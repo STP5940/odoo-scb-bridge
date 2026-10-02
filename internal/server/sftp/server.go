@@ -192,6 +192,7 @@ func (s *Server) handleConn(conn net.Conn, sshConfig *ssh.ServerConfig) {
 		server, err := sftp.NewServer(
 			channel,
 			sftp.WithDebug(io.Discard),
+			sftp.WithServerWorkingDirectory(s.tempDir),
 		)
 		if err != nil {
 			return

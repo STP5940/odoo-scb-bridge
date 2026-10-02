@@ -6,7 +6,7 @@ import "time"
 type User struct {
 	ID        int64     `json:"id"`
 	Username  string    `json:"username"`
-	Password  string    `json:"-"`
+	Password  string    `json:"password,omitempty"`
 	RootDir   string    `json:"root_dir"`
 	Enabled   bool      `json:"enabled"`
 	CreatedAt time.Time `json:"created_at"`

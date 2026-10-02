@@ -293,15 +293,27 @@ func (d *DB) SaveUser(u *models.User) error {
 		enabled = 1
 	}
 
-	_, err := d.conn.Exec(`
-		INSERT INTO users (username, password, root_dir, enabled, created_at, updated_at)
-		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		ON CONFLICT(username) DO UPDATE SET
-			password=excluded.password,
-			root_dir=excluded.root_dir,
-			enabled=excluded.enabled,
-			updated_at=CURRENT_TIMESTAMP
-	`, u.Username, u.Password, u.RootDir, enabled)
+	var err error
+	if u.Password != "" {
+		_, err = d.conn.Exec(`
+			INSERT INTO users (username, password, root_dir, enabled, created_at, updated_at)
+			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+			ON CONFLICT(username) DO UPDATE SET
+				password=excluded.password,
+				root_dir=excluded.root_dir,
+				enabled=excluded.enabled,
+				updated_at=CURRENT_TIMESTAMP
+		`, u.Username, u.Password, u.RootDir, enabled)
+	} else {
+		_, err = d.conn.Exec(`
+			INSERT INTO users (username, password, root_dir, enabled, created_at, updated_at)
+			VALUES (?, '', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+			ON CONFLICT(username) DO UPDATE SET
+				root_dir=excluded.root_dir,
+				enabled=excluded.enabled,
+				updated_at=CURRENT_TIMESTAMP
+		`, u.Username, u.RootDir, enabled)
+	}
 	if err == nil {
 		_ = d.internalLogAudit(models.AuditLog{
 			EventType: "USER_MGMT",
