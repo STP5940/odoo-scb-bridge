@@ -192,7 +192,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.16</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.17</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -217,7 +217,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.16</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.17</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -407,7 +407,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.16</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.17</span>
       </div>
     </aside>
 
@@ -997,7 +997,7 @@
         : isChange ? pinText('ยืนยัน PIN ปัจจุบัน แล้วกำหนด PIN ใหม่', 'Verify your current PIN, then choose a new one.')
           : isDisable ? pinText('กรอก PIN ปัจจุบันเพื่อปิดการป้องกัน', 'Enter your current PIN to turn off PIN protection.')
             : pinText('กรอก PIN 6 หลักเพื่อเข้าใช้งาน', 'Enter your 6-digit PIN to continue.');
-      submit.innerText = isSetup ? pinText('ตั้ง PIN', 'Set PIN') : isChange ? pinText('เปลี่ยน PIN', 'Change PIN')
+      submit.innerText = isSetup ? pinText('ถัดไป', 'Next') : isChange ? pinText('เปลี่ยน PIN', 'Change PIN')
         : isDisable ? pinText('ปิด PIN', 'Disable PIN') : pinText('ปลดล็อก', 'Unlock');
       document.getElementById('pin-current-label').innerText = pinText('PIN ปัจจุบัน', 'Current PIN');
       document.getElementById('pin-new-label').innerText = pinText('PIN 6 หลัก', '6-digit PIN');
@@ -1019,6 +1019,7 @@
     function setActivePinField(fieldId) {
       activePinField = fieldId;
       updatePinFieldFocus();
+      updatePinSubmitState();
       document.getElementById(fieldId)?.focus();
     }
 
@@ -1048,7 +1049,9 @@
       const isChange = pinScreenMode === 'change';
       const isDisable = pinScreenMode === 'disable';
       const pinPairValid = /^\d{6}$/.test(value('pin-new')) && /^\d{6}$/.test(value('pin-confirm')) && value('pin-new') === value('pin-confirm');
-      const valid = isSetup ? pinPairValid
+      if (isSetup) submit.innerText = activePinField === 'pin-confirm' ? pinText('ตั้ง PIN', 'Set PIN') : pinText('ถัดไป', 'Next');
+      const valid = isSetup
+        ? activePinField === 'pin-confirm' ? pinPairValid : /^\d{6}$/.test(value('pin-new'))
         : isChange ? /^\d{6}$/.test(value('pin-current')) && pinPairValid
           : isDisable ? /^\d{6}$/.test(value('pin-current')) : /^\d{6}$/.test(value('pin-unlock'));
       submit.disabled = !valid;
@@ -1092,9 +1095,7 @@
         updatePinSubmitState();
         return;
       }
-      if (pinScreenMode === 'setup' && fieldId === 'pin-new') {
-        setActivePinField('pin-confirm');
-      } else if (pinScreenMode === 'change' && fieldId === 'pin-current') {
+      if (pinScreenMode === 'change' && fieldId === 'pin-current') {
         setActivePinField('pin-new');
       } else if ((pinScreenMode === 'setup' || pinScreenMode === 'change') && fieldId === 'pin-new') {
         setActivePinField('pin-confirm');
@@ -1191,6 +1192,12 @@
       const isSetup = pinScreenMode === 'setup';
       const isChange = pinScreenMode === 'change';
       const isDisable = pinScreenMode === 'disable';
+      if (isSetup && activePinField === 'pin-new') {
+        if (!/^\d{6}$/.test(document.getElementById('pin-new').value)) return;
+        document.getElementById('pin-message').innerText = '';
+        setActivePinField('pin-confirm');
+        return;
+      }
       const pin = document.getElementById(isSetup || isChange ? 'pin-new' : isDisable ? 'pin-current' : 'pin-unlock').value;
       if (!/^\d{6}$/.test(pin)) {
         message.innerText = pinText('PIN ต้องเป็นตัวเลข 6 หลัก', 'PIN must contain exactly 6 digits.');
