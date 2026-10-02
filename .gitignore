@@ -1,0 +1,29 @@
+# Binaries & Build Output
+dist/
+dist_electron/
+output/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Node Dependencies
+node_modules/
+package-lock.json
+
+# Local Data & SQLite DBs
+*.db
+*.db-journal
+*.log
+host_rsa.key
+
+# OS & IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+Desktop.ini

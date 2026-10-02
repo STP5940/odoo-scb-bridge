@@ -1,0 +1,30 @@
+{
+  "name": "odoo-scb-bridge-monitor",
+  "version": "1.0.0",
+  "description": "Desktop GUI Monitor for Odoo SCB Bridge Service",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.odoo.scb.bridge.monitor",
+    "productName": "ServiceMonitor",
+    "win": {
+      "target": "dir",
+      "icon": "icon/app.ico"
+    },
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "electron/**/*",
+      "internal/ui/**/*",
+      "icon/**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  }
+}

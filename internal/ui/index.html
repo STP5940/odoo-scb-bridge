@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odoo SCB Bridge - Management Studio</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+            },
+            dark: {
+              950: '#101317',
+              900: '#161920',
+              850: '#1d212a',
+              800: '#242936',
+              750: '#2c3242',
+              700: '#343b4e',
+              600: '#47516b',
+            },
+            accent: {
+              pink: '#ec4899',
+              purple: '#a855f7',
+              cyan: '#06b6d4',
+              blue: '#3b82f6',
+              amber: '#f59e0b',
+              emerald: '#10b981',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; user-select: none; }
+    .titlebar-drag { -webkit-app-region: drag; }
+    .titlebar-nodrag { -webkit-app-region: no-drag; }
+    
+    /* Modern Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(16, 19, 23, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(71, 81, 107, 0.4); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(71, 81, 107, 0.8); }
+
+    /* Frosted Glass Effect */
+    .glass-card {
+      background: rgba(29, 33, 42, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .glass-input {
+      background: rgba(16, 19, 23, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s ease;
+    }
+    .glass-input:focus {
+      border-color: #3b82f6;
+      background: rgba(16, 19, 23, 0.95);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      outline: none;
+    }
+    
+    /* Smooth transitions */
+    .tab-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  </style>
+</head>
+<body class="bg-dark-950 text-slate-200 min-h-screen flex flex-col select-none overflow-hidden antialiased">
+
+  <!-- ================= TOP WINDOW BAR (Frameless Window Drag Area) ================= -->
+  <div class="titlebar-drag bg-dark-950/90 border-b border-dark-800/80 h-9 flex items-center justify-between px-3 text-xs select-none z-50">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-5 h-5 rounded-md bg-gradient-to-tr from-brand-500 to-accent-cyan flex items-center justify-center shadow-sm">
+        <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
+      </div>
+      <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v1.0</span>
+    </div>
+    <div class="titlebar-nodrag flex items-center space-x-1">
+      <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
+        <i class="fa-solid fa-minus text-[10px]"></i>
+      </button>
+      <button onclick="window.electronAPI ? window.electronAPI.maximize() : null" title="ขยายเต็มจอ" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
+        <i class="fa-regular fa-square text-[10px]"></i>
+      </button>
+      <button onclick="window.electronAPI ? window.electronAPI.close() : window.close()" title="ปิดโปรแกรม" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition">
+        <i class="fa-solid fa-xmark text-[12px]"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= TOP APP HEADER / TOOLBAR ================= -->
+  <header class="bg-dark-900 border-b border-dark-800/80 px-5 py-2.5 flex items-center justify-between z-40">
+    <div class="flex items-center space-x-4">
+      <!-- App Brand Logo Pill -->
+      <div class="flex items-center space-x-3 pr-4 border-r border-dark-800">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+          <i class="fa-solid fa-network-wired text-brand-400 text-sm"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-sm tracking-tight text-white">Bridge Console</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">ENTERPRISE</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway</p>
+        </div>
+      </div>
+
+      <!-- Quick Breadcrumb / Context Nav Tabs -->
+      <div class="flex items-center space-x-1 bg-dark-950/70 p-1 rounded-xl border border-white/5">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white flex items-center space-x-2">
+          <i class="fa-solid fa-grip text-[11px]"></i>
+          <span>Dashboard</span>
+        </button>
+        <button onclick="switchTab('inbound')" id="btn-inbound" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-2">
+          <i class="fa-solid fa-arrow-down-left-and-arrow-up-right-to-center text-[11px]"></i>
+          <span>Inbound SFTP</span>
+        </button>
+        <button onclick="switchTab('outbound')" id="btn-outbound" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-2">
+          <i class="fa-solid fa-paper-plane text-[11px]"></i>
+          <span>Outbound Jobs</span>
+        </button>
+        <button onclick="switchTab('logs')" id="btn-logs" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-2">
+          <i class="fa-solid fa-timeline text-[11px]"></i>
+          <span>Audit Logs</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Header Right Controls & Quick Actions -->
+    <div class="flex items-center space-x-3">
+      <!-- Service Status Badge -->
+      <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span id="service-status-text" class="text-xs font-medium text-emerald-400">Service Active</span>
+      </div>
+
+      <!-- Power Toggle Button -->
+      <button id="btn-toggle-service" onclick="toggleService()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95">
+        <i class="fa-solid fa-power-off text-[11px]"></i>
+        <span>Stop Service</span>
+      </button>
+
+      <!-- Sync / Refresh Button -->
+      <button onclick="refreshData()" title="รีเฟรชข้อมูลล่าสุด" class="w-8 h-8 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition active:rotate-180">
+        <i class="fa-solid fa-arrows-rotate"></i>
+      </button>
+
+      <!-- User Avatar Profile Pill (Modern Header element like preview) -->
+      <div class="flex items-center space-x-2 pl-3 border-l border-dark-800">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-accent-pink to-accent-purple flex items-center justify-center text-white text-xs font-bold ring-2 ring-white/10 shadow-sm">
+          A
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= WORKSPACE (3-COLUMN LAYOUT) ================= -->
+  <div class="flex flex-1 overflow-hidden">
+
+    <!-- ================= LEFT SIDEBAR (Explorer / Modules) ================= -->
+    <aside class="w-60 bg-dark-900/60 border-r border-dark-800/80 flex flex-col justify-between py-4 select-none">
+      <div class="px-3 space-y-4">
+        <!-- Quick Search Pill -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+          <input type="text" placeholder="ค้นหาการตั้งค่า..." class="w-full glass-input text-xs rounded-xl pl-8 pr-3 py-2 text-slate-200 placeholder-slate-500">
+        </div>
+
+        <!-- Section: MODULES -->
+        <div>
+          <div class="flex items-center justify-between px-2 mb-2">
+            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">MODULES</span>
+            <span class="text-[10px] font-mono text-slate-500">4 Active</span>
+          </div>
+          <div class="space-y-1">
+            <button onclick="switchTab('dashboard')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
+              <div class="flex items-center space-x-2.5">
+                <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-accent-blue flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-chart-pie text-[11px]"></i></span>
+                <span>Dashboard Overview</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
+            </button>
+            <button onclick="switchTab('inbound')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
+              <div class="flex items-center space-x-2.5">
+                <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-brand-400 flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-server text-[11px]"></i></span>
+                <span>Inbound SFTP Host</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
+            </button>
+            <button onclick="switchTab('outbound')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
+              <div class="flex items-center space-x-2.5">
+                <span class="w-6 h-6 rounded-lg bg-purple-500/10 text-accent-purple flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-clock-rotate-left text-[11px]"></i></span>
+                <span>Outbound Schedulers</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
+            </button>
+            <button onclick="switchTab('logs')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
+              <div class="flex items-center space-x-2.5">
+                <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-accent-amber flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-shield-halved text-[11px]"></i></span>
+                <span>Audit & Security Logs</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section: FOLDERS & PATHS -->
+        <div>
+          <div class="flex items-center justify-between px-2 mb-2">
+            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">SYSTEM DIRECTORIES</span>
+          </div>
+          <div class="space-y-1.5 text-[11px] font-mono text-slate-400 px-2">
+            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
+              <i class="fa-regular fa-folder-closed text-accent-cyan"></i>
+              <span class="truncate">data/inbound</span>
+            </div>
+            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
+              <i class="fa-regular fa-folder-closed text-accent-purple"></i>
+              <span class="truncate">data/outbound</span>
+            </div>
+            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
+              <i class="fa-regular fa-folder-closed text-accent-amber"></i>
+              <span class="truncate">data/temp</span>
+            </div>
+            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
+              <i class="fa-solid fa-database text-brand-400"></i>
+              <span class="truncate">data/bridge.db</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer Badge -->
+      <div class="px-4 pt-3 border-t border-dark-800/80 flex items-center justify-between text-[11px] text-slate-500">
+        <div class="flex items-center space-x-2">
+          <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
+          <span>Go Service 1.26</span>
+        </div>
+        <span class="font-mono text-[10px] text-brand-400">ONLINE</span>
+      </div>
+    </aside>
+
+    <!-- ================= CENTER MAIN CONTENT ================= -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ================= TAB 1: DASHBOARD ================= -->
+      <section id="tab-dashboard" class="space-y-6">
+        
+        <!-- Header Title Banner -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">System Overview & Metric Cards</h2>
+            <p class="text-xs text-slate-400 mt-0.5">ภาพรวมระบบ การเชื่อมต่อ และสถิติการรับ-ส่งข้อมูลล่าสุด</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-slate-400 bg-dark-900 border border-white/5 px-3 py-1.5 rounded-xl font-mono">
+              <i class="fa-regular fa-clock text-accent-cyan mr-1.5"></i>
+              <span id="current-clock">--:--:--</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 3 Feature Highlight Metric Cards (Snetch / Modern Cards Style) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <!-- Card 1: SFTP Gateway Inbound -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-brand-500/10 rounded-full blur-xl pointer-events-none group-hover:scale-150 transition"></div>
+            <div class="flex items-start justify-between">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-brand-400 flex items-center justify-center text-lg font-bold">
+                <i class="fa-solid fa-network-wired"></i>
+              </div>
+              <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20">LISTENING</span>
+            </div>
+            <div class="mt-4">
+              <p class="text-xs font-medium text-slate-400">SFTP Inbound Port</p>
+              <div class="flex items-baseline space-x-2 mt-1">
+                <h3 id="stat-sftp-port" class="text-3xl font-extrabold text-white font-mono">2222</h3>
+                <span class="text-xs text-brand-400 font-mono">TCP / SSH-2.0</span>
+              </div>
+              <p id="stat-target-dir" class="text-[11px] text-slate-400 mt-3 truncate bg-dark-950/60 px-2.5 py-1.5 rounded-lg border border-white/5 font-mono">
+                โฟลเดอร์รับเข้า: Loading...
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 2: Outbound Automation Jobs -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-accent-purple/10 rounded-full blur-xl pointer-events-none group-hover:scale-150 transition"></div>
+            <div class="flex items-start justify-between">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-accent-purple flex items-center justify-center text-lg font-bold">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-accent-purple border border-purple-500/20">SCHEDULER</span>
+            </div>
+            <div class="mt-4">
+              <p class="text-xs font-medium text-slate-400">Active Outbound Jobs</p>
+              <div class="flex items-baseline space-x-2 mt-1">
+                <h3 id="stat-jobs-count" class="text-3xl font-extrabold text-white font-mono">0</h3>
+                <span class="text-xs text-slate-400">ตั้งรอบอัตโนมัติ</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-3 truncate bg-dark-950/60 px-2.5 py-1.5 rounded-lg border border-white/5 font-mono">
+                Cron Jobs: วนตรวจไฟล์ส่ง SCB
+              </p>
+            </div>
+          </div>
+
+          <!-- Card 3: Audit Security Logs -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group">
+            <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-accent-amber/10 rounded-full blur-xl pointer-events-none group-hover:scale-150 transition"></div>
+            <div class="flex items-start justify-between">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-accent-amber flex items-center justify-center text-lg font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-accent-amber border border-amber-500/20">SQLITE 3</span>
+            </div>
+            <div class="mt-4">
+              <p class="text-xs font-medium text-slate-400">Total Audit Logs</p>
+              <div class="flex items-baseline space-x-2 mt-1">
+                <h3 id="stat-logs-count" class="text-3xl font-extrabold text-white font-mono">0</h3>
+                <span class="text-xs text-slate-400">รายการบันทึก</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-3 truncate bg-dark-950/60 px-2.5 py-1.5 rounded-lg border border-white/5 font-mono">
+                เก็บบันทึก Login & File Transfers
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- System Quick Alert Badges Banner (Styled after preview notification pills) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-brand-400">
+            <div class="flex items-center space-x-2.5">
+              <i class="fa-solid fa-circle-check text-sm"></i>
+              <span class="font-medium">Odoo SCB Bridge Core Service ทำงานปกติบน Windows Service (PID Running)</span>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-300">Ready for data transfer</span>
+          </div>
+          <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-accent-cyan">
+            <div class="flex items-center space-x-2.5">
+              <i class="fa-solid fa-circle-info text-sm"></i>
+              <span class="font-medium">พอร์ต 2222 ได้รับการเปิดผ่าน Windows Firewall Rule อัตโนมัติ</span>
+            </div>
+            <span class="text-[10px] font-mono text-cyan-300">Firewall OK</span>
+          </div>
+        </div>
+
+        <!-- Recent Transfer Activity Table -->
+        <div class="glass-card rounded-2xl p-5 overflow-hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-semibold text-white text-sm">กิจกรรมการถ่ายโอนไฟล์ล่าสุด (Recent File Transfers)</h3>
+              <p class="text-xs text-slate-400">รายงาน 5 รายการล่าสุดที่ถูกบันทึกลงในระบบ</p>
+            </div>
+            <button onclick="switchTab('logs')" class="text-xs text-accent-blue hover:underline flex items-center space-x-1">
+              <span>ดูประวัติทั้งหมด</span>
+              <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
+                <tr>
+                  <th class="py-2.5 px-3">วัน/เวลา</th>
+                  <th class="py-2.5 px-3">ประเภทกิจกรรม</th>
+                  <th class="py-2.5 px-3">โปรโตคอล</th>
+                  <th class="py-2.5 px-3">ชื่อไฟล์</th>
+                  <th class="py-2.5 px-3">ขนาด</th>
+                  <th class="py-2.5 px-3">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="dash-recent-logs" class="divide-y divide-dark-800/60 font-mono">
+                <tr><td colspan="6" class="p-6 text-center text-slate-500">กำลังโหลดข้อมูลล่าสุด...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 2: INBOUND SFTP ================= -->
+      <section id="tab-inbound" class="hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">ตั้งค่า SFTP Server ขาเข้า & จัดการผู้ใช้</h2>
+          <p class="text-xs text-slate-400 mt-0.5">กำหนดพอร์ต โฟลเดอร์จัดเก็บ และจัดการบัญชีผู้ใช้งานสำหรับธนาคาร SCB หรือระบบภายนอก</p>
+        </div>
+
+        <!-- Inbound Configuration Card -->
+        <div class="glass-card rounded-2xl p-6 max-w-3xl space-y-5">
+          <div class="flex items-center space-x-3 pb-3 border-b border-dark-800">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-brand-400 flex items-center justify-center">
+              <i class="fa-solid fa-sliders"></i>
+            </div>
+            <h3 class="font-semibold text-white text-sm">Server Listener Settings</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">พอร์ต SFTP สำหรับรับเข้า (Inbound Port)</label>
+              <input type="number" id="inbound-sftp-port" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white" placeholder="2222">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">โปรโตคอลการทำงาน</label>
+              <input type="text" value="SFTP (SSH-2.0 RSA)" readonly class="w-full glass-input rounded-xl p-2.5 text-xs text-slate-400 cursor-not-allowed">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">โฟลเดอร์ปลายทางสำหรับจัดเก็บไฟล์ (Target Destination)</label>
+            <input type="text" id="inbound-target-dir" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white" placeholder="C:/.../data/inbound">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">โฟลเดอร์ชั่วคราวขณะอัปโหลด (Temp Upload Folder)</label>
+            <input type="text" id="inbound-temp-dir" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white" placeholder="C:/.../data/temp">
+          </div>
+
+          <button onclick="saveInboundConfig()" class="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-brand-500/20 active:scale-95">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>บันทึกการตั้งค่าขาเข้า</span>
+          </button>
+        </div>
+
+        <!-- SFTP Users Management Card -->
+        <div class="glass-card rounded-2xl p-6 space-y-5">
+          <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-accent-blue flex items-center justify-center">
+                <i class="fa-solid fa-users"></i>
+              </div>
+              <div>
+                <h3 class="font-semibold text-white text-sm">จัดการผู้ใช้งาน SFTP (Accounts Management)</h3>
+                <p class="text-xs text-slate-400">สร้างบัญชีผู้ใช้สำหรับเชื่อมต่อ SFTP เพื่อรับไฟล์ (บันทึกลง SQLite ทันที)</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add / Edit User Form -->
+          <div class="p-4 rounded-xl bg-dark-950/60 border border-white/5 space-y-3">
+            <span class="text-xs font-semibold text-slate-300 flex items-center space-x-2">
+              <i class="fa-solid fa-user-plus text-brand-400 text-[11px]"></i>
+              <span id="user-form-title">เพิ่มผู้ใช้งานใหม่</span>
+            </span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <input type="text" id="user-username" placeholder="Username (เช่น scb_gateway)" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+              </div>
+              <div>
+                <input type="password" id="user-password" placeholder="Password (รหัสผ่าน)" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+              </div>
+              <div class="flex items-center space-x-2">
+                <button onclick="addUser()" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-brand-500/20">
+                  <i class="fa-solid fa-check"></i>
+                  <span id="btn-user-submit-text">บันทึกผู้ใช้</span>
+                </button>
+                <button id="btn-cancel-user-edit" onclick="cancelUserEdit()" class="hidden px-3 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 text-xs">
+                  ยกเลิก
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
+                <tr>
+                  <th class="py-2.5 px-3">ID</th>
+                  <th class="py-2.5 px-3">Username</th>
+                  <th class="py-2.5 px-3">สิทธิ์ / Root Path</th>
+                  <th class="py-2.5 px-3">สถานะบัญชี</th>
+                  <th class="py-2.5 px-3">วันที่สร้าง</th>
+                  <th class="py-2.5 px-3 text-right">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="user-list-table" class="divide-y divide-dark-800/60 font-mono">
+                <tr><td colspan="6" class="p-6 text-center text-slate-500">กำลังโหลดรายชื่อผู้ใช้...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 3: OUTBOUND JOBS ================= -->
+      <section id="tab-outbound" class="hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">รอบงานส่งออกไฟล์ (Outbound Push Jobs)</h2>
+          <p class="text-xs text-slate-400 mt-0.5">ระบบ Cron Job อัตโนมัติสำหรับดึงไฟล์ในเครื่องส่งไปยังธนาคาร SCB หรือ SFTP ปลายทาง</p>
+        </div>
+
+        <!-- Add Job Form Card -->
+        <div class="glass-card rounded-2xl p-6 max-w-4xl space-y-4">
+          <div class="flex items-center space-x-3 pb-3 border-b border-dark-800">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-accent-purple flex items-center justify-center">
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <h3 class="font-semibold text-white text-sm">สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">ชื่องาน (Job Name)</label>
+              <input type="text" id="job-name" placeholder="เช่น ส่งรายงาน SCB ประจำวัน" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">รอบเวลา Cron (Cron Expression)</label>
+              <input type="text" id="job-cron" value="*/5 * * * * *" placeholder="*/5 * * * * * (ทุก 5 วินาที)" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">โฟลเดอร์ต้นทางที่เก็บไฟล์ (Source Folder)</label>
+              <input type="text" id="job-source" placeholder="C:/data/outbound" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">รูปแบบไฟล์ (Pattern Matching)</label>
+              <input type="text" id="job-pattern" value="*.*" placeholder="*.* หรือ *.txt" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">โปรโตคอลปลายทาง</label>
+              <select id="job-proto" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+                <option value="sftp">SFTP (SSH)</option>
+                <option value="ftp">FTP / FTPS</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Remote Host</label>
+              <input type="text" id="job-host" placeholder="127.0.0.1 หรือ sftp.scb.co.th" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Remote Port</label>
+              <input type="number" id="job-port" value="22" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Remote Username</label>
+              <input type="text" id="job-user" placeholder="scb_user" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">Remote Password</label>
+              <input type="password" id="job-pass" placeholder="Password" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">โฟลเดอร์ปลายทาง (Remote Path)</label>
+              <input type="text" id="job-remote-dir" value="/upload" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button onclick="saveOutboundJob()" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-purple-600/20 active:scale-95">
+              <i class="fa-solid fa-plus"></i>
+              <span>บันทึกงานส่งออก (Save Job)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Outbound Jobs Table -->
+        <div class="glass-card rounded-2xl p-6">
+          <div class="flex items-center justify-between pb-3 border-b border-dark-800 mb-4">
+            <h3 class="font-semibold text-white text-sm">รายการงานส่งออกไฟล์ทั้งหมด (Registered Jobs)</h3>
+            <span class="text-xs text-slate-400">ควบคุมด้วย Go Cron Engine</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
+                <tr>
+                  <th class="py-2.5 px-3">ชื่องาน</th>
+                  <th class="py-2.5 px-3">รอบเวลา Cron</th>
+                  <th class="py-2.5 px-3">โฟลเดอร์ต้นทาง</th>
+                  <th class="py-2.5 px-3">ปลายทาง Host</th>
+                  <th class="py-2.5 px-3">สถานะล่าสุด</th>
+                  <th class="py-2.5 px-3 text-right">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="job-list-table" class="divide-y divide-dark-800/60 font-mono">
+                <tr><td colspan="6" class="p-6 text-center text-slate-500">กำลังโหลดรายการงาน...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 4: AUDIT LOGS ================= -->
+      <section id="tab-logs" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">บันทึกเหตุการณ์และความปลอดภัย (Audit Trail Logs)</h2>
+            <p class="text-xs text-slate-400 mt-0.5">บันทึกประวัติการเข้าใช้งาน การรับและส่งไฟล์ พร้อมค่าแฮช SHA-256 ในฐานข้อมูล SQLite</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div class="relative">
+              <i class="fa-solid fa-filter absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+              <select id="log-filter" onchange="loadLogs()" class="glass-input rounded-xl pl-8 pr-4 py-2 text-xs text-white">
+                <option value="">ทั้งหมด (All Events)</option>
+                <option value="LOGIN">เฉพาะการล็อกอิน (LOGIN)</option>
+                <option value="INBOUND_FILE">การรับเข้าไฟล์ (INBOUND)</option>
+                <option value="OUTBOUND_FILE">การส่งออกไฟล์ (OUTBOUND)</option>
+                <option value="USER_MGMT">การจัดการผู้ใช้ (USER_MGMT)</option>
+              </select>
+            </div>
+            <button onclick="loadLogs()" class="px-3 py-2 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 text-xs border border-white/5 flex items-center space-x-1.5">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>รีเฟรช Log</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div class="glass-card rounded-2xl p-6 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
+                <tr>
+                  <th class="py-2.5 px-3">วัน/เวลา</th>
+                  <th class="py-2.5 px-3">ประเภทเหตุการณ์</th>
+                  <th class="py-2.5 px-3">โปรโตคอล</th>
+                  <th class="py-2.5 px-3">ผู้ใช้ / IP</th>
+                  <th class="py-2.5 px-3">ไฟล์ / รายละเอียด</th>
+                  <th class="py-2.5 px-3">SHA-256 Hash</th>
+                  <th class="py-2.5 px-3">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table" class="divide-y divide-dark-800/60 font-mono text-[11px]">
+                <tr><td colspan="7" class="p-6 text-center text-slate-500">กำลังโหลด Audit Logs จาก SQLite...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ================= RIGHT PANEL (System Inspector & Quick Info) ================= -->
+    <aside class="w-72 bg-dark-900/60 border-l border-dark-800/80 p-4 flex flex-col justify-between select-none overflow-y-auto">
+      <div class="space-y-5">
+        <!-- Inspector Title -->
+        <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SYSTEM INSPECTOR</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        </div>
+
+        <!-- Metrics Preview Box (like preview right sidebar) -->
+        <div class="space-y-3">
+          <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">GATEWAY METRICS</span>
+          <div class="grid grid-cols-2 gap-2 text-center font-mono">
+            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
+              <p class="text-[10px] text-slate-500">PORT</p>
+              <p class="text-sm font-bold text-slate-200 mt-0.5">2222</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
+              <p class="text-[10px] text-slate-500">API PORT</p>
+              <p class="text-sm font-bold text-slate-200 mt-0.5">9527</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
+              <p class="text-[10px] text-slate-500">CIPHER</p>
+              <p class="text-[11px] font-bold text-brand-400 mt-1">AES-256</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
+              <p class="text-[10px] text-slate-500">DATABASE</p>
+              <p class="text-[11px] font-bold text-accent-cyan mt-1">SQLite</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Segmented Quick Status -->
+        <div class="space-y-2">
+          <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">SERVICE HEALTH</span>
+          <div class="p-3 rounded-xl bg-dark-950/80 border border-white/5 space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Windows Service</span>
+              <span class="text-brand-400 font-mono text-[11px] font-medium">Running</span>
+            </div>
+            <div class="w-full bg-dark-800 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-brand-500 h-1.5 rounded-full" style="width: 100%"></div>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-slate-400">Memory Usage</span>
+              <span class="text-slate-300 font-mono text-[11px]">~24.8 MB</span>
+            </div>
+            <div class="w-full bg-dark-800 rounded-full h-1.5 overflow-hidden">
+              <div class="bg-accent-cyan h-1.5 rounded-full" style="width: 18%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Help & Note -->
+        <div class="p-3.5 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 text-xs space-y-1.5">
+          <div class="flex items-center space-x-1.5 text-accent-cyan font-semibold">
+            <i class="fa-solid fa-lightbulb"></i>
+            <span>Quick Tip</span>
+          </div>
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            ไฟล์ที่อัปโหลดเข้า SFTP จะถูกจัดเก็บลง <code class="text-white font-mono">data/inbound</code> โดยอัตโนมัติพร้อมตรวจสอบ SHA-256 Hash ทุกไฟล์
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Bottom System Version -->
+      <div class="pt-4 border-t border-dark-800 text-[10px] text-slate-500 flex items-center justify-between">
+        <span>Electron + Go Service</span>
+        <span class="font-mono text-slate-400">100% Native</span>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ================= NOTIFICATION TOAST ================= -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toast-box" class="px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium border bg-dark-900 border-white/10 text-white">
+      <i id="toast-icon" class="fa-solid fa-circle-check text-brand-400 text-sm"></i>
+      <span id="toast-msg">ข้อความแจ้งเตือน</span>
+    </div>
+  </div>
+
+  <!-- ================= SCRIPTS & FRONTEND LOGIC ================= -->
+  <script>
+    const API_BASE = "http://127.0.0.1:9527/api";
+    let isRunning = true;
+
+    // Toast Notification Utility
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const box = document.getElementById('toast-box');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-msg');
+
+      text.innerText = msg;
+      if (type === 'success') {
+        icon.className = 'fa-solid fa-circle-check text-brand-400 text-sm';
+        box.className = 'px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium border bg-dark-900 border-emerald-500/30 text-white';
+      } else if (type === 'error') {
+        icon.className = 'fa-solid fa-circle-xmark text-rose-400 text-sm';
+        box.className = 'px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium border bg-dark-900 border-rose-500/30 text-white';
+      } else {
+        icon.className = 'fa-solid fa-circle-info text-cyan-400 text-sm';
+        box.className = 'px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium border bg-dark-900 border-cyan-500/30 text-white';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3000);
+    }
+
+    // Tab Navigation Switcher
+    function switchTab(tab) {
+      ['dashboard', 'inbound', 'outbound', 'logs'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`btn-${t}`);
+        if (btn) {
+          btn.classList.remove('bg-dark-800', 'text-white', 'shadow-sm');
+          btn.classList.add('text-slate-400');
+        }
+      });
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`btn-${tab}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-dark-800', 'text-white', 'shadow-sm');
+        activeBtn.classList.remove('text-slate-400');
+      }
+    }
+
+    // Refresh all data
+    async function refreshData() {
+      await Promise.all([loadStatus(), loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+      showToast('รีเฟรชข้อมูลล่าสุดสำเร็จ', 'info');
+    }
+
+    // Toggle Windows Service (Start / Stop)
+    async function toggleService() {
+      const btn = document.getElementById('btn-toggle-service');
+      btn.disabled = true;
+      try {
+        if (isRunning) {
+          await fetch(`${API_BASE}/service/stop`, { method: 'POST' });
+          showToast('ส่งคำสั่งหยุดการทำงาน Service สำเร็จ', 'info');
+        } else {
+          await fetch(`${API_BASE}/service/start`, { method: 'POST' });
+          showToast('ส่งคำสั่งเริ่มการทำงาน Service สำเร็จ', 'success');
+        }
+      } catch (e) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ Service', 'error');
+      }
+      setTimeout(async () => {
+        await loadStatus();
+        btn.disabled = false;
+      }, 1000);
+    }
+
+    // Load Service Status
+    async function loadStatus() {
+      const pill = document.getElementById('service-status-pill');
+      const text = document.getElementById('service-status-text');
+      const btn = document.getElementById('btn-toggle-service');
+
+      try {
+        const res = await fetch(`${API_BASE}/status`);
+        if (res.ok) {
+          pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30";
+          pill.innerHTML = `
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-medium text-emerald-400">Service Active</span>
+          `;
+          btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95";
+          btn.innerHTML = '<i class="fa-solid fa-power-off text-[11px]"></i><span>Stop Service</span>';
+          isRunning = true;
+        }
+      } catch (e) {
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
+        pill.innerHTML = `
+          <span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+          <span class="text-xs font-medium text-rose-400">Service Offline</span>
+        `;
+        btn.className = "px-3.5 py-1.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95";
+        btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
+        isRunning = false;
+      }
+    }
+
+    // Load Inbound Config
+    async function loadInbound() {
+      try {
+        const res = await fetch(`${API_BASE}/inbound`);
+        if (res.ok) {
+          const cfg = await res.json();
+          document.getElementById('stat-sftp-port').innerText = cfg.sftp_port;
+          document.getElementById('stat-target-dir').innerText = `ปลายทาง: ${cfg.target_dir}`;
+          document.getElementById('inbound-sftp-port').value = cfg.sftp_port;
+          document.getElementById('inbound-target-dir').value = cfg.target_dir;
+          document.getElementById('inbound-temp-dir').value = cfg.temp_dir;
+        }
+      } catch (e) {}
+    }
+
+    // Save Inbound Config
+    async function saveInboundConfig() {
+      const payload = {
+        id: 1,
+        protocol: "sftp",
+        sftp_port: parseInt(document.getElementById('inbound-sftp-port').value),
+        ftp_port: 2121,
+        target_dir: document.getElementById('inbound-target-dir').value,
+        temp_dir: document.getElementById('inbound-temp-dir').value,
+        auto_move_enabled: true
+      };
+      try {
+        const res = await fetch(`${API_BASE}/inbound`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showToast('บันทึกการตั้งค่า SFTP Inbound เรียบร้อยแล้ว', 'success');
+          refreshData();
+        } else {
+          showToast('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า', 'error');
+        }
+      } catch (e) {
+        showToast('ไม่สามารถเชื่อมต่อ Server ได้', 'error');
+      }
+    }
+
+    // Load SFTP Users
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_BASE}/users`);
+        if (res.ok) {
+          const users = await res.json() || [];
+          const table = document.getElementById('user-list-table');
+          if (users.length === 0) {
+            table.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีผู้ใช้งาน SFTP บันทึกไว้</td></tr>';
+            return;
+          }
+          table.innerHTML = users.map(u => `
+            <tr class="hover:bg-dark-850/50 transition">
+              <td class="p-3 text-slate-500 text-[11px] font-mono">#${u.id}</td>
+              <td class="p-3 font-semibold text-white">
+                <div class="flex items-center space-x-2">
+                  <div class="w-6 h-6 rounded-md bg-blue-500/10 text-accent-blue flex items-center justify-center text-[10px]">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  <span>${u.username}</span>
+                </div>
+              </td>
+              <td class="p-3 text-slate-400 text-xs">${u.root_dir || '.'}</td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${u.enabled ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
+                  ${u.enabled ? '● ACTIVE' : '○ DISABLED'}
+                </span>
+              </td>
+              <td class="p-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString('th-TH')}</td>
+              <td class="p-3 text-right space-x-2">
+                <button onclick="editUser('${u.username}')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white text-xs border border-white/5 transition">
+                  <i class="fa-solid fa-pen text-[10px] mr-1"></i>แก้ไข
+                </button>
+                <button onclick="deleteUser(${u.id}, '${u.username}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs border border-rose-500/20 transition">
+                  <i class="fa-solid fa-trash text-[10px] mr-1"></i>ลบ
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    // Add or Update User
+    async function addUser() {
+      const u = document.getElementById('user-username').value.trim();
+      const p = document.getElementById('user-password').value.trim();
+      if (!u || !p) {
+        showToast('กรุณากรอก Username และ Password ให้ครบถ้วน', 'error');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p, root_dir: '.', enabled: true })
+        });
+        if (res.ok) {
+          cancelUserEdit();
+          showToast(`บันทึกบัญชีผู้ใช้ "${u}" เรียบร้อยแล้ว`, 'success');
+          await loadUsers();
+          await loadLogs();
+        } else {
+          showToast('ไม่สามารถบันทึกผู้ใช้ได้', 'error');
+        }
+      } catch (e) {
+        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+      }
+    }
+
+    function editUser(username) {
+      document.getElementById('user-form-title').innerText = `แก้ไขผู้ใช้: ${username}`;
+      document.getElementById('user-username').value = username;
+      document.getElementById('user-password').value = '';
+      document.getElementById('user-password').focus();
+      document.getElementById('user-password').placeholder = 'กรอกรหัสผ่านใหม่';
+      document.getElementById('btn-user-submit-text').innerText = 'อัปเดตรหัสผ่าน';
+      document.getElementById('btn-cancel-user-edit').classList.remove('hidden');
+    }
+
+    function cancelUserEdit() {
+      document.getElementById('user-form-title').innerText = 'เพิ่มผู้ใช้งานใหม่';
+      document.getElementById('user-username').value = '';
+      document.getElementById('user-password').value = '';
+      document.getElementById('user-password').placeholder = 'Password (รหัสผ่าน)';
+      document.getElementById('btn-user-submit-text').innerText = 'บันทึกผู้ใช้';
+      document.getElementById('btn-cancel-user-edit').classList.add('hidden');
+    }
+
+    async function deleteUser(id, username) {
+      if (!confirm(`ยืนยันการลบบัญชีผู้ใช้ "${username}" ใช่หรือไม่?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/users?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast(`ลบบัญชีผู้ใช้ "${username}" เรียบร้อยแล้ว`, 'success');
+          await loadUsers();
+          await loadLogs();
+        }
+      } catch (e) {
+        showToast('เกิดข้อผิดพลาดในการลบผู้ใช้', 'error');
+      }
+    }
+
+    // Load Outbound Jobs
+    async function loadJobs() {
+      try {
+        const res = await fetch(`${API_BASE}/outbound/jobs`);
+        if (res.ok) {
+          const jobs = await res.json() || [];
+          document.getElementById('stat-jobs-count').innerText = jobs.length;
+          const table = document.getElementById('job-list-table');
+          if (jobs.length === 0) {
+            table.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีรอบงานส่งออกไฟล์ (คลิกสร้างงานด้านบน)</td></tr>';
+            return;
+          }
+          table.innerHTML = jobs.map(j => `
+            <tr class="hover:bg-dark-850/50 transition">
+              <td class="p-3 font-semibold text-white">
+                <div class="flex items-center space-x-2">
+                  <div class="w-6 h-6 rounded-md bg-purple-500/10 text-accent-purple flex items-center justify-center text-[10px]">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </div>
+                  <span>${j.name}</span>
+                </div>
+              </td>
+              <td class="p-3 text-accent-cyan font-mono text-xs">${j.cron_expr}</td>
+              <td class="p-3 text-slate-400 text-xs">${j.source_dir}</td>
+              <td class="p-3 text-xs text-slate-300">${j.protocol.toUpperCase()}://${j.remote_host}:${j.remote_port}</td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${j.last_status === 'SUCCESS' ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
+                  ${j.last_status || 'IDLE'}
+                </span>
+              </td>
+              <td class="p-3 text-right">
+                <button onclick="deleteJob(${j.id}, '${j.name}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs border border-rose-500/20 transition">
+                  <i class="fa-solid fa-trash text-[10px] mr-1"></i>ลบ
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    // Save Outbound Job
+    async function saveOutboundJob() {
+      const name = document.getElementById('job-name').value.trim();
+      if (!name) {
+        showToast('กรุณากรอกชื่องานส่งออก', 'error');
+        return;
+      }
+      const payload = {
+        name: name,
+        cron_expr: document.getElementById('job-cron').value.trim(),
+        source_dir: document.getElementById('job-source').value.trim(),
+        file_pattern: document.getElementById('job-pattern').value.trim(),
+        protocol: document.getElementById('job-proto').value,
+        remote_host: document.getElementById('job-host').value.trim(),
+        remote_port: parseInt(document.getElementById('job-port').value),
+        remote_user: document.getElementById('job-user').value.trim(),
+        remote_password: document.getElementById('job-pass').value.trim(),
+        remote_dir: document.getElementById('job-remote-dir').value.trim(),
+        post_action: "archive",
+        archive_dir: document.getElementById('job-source').value.trim() + "/archive",
+        enabled: true
+      };
+      try {
+        const res = await fetch(`${API_BASE}/outbound/jobs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showToast(`บันทึกรอบงาน "${name}" เรียบร้อยแล้ว`, 'success');
+          loadJobs();
+        } else {
+          showToast('เกิดข้อผิดพลาดในการบันทึกงาน', 'error');
+        }
+      } catch (e) {
+        showToast('ไม่สามารถเชื่อมต่อ Server ได้', 'error');
+      }
+    }
+
+    async function deleteJob(id, name) {
+      if (!confirm(`ยืนยันการลบรอบงาน "${name}" ใช่หรือไม่?`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/outbound/jobs?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast(`ลบรอบงาน "${name}" เรียบร้อยแล้ว`, 'success');
+          loadJobs();
+        }
+      } catch (e) {
+        showToast('เกิดข้อผิดพลาดในการลบงาน', 'error');
+      }
+    }
+
+    // Load Audit Logs
+    async function loadLogs() {
+      try {
+        const filter = document.getElementById('log-filter').value;
+        const res = await fetch(`${API_BASE}/logs?limit=50&event_type=${filter}`);
+        if (res.ok) {
+          const logs = await res.json() || [];
+          document.getElementById('stat-logs-count').innerText = logs.length;
+          const table = document.getElementById('logs-table');
+          const dashTable = document.getElementById('dash-recent-logs');
+          
+          if (logs.length === 0) {
+            table.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">ไม่มีข้อมูลบันทึกเหตุการณ์</td></tr>';
+            dashTable.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีข้อมูล</td></tr>';
+            return;
+          }
+
+          table.innerHTML = logs.map(l => {
+            const isSuccess = l.status === 'SUCCESS';
+            let badgeClass = 'text-brand-400 bg-emerald-500/10 border-emerald-500/20';
+            if (l.event_type === 'LOGIN') badgeClass = 'text-accent-blue bg-blue-500/10 border-blue-500/20';
+            else if (l.event_type === 'USER_MGMT') badgeClass = 'text-accent-purple bg-purple-500/10 border-purple-500/20';
+            else if (l.event_type === 'OUTBOUND_FILE') badgeClass = 'text-accent-cyan bg-cyan-500/10 border-cyan-500/20';
+
+            return `
+              <tr class="hover:bg-dark-850/50 transition">
+                <td class="p-3 text-slate-400 font-mono">${new Date(l.timestamp).toLocaleString('th-TH')}</td>
+                <td class="p-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border ${badgeClass}">
+                    ${l.event_type}
+                  </span>
+                </td>
+                <td class="p-3 font-semibold text-slate-300">${l.protocol}</td>
+                <td class="p-3 text-slate-300">${l.username || '-'} <span class="text-slate-500">(${l.client_ip || '-'})</span></td>
+                <td class="p-3 text-slate-300">${l.file_name || l.details}</td>
+                <td class="p-3 font-mono text-[10px] text-slate-500 truncate max-w-xs" title="${l.file_hash || ''}">${l.file_hash ? l.file_hash.substring(0, 16) + '...' : '-'}</td>
+                <td class="p-3">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${isSuccess ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                    ${l.status}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          dashTable.innerHTML = logs.slice(0, 5).map(l => `
+            <tr class="hover:bg-dark-850/50 transition">
+              <td class="py-2.5 px-3 text-slate-400">${new Date(l.timestamp).toLocaleTimeString('th-TH')}</td>
+              <td class="py-2.5 px-3 font-semibold text-white">${l.event_type}</td>
+              <td class="py-2.5 px-3 text-slate-300">${l.protocol}</td>
+              <td class="py-2.5 px-3 text-slate-200">${l.file_name || '-'}</td>
+              <td class="py-2.5 px-3 text-slate-400">${l.file_size ? l.file_size.toLocaleString() + ' B' : '-'}</td>
+              <td class="py-2.5 px-3">
+                <span class="px-2 py-0.5 rounded-full text-[10px] ${l.status === 'SUCCESS' ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                  ${l.status}
+                </span>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {}
+    }
+
+    // Live Clock
+    setInterval(() => {
+      const clockEl = document.getElementById('current-clock');
+      if (clockEl) {
+        const now = new Date();
+        clockEl.innerText = now.toLocaleTimeString('th-TH');
+      }
+    }, 1000);
+
+    // Initial Load & Auto Poll Status
+    switchTab('dashboard');
+    refreshData();
+    setInterval(loadStatus, 5000);
+  </script>
+</body>
+</html>
