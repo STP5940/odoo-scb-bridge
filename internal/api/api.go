@@ -118,7 +118,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"sftp_running": sftpRunning,
 		"activated":    s.license != nil && s.license.Activated(),
 		"machine_id":   s.machineID(),
-		"version":      "0.1.3",
+		"version":      "0.1.15",
 	})
 }
 

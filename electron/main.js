@@ -1,12 +1,107 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
 const { execFile } = require('child_process');
 const os = require('os');
 const { promisify } = require('util');
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 
 const execFileAsync = promisify(execFile);
 const serviceName = 'OdooSCBBridge';
 let mainWindow;
+let pinFailures = 0;
+let pinLockedUntil = 0;
+
+function pinRecordPath() {
+  return path.join(app.getPath('userData'), 'app-pin.dat');
+}
+
+function pinSetupSkippedPath() {
+  return path.join(app.getPath('userData'), 'pin-setup-skipped');
+}
+
+function readPinRecord() {
+  const file = pinRecordPath();
+  if (!fs.existsSync(file)) return null;
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure PIN storage is unavailable');
+  const encrypted = fs.readFileSync(file, 'utf8');
+  return JSON.parse(safeStorage.decryptString(Buffer.from(encrypted, 'base64')));
+}
+
+function validatePin(pin) {
+  return typeof pin === 'string' && /^\d{6}$/.test(pin);
+}
+
+function savePin(pin) {
+  if (!validatePin(pin)) throw new Error('PIN must contain exactly 6 digits');
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure PIN storage is unavailable');
+  const salt = crypto.randomBytes(16);
+  const record = {
+    salt: salt.toString('hex'),
+    verifier: crypto.scryptSync(pin, salt, 64).toString('hex')
+  };
+  const file = pinRecordPath();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const temporaryFile = file + '.tmp';
+  fs.writeFileSync(temporaryFile, safeStorage.encryptString(JSON.stringify(record)).toString('base64'), { mode: 0o600 });
+  fs.renameSync(temporaryFile, file);
+}
+
+function verifyPin(pin) {
+  if (Date.now() < pinLockedUntil) {
+    const seconds = Math.ceil((pinLockedUntil - Date.now()) / 1000);
+    return { ok: false, locked: true, seconds };
+  }
+  const record = readPinRecord();
+  if (!record || !validatePin(pin)) return { ok: false };
+  const expected = Buffer.from(record.verifier, 'hex');
+  const actual = crypto.scryptSync(pin, Buffer.from(record.salt, 'hex'), expected.length);
+  if (expected.length === actual.length && crypto.timingSafeEqual(expected, actual)) {
+    pinFailures = 0;
+    pinLockedUntil = 0;
+    return { ok: true };
+  }
+  pinFailures++;
+  if (pinFailures >= 5) {
+    pinFailures = 0;
+    pinLockedUntil = Date.now() + 30_000;
+    return { ok: false, locked: true, seconds: 30 };
+  }
+  return { ok: false, remaining: 5 - pinFailures };
+}
+
+ipcMain.handle('pin-status', () => {
+  const configured = Boolean(readPinRecord());
+  return { configured, skipped: !configured && fs.existsSync(pinSetupSkippedPath()) };
+});
+ipcMain.handle('pin-setup', (_event, pin) => {
+  if (readPinRecord()) throw new Error('PIN is already configured');
+  savePin(pin);
+  fs.rmSync(pinSetupSkippedPath(), { force: true });
+  return { ok: true };
+});
+ipcMain.handle('pin-skip-setup', () => {
+  if (!readPinRecord()) {
+    fs.mkdirSync(app.getPath('userData'), { recursive: true });
+    fs.writeFileSync(pinSetupSkippedPath(), 'skipped');
+  }
+  return { ok: true };
+});
+ipcMain.handle('pin-verify', (_event, pin) => verifyPin(pin));
+ipcMain.handle('pin-change', (_event, currentPin, nextPin) => {
+  const result = verifyPin(currentPin);
+  if (!result.ok) return result;
+  savePin(nextPin);
+  return { ok: true };
+});
+ipcMain.handle('pin-disable', (_event, currentPin) => {
+  const result = verifyPin(currentPin);
+  if (!result.ok) return result;
+  fs.rmSync(pinRecordPath(), { force: true });
+  fs.mkdirSync(app.getPath('userData'), { recursive: true });
+  fs.writeFileSync(pinSetupSkippedPath(), 'skipped');
+  return { ok: true };
+});
 
 async function queryServiceState() {
   const { stdout } = await execFileAsync('sc.exe', ['query', serviceName], { windowsHide: true });
@@ -74,6 +169,7 @@ function createWindow() {
     }
   });
 
+  mainWindow.maximize();
   mainWindow.loadFile(path.join(rootDir, 'internal', 'ui', 'index.html'));
   mainWindow.on('closed', () => { mainWindow = null; });
 }

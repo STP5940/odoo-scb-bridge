@@ -100,6 +100,18 @@
     html[data-theme="light"] .glass-card:hover { border-color: #cbd5e1; }
     html[data-theme="light"] .glass-input { background: #ffffff; border-color: #d0d7e2; color: #172033; }
     html[data-theme="light"] .glass-input:focus { background: #ffffff; }
+    html[data-theme="light"] .pin-keypad-button {
+      background: #eef2f7;
+      border-color: #d7dee8;
+      color: #344054;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+    html[data-theme="light"] .pin-keypad-button:hover {
+      background: #e9f8ef;
+      border-color: #86d5a5;
+      color: #15803d;
+    }
+    html[data-theme="light"] .pin-entry-active label { color: #0e7490; }
     html[data-theme="light"] .glass-input::placeholder { color: #7b8798; }
     html[data-theme="light"] select.glass-input option { background: #ffffff; color: #172033; }
     html[data-theme="light"] [class*="hover:bg-dark-850"]:hover { background-color: #eef2f7 !important; }
@@ -135,6 +147,29 @@
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
       outline: none;
     }
+    .pin-keypad-button {
+      background: linear-gradient(145deg, #242936, #1d212a);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      box-shadow: 0 3px 9px rgba(0, 0, 0, 0.16);
+      transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+    }
+    .pin-keypad-button:hover {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+    }
+    .pin-keypad-button:active { transform: scale(0.96); }
+    .pin-entry-active label { color: #67e8f9; }
+    .startup-spinner {
+      width: 2rem;
+      height: 2rem;
+      border: 3px solid rgba(74, 222, 128, 0.18);
+      border-top-color: #4ade80;
+      border-radius: 50%;
+      animation: startup-spin 0.8s linear infinite;
+    }
+    @keyframes startup-spin { to { transform: rotate(360deg); } }
     
     /* Navigation button active state styling */
     .nav-active {
@@ -157,7 +192,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.3</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.15</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -182,7 +217,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.3</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.15</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -190,14 +225,10 @@
 
     <!-- Header Right Controls & Quick Actions -->
     <div class="flex items-center space-x-3">
-      <label for="language-select" class="sr-only">Language</label>
-      <select id="language-select" onchange="setLanguage(this.value)" aria-label="Language" class="glass-input rounded-lg px-2 py-1.5 text-xs text-white">
-        <option value="th">ไทย</option>
-        <option value="en">English</option>
-      </select>
-      <button id="theme-toggle" onclick="toggleTheme()" title="Switch to light theme" aria-label="Switch to light theme" class="w-9 h-8 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition" type="button">
-        <i id="theme-icon" class="fa-solid fa-sun" aria-hidden="true"></i>
-      </button>
+      <span class="hidden sm:inline-flex items-center text-xs text-slate-400 bg-dark-900 border border-white/5 px-3 py-1.5 rounded-xl font-mono whitespace-nowrap" aria-label="Current time">
+        <i class="fa-regular fa-clock text-accent-cyan mr-1.5" aria-hidden="true"></i>
+        <span id="current-clock">--:--:--</span>
+      </span>
       <!-- Service Status Badge -->
       <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 transition">
         <span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
@@ -210,9 +241,8 @@
         <span>Activation Required</span>
       </button>
 
-      <button id="btn-revoke-license" onclick="deactivateProductLicense()" class="hidden px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs font-semibold transition items-center space-x-2" type="button">
-        <i class="fa-solid fa-key text-[11px]"></i>
-        <span>Deactivate License</span>
+      <button id="btn-lock-app-header" onclick="lockApp()" class="hidden w-9 h-8 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 items-center justify-center text-xs transition" title="Lock application" aria-label="Lock application" type="button">
+        <i id="lock-app-header-icon" class="fa-solid fa-lock" aria-hidden="true"></i>
       </button>
 
       <!-- Sync / Refresh Button -->
@@ -222,7 +252,17 @@
     </div>
   </header>
 
-  <section id="activation-screen" class="fixed z-40 inset-x-0 bottom-0 overflow-y-auto bg-dark-950 px-4 py-4 md:px-6 md:py-6" style="top: calc(2.25rem + 3.5rem)" aria-labelledby="activation-title">
+  <section id="app-startup-cover" class="text-slate-400" style="position:fixed;inset:0;z-index:2147483647;background:#101317;display:flex;align-items:center;justify-content:center" aria-label="กำลังเตรียมแอป">
+    <div class="flex flex-col items-center gap-3 text-slate-400">
+      <span class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" focusable="false"><path d="M13.2 2.5 4.6 13.1a1 1 0 0 0 .78 1.64h5.3l-.9 6.76a.5.5 0 0 0 .88.38l8.73-10.72a1 1 0 0 0-.78-1.63h-5.32l.75-6.55a.5.5 0 0 0-.85-.47Z"/></svg>
+      </span>
+      <span class="startup-spinner" role="status" aria-label="Loading"></span>
+      <span class="text-xs">กำลังเตรียมแอป...</span>
+    </div>
+  </section>
+
+  <section id="activation-screen" class="hidden fixed z-40 inset-x-0 bottom-0 overflow-y-auto bg-dark-950 px-4 py-4 md:px-6 md:py-6" style="top: calc(2.25rem + 3.5rem)" aria-labelledby="activation-title">
     <div class="max-w-3xl mx-auto glass-card rounded-2xl p-6 md:p-8">
       <div class="flex items-start gap-4 border-b border-dark-800 pb-5 mb-5">
         <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-accent-amber flex items-center justify-center text-lg"><i class="fa-solid fa-key"></i></div>
@@ -253,6 +293,61 @@
     </div>
   </section>
 
+  <section id="pin-screen" class="hidden fixed z-[60] inset-x-0 bottom-0 overflow-y-auto bg-dark-950 px-4 py-4 md:px-6 md:py-6 flex items-center justify-center" style="top: 2.25rem" aria-labelledby="pin-title">
+    <div class="w-full max-w-sm glass-card rounded-2xl p-5 md:p-6">
+      <div class="flex items-center gap-3 border-b border-dark-800 pb-4 mb-4">
+        <div class="w-11 h-11 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+          <h1 id="pin-title" class="text-xl font-bold text-white">Application Locked</h1>
+          <p id="pin-description" class="text-sm text-slate-400 mt-1">Enter your 6-digit PIN to continue.</p>
+        </div>
+      </div>
+      <div id="pin-current-wrap" class="hidden mb-4">
+        <label id="pin-current-label" for="pin-current" class="block text-sm font-semibold text-slate-300 mb-2">PIN ปัจจุบัน</label>
+        <input id="pin-current" onclick="setActivePinField('pin-current')" oninput="handlePinFieldInput('pin-current')" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="Current PIN">
+      </div>
+      <div id="pin-new-wrap" class="hidden mb-4">
+        <label id="pin-new-label" for="pin-new" class="block text-sm font-semibold text-slate-300 mb-2">PIN 6 หลัก</label>
+        <input id="pin-new" onclick="setActivePinField('pin-new')" oninput="handlePinFieldInput('pin-new')" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="6-digit PIN">
+      </div>
+      <div id="pin-confirm-wrap" class="hidden mb-4">
+        <label id="pin-confirm-label" for="pin-confirm" class="block text-sm font-semibold text-slate-300 mb-2">ยืนยัน PIN</label>
+        <input id="pin-confirm" onclick="setActivePinField('pin-confirm')" oninput="handlePinFieldInput('pin-confirm')" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="Confirm PIN">
+      </div>
+      <div id="pin-unlock-wrap" class="mb-4">
+        <label id="pin-unlock-label" for="pin-unlock" class="block text-sm font-semibold text-slate-300 mb-2">PIN</label>
+        <input id="pin-unlock" onclick="setActivePinField('pin-unlock')" oninput="handlePinFieldInput('pin-unlock')" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="PIN">
+      </div>
+      <p id="pin-keypad-label" class="text-center text-xs text-slate-500 mb-4">กดตัวเลขเพื่อกรอก PIN</p>
+      <div class="mx-auto grid w-full max-w-[360px] grid-cols-3 justify-items-center gap-x-4 gap-y-3 mb-4" aria-label="PIN keypad">
+        <button type="button" onclick="appendPinDigit('1')" aria-label="1" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">1</button>
+        <button type="button" onclick="appendPinDigit('2')" aria-label="2" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">2</button>
+        <button type="button" onclick="appendPinDigit('3')" aria-label="3" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">3</button>
+        <button type="button" onclick="appendPinDigit('4')" aria-label="4" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">4</button>
+        <button type="button" onclick="appendPinDigit('5')" aria-label="5" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">5</button>
+        <button type="button" onclick="appendPinDigit('6')" aria-label="6" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">6</button>
+        <button type="button" onclick="appendPinDigit('7')" aria-label="7" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">7</button>
+        <button type="button" onclick="appendPinDigit('8')" aria-label="8" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">8</button>
+        <button type="button" onclick="appendPinDigit('9')" aria-label="9" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">9</button>
+        <span aria-hidden="true"></span>
+        <button type="button" onclick="appendPinDigit('0')" aria-label="0" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">0</button>
+        <button id="pin-delete-button" type="button" onclick="deletePinDigit()" aria-label="ลบตัวเลขล่าสุด" title="ลบตัวเลขล่าสุด" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-delete-left"></i></button>
+        <div id="pin-back-row" class="hidden col-span-3 grid-cols-3 justify-items-center">
+          <span aria-hidden="true"></span>
+          <button id="pin-back-button" type="button" onclick="backToPinEntry()" aria-label="ย้อนกลับ" title="ย้อนกลับ" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-arrow-left"></i></button>
+          <span aria-hidden="true"></span>
+        </div>
+      </div>
+      <p id="pin-message" class="text-xs text-rose-400" role="status" aria-live="polite"></p>
+      <div class="flex gap-2">
+        <button id="pin-submit" onclick="submitPinScreen()" class="flex-1 px-4 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-700">Unlock</button>
+        <button id="pin-skip-button" onclick="skipPinSetup()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">ข้ามไปก่อน</button>
+        <button id="pin-change-button" onclick="showPinScreen('change')" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">Change PIN</button>
+        <button id="pin-cancel-change" onclick="cancelPinOperation()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">Cancel</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= WORKSPACE (SIDEBAR + FULL-WIDTH SCROLLABLE CONTENT) ================= -->
   <div class="flex flex-1 min-h-0 overflow-hidden">
 
@@ -275,7 +370,7 @@
             </button>
             <button onclick="switchTab('inbound')" id="nav-inbound" class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group border border-transparent">
               <div class="flex items-center space-x-3">
-                <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-brand-400 flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-server text-xs"></i></span>
+                <span class="w-7 h-7 rounded-lg bg-cyan-500/10 text-accent-cyan flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-server text-xs"></i></span>
                 <span class="font-medium">Inbound SFTP Host</span>
               </div>
               <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
@@ -294,6 +389,15 @@
               </div>
               <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
             </button>
+            <div class="pt-2 mt-2 border-t border-dark-800/70">
+              <button id="nav-settings" onclick="switchTab('settings')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group border border-transparent">
+                <div class="flex items-center space-x-3">
+                  <span class="w-7 h-7 rounded-lg bg-slate-500/10 text-slate-300 flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-gear text-xs"></i></span>
+                  <span class="font-medium">ตั้งค่า</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -305,7 +409,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.3</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.15</span>
       </div>
     </aside>
 
@@ -320,12 +424,6 @@
           <div>
             <h2 class="text-xl font-bold text-white tracking-tight">System Overview & Metric Cards</h2>
             <p class="text-xs text-slate-400 mt-0.5">ภาพรวมระบบ การเชื่อมต่อ และสถิติการรับ-ส่งข้อมูลล่าสุด</p>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs text-slate-400 bg-dark-900 border border-white/5 px-3 py-1.5 rounded-xl font-mono">
-              <i class="fa-regular fa-clock text-accent-cyan mr-1.5"></i>
-              <span id="current-clock">--:--:--</span>
-            </span>
           </div>
         </div>
 
@@ -736,6 +834,90 @@
 
       </section>
 
+      <!-- ================= TAB 5: SETTINGS ================= -->
+      <section id="tab-settings" class="hidden space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">ตั้งค่า</h2>
+          <p class="text-xs text-slate-400 mt-0.5">จัดการภาษา ธีม และความปลอดภัยของแอป</p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <section class="glass-card rounded-2xl p-6 space-y-5">
+            <div class="flex items-center gap-3 border-b border-dark-800 pb-4">
+              <span class="w-10 h-10 rounded-xl bg-cyan-500/10 text-accent-cyan flex items-center justify-center"><i class="fa-solid fa-sliders"></i></span>
+              <div>
+                <h3 class="font-bold text-white">การแสดงผล</h3>
+                <p class="text-xs text-slate-400 mt-0.5">เลือกภาษาและธีมของแอป</p>
+              </div>
+            </div>
+            <div>
+              <label for="language-select" class="block text-xs font-semibold text-slate-300 mb-2">ภาษา</label>
+              <select id="language-select" onchange="setLanguage(this.value)" aria-label="Language" class="glass-input w-full rounded-xl px-3 py-3 text-sm text-white">
+                <option value="th">ไทย</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between gap-4 rounded-xl bg-dark-900/60 border border-white/5 p-4">
+              <div>
+                <h4 class="text-sm font-semibold text-slate-200">ธีม (Theme)</h4>
+                <p class="text-xs text-slate-500 mt-1">สลับระหว่างธีมมืดและธีมสว่าง</p>
+              </div>
+              <button id="theme-toggle" onclick="toggleTheme()" title="Switch to light theme" aria-label="Switch to light theme" class="shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 text-xs transition" type="button">
+                <i id="theme-icon" class="fa-solid fa-sun" aria-hidden="true"></i>
+                <span id="theme-label">Switch to light theme</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="glass-card rounded-2xl p-6 space-y-5">
+            <div class="flex items-center gap-3 border-b border-dark-800 pb-4">
+              <span class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center"><i class="fa-solid fa-shield-halved"></i></span>
+              <div>
+                <h3 class="font-bold text-white">ความปลอดภัย</h3>
+                <p class="text-xs text-slate-400 mt-0.5">ตั้งค่า PIN และล็อกหน้าจอแอป</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-4 rounded-xl bg-dark-900/60 border border-white/5 p-4">
+              <div>
+                <h4 id="pin-setting-label" class="text-sm font-semibold text-slate-200">App PIN</h4>
+                <p class="text-xs text-slate-500 mt-1">PIN 6 หลักเป็นตัวเลือกเสริม</p>
+              </div>
+              <span id="pin-setting-status" class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-500 bg-dark-800">Off</span>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <button id="btn-toggle-pin" onclick="togglePinEnabled()" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 text-xs font-semibold transition" type="button">
+                <i id="pin-toggle-icon" class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                <span id="pin-toggle-label">Enable PIN</span>
+              </button>
+              <button id="btn-lock-app" onclick="lockApp()" title="Lock application" aria-label="Lock application" class="hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 text-xs font-semibold transition" type="button">
+                <i id="lock-app-icon" class="fa-solid fa-lock" aria-hidden="true"></i>
+                <span id="lock-app-label">Lock application</span>
+              </button>
+              <button id="btn-change-pin" onclick="showPinScreen('change')" class="hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 text-xs font-semibold transition" type="button">
+                <i class="fa-solid fa-key" aria-hidden="true"></i>
+                <span>เปลี่ยน PIN</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="glass-card rounded-2xl p-6 xl:col-span-2">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl bg-amber-500/10 text-accent-amber flex items-center justify-center"><i class="fa-solid fa-key"></i></span>
+                <div>
+                  <h3 class="font-bold text-white">License</h3>
+                  <p class="text-xs text-slate-400 mt-0.5">จัดการการลงทะเบียน License บนอุปกรณ์นี้</p>
+                </div>
+              </div>
+              <button id="btn-revoke-license" onclick="deactivateProductLicense()" class="hidden px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs font-semibold transition items-center gap-2 text-left" type="button">
+                <i class="fa-solid fa-key"></i>
+                <span>Deactivate License</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
     </main>
 
   </div>
@@ -755,8 +937,14 @@
     let currentLanguage = 'th';
     let currentTheme = 'dark';
     let isActivated = false;
+    let activationStateResolved = false;
     let activationRequestLoaded = false;
     let activationRequestLoading = false;
+    const startupCoverStartedAt = Date.now();
+    let pinConfigured = false;
+    let pinSetupSkipped = false;
+    let pinScreenMode = 'unlock';
+    let activePinField = 'pin-unlock';
     let languageLookup = new Map();
     let translatingPage = false;
     let cachedUsers = [];
@@ -766,8 +954,335 @@
     let logsRequestId = 0;
     let logsPageSize = 10;
 
+    function pinText(th, en) {
+      return translateValue(currentLanguage === 'en' ? en : th);
+    }
+
+    async function finishStartupCover() {
+      const minimumVisibleMs = 1000;
+      const remainingMs = minimumVisibleMs - (Date.now() - startupCoverStartedAt);
+      if (remainingMs > 0) await new Promise(resolve => setTimeout(resolve, remainingMs));
+      document.getElementById('app-startup-cover')?.remove();
+    }
+
+    function showPinScreen(mode) {
+      pinScreenMode = mode;
+      ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => { document.getElementById(id).value = ''; });
+      const screen = document.getElementById('pin-screen');
+      const currentWrap = document.getElementById('pin-current-wrap');
+      const newWrap = document.getElementById('pin-new-wrap');
+      const confirmWrap = document.getElementById('pin-confirm-wrap');
+      const unlockWrap = document.getElementById('pin-unlock-wrap');
+      const changeButton = document.getElementById('pin-change-button');
+      const cancelButton = document.getElementById('pin-cancel-change');
+      const skipButton = document.getElementById('pin-skip-button');
+      const title = document.getElementById('pin-title');
+      const description = document.getElementById('pin-description');
+      const submit = document.getElementById('pin-submit');
+      const isSetup = mode === 'setup';
+      const isChange = mode === 'change';
+      const isDisable = mode === 'disable';
+      activePinField = isSetup ? 'pin-new' : (isChange || isDisable) ? 'pin-current' : 'pin-unlock';
+      currentWrap.classList.toggle('hidden', !(isChange || isDisable));
+      newWrap.classList.toggle('hidden', !(isSetup || isChange));
+      confirmWrap.classList.toggle('hidden', !(isSetup || isChange));
+      unlockWrap.classList.toggle('hidden', isSetup || isChange || isDisable);
+      changeButton.classList.add('hidden');
+      cancelButton.classList.toggle('hidden', !(isChange || isDisable));
+      skipButton.classList.toggle('hidden', !isSetup);
+      title.innerText = isSetup
+        ? pinText('ตั้ง PIN สำหรับแอป', 'Set up your app PIN')
+        : isChange ? pinText('เปลี่ยน PIN', 'Change PIN')
+          : isDisable ? pinText('ยืนยันเพื่อปิด PIN', 'Disable app PIN') : pinText('แอปถูกล็อก', 'Application Locked');
+      description.innerText = isSetup
+        ? pinText('กำหนด PIN 6 หลักเพื่อใช้ล็อกหน้าจอแอป', 'Create a 6-digit PIN to protect this app.')
+        : isChange ? pinText('ยืนยัน PIN ปัจจุบัน แล้วกำหนด PIN ใหม่', 'Verify your current PIN, then choose a new one.')
+          : isDisable ? pinText('กรอก PIN ปัจจุบันเพื่อปิดการป้องกัน', 'Enter your current PIN to turn off PIN protection.')
+            : pinText('กรอก PIN 6 หลักเพื่อเข้าใช้งาน', 'Enter your 6-digit PIN to continue.');
+      submit.innerText = isSetup ? pinText('ตั้ง PIN', 'Set PIN') : isChange ? pinText('เปลี่ยน PIN', 'Change PIN')
+        : isDisable ? pinText('ปิด PIN', 'Disable PIN') : pinText('ปลดล็อก', 'Unlock');
+      document.getElementById('pin-current-label').innerText = pinText('PIN ปัจจุบัน', 'Current PIN');
+      document.getElementById('pin-new-label').innerText = pinText('PIN 6 หลัก', '6-digit PIN');
+      document.getElementById('pin-confirm-label').innerText = pinText('ยืนยัน PIN', 'Confirm PIN');
+      document.getElementById('pin-unlock-label').innerText = 'PIN';
+      document.getElementById('pin-keypad-label').innerText = pinText('กดตัวเลขเพื่อกรอก PIN', 'Tap a number to enter your PIN');
+      changeButton.innerText = pinText('เปลี่ยน PIN', 'Change PIN');
+      cancelButton.innerText = pinText('ยกเลิก', 'Cancel');
+      skipButton.innerText = pinText('ยกเลิก', 'Cancel');
+      updatePinButton();
+      updatePinSettingControl();
+      document.getElementById('pin-message').innerText = '';
+      screen.classList.remove('hidden');
+      updatePinFieldFocus();
+      updatePinSubmitState();
+      setTimeout(() => document.getElementById(activePinField)?.focus(), 0);
+    }
+
+    function setActivePinField(fieldId) {
+      activePinField = fieldId;
+      updatePinFieldFocus();
+      document.getElementById(fieldId)?.focus();
+    }
+
+    function updatePinFieldFocus() {
+      const isConfirmStep = activePinField === 'pin-confirm';
+      const backRow = document.getElementById('pin-back-row');
+      backRow?.classList.toggle('hidden', !isConfirmStep);
+      backRow?.classList.toggle('grid', isConfirmStep);
+      const backButton = document.getElementById('pin-back-button');
+      if (backButton) {
+        const label = pinText('ย้อนกลับ', 'Back');
+        backButton.title = label;
+        backButton.setAttribute('aria-label', label);
+      }
+      ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => {
+        const field = document.getElementById(id);
+        const wrapper = field?.parentElement;
+        wrapper?.classList.toggle('hidden', id !== activePinField);
+        wrapper?.classList.toggle('pin-entry-active', id === activePinField);
+      });
+    }
+
+    function updatePinSubmitState() {
+      const submit = document.getElementById('pin-submit');
+      if (!submit) return;
+      const value = id => document.getElementById(id)?.value || '';
+      const isSetup = pinScreenMode === 'setup';
+      const isChange = pinScreenMode === 'change';
+      const isDisable = pinScreenMode === 'disable';
+      const pinPairValid = /^\d{6}$/.test(value('pin-new')) && /^\d{6}$/.test(value('pin-confirm')) && value('pin-new') === value('pin-confirm');
+      const valid = isSetup ? pinPairValid
+        : isChange ? /^\d{6}$/.test(value('pin-current')) && pinPairValid
+          : isDisable ? /^\d{6}$/.test(value('pin-current')) : /^\d{6}$/.test(value('pin-unlock'));
+      submit.disabled = !valid;
+    }
+
+    function backToPinEntry() {
+      if (activePinField !== 'pin-confirm') return;
+      document.getElementById('pin-confirm').value = '';
+      document.getElementById('pin-message').innerText = '';
+      setActivePinField('pin-new');
+      updatePinSubmitState();
+    }
+
+    function cancelPinOperation() {
+      if (pinScreenMode !== 'change' && pinScreenMode !== 'disable') return;
+      unlockApp();
+    }
+
+    function appendPinDigit(digit) {
+      if (!/^\d$/.test(digit)) return;
+      const field = document.getElementById(activePinField);
+      if (!field || field.value.length >= 6) return;
+      field.value += digit;
+      handlePinFieldInput(activePinField);
+    }
+
+    function deletePinDigit() {
+      const field = document.getElementById(activePinField);
+      if (!field) return;
+      field.value = field.value.slice(0, -1);
+      document.getElementById('pin-message').innerText = '';
+      updatePinFieldFocus();
+      updatePinSubmitState();
+      field.focus();
+    }
+
+    function handlePinFieldInput(fieldId) {
+      const field = document.getElementById(fieldId);
+      field.value = field.value.replace(/\D/g, '').slice(0, 6);
+      if (field.value.length !== 6) {
+        updatePinSubmitState();
+        return;
+      }
+      if (pinScreenMode === 'setup' && fieldId === 'pin-new') {
+        setActivePinField('pin-confirm');
+      } else if (pinScreenMode === 'change' && fieldId === 'pin-current') {
+        setActivePinField('pin-new');
+      } else if ((pinScreenMode === 'setup' || pinScreenMode === 'change') && fieldId === 'pin-new') {
+        setActivePinField('pin-confirm');
+      }
+      updatePinSubmitState();
+    }
+
+    async function initializePinLock() {
+      try {
+        const status = await window.electronAPI.getPinStatus();
+        pinConfigured = status.configured === true;
+        pinSetupSkipped = status.skipped === true;
+        updatePinButton();
+        updatePinSettingControl();
+        if (!pinConfigured && pinSetupSkipped) {
+          document.getElementById('pin-screen').classList.add('hidden');
+          await finishStartupCover();
+          return;
+        }
+        showPinScreen(pinConfigured ? 'unlock' : 'setup');
+        await finishStartupCover();
+      } catch (error) {
+        showPinScreen('setup');
+        document.getElementById('pin-submit').disabled = true;
+        document.getElementById('pin-message').innerText = error.message || pinText('ไม่สามารถเปิดใช้พื้นที่จัดเก็บ PIN ที่ปลอดภัยได้', 'Secure PIN storage is unavailable.');
+        await finishStartupCover();
+      }
+    }
+
+    function updatePinButton() {
+      const button = document.getElementById('btn-lock-app');
+      const label = pinText('ล็อกแอป', 'Lock application');
+      [button, document.getElementById('btn-lock-app-header')].forEach(lockButton => {
+        if (!lockButton) return;
+        lockButton.classList.toggle('hidden', !pinConfigured);
+        lockButton.title = label;
+        lockButton.setAttribute('aria-label', label);
+      });
+      const icon = document.getElementById('lock-app-icon');
+      if (icon) icon.className = 'fa-solid ' + (pinConfigured ? 'fa-lock' : 'fa-shield-halved') + ' w-4 text-center';
+      const headerIcon = document.getElementById('lock-app-header-icon');
+      if (headerIcon) headerIcon.className = 'fa-solid ' + (pinConfigured ? 'fa-lock' : 'fa-shield-halved');
+      const labelElement = document.getElementById('lock-app-label');
+      if (labelElement) labelElement.innerText = label;
+    }
+
+    function updatePinSettingControl() {
+      const status = document.getElementById('pin-setting-status');
+      const label = document.getElementById('pin-toggle-label');
+      const icon = document.getElementById('pin-toggle-icon');
+      const button = document.getElementById('btn-toggle-pin');
+      const changeButton = document.getElementById('btn-change-pin');
+      if (!status || !label || !button) return;
+      document.getElementById('pin-setting-label').innerText = pinText('PIN แอป', 'App PIN');
+      status.innerText = pinConfigured ? pinText('เปิด', 'On') : pinText('ปิด', 'Off');
+      status.className = 'font-semibold ' + (pinConfigured ? 'text-brand-400' : 'text-slate-500');
+      label.innerText = pinConfigured ? pinText('ปิดการใช้ PIN', 'Turn off PIN') : pinText('เปิดใช้ PIN', 'Enable PIN');
+      if (icon) icon.className = 'fa-solid ' + (pinConfigured ? 'fa-shield-halved' : 'fa-shield') + ' w-4 text-center';
+      button.title = label.innerText;
+      changeButton?.classList.toggle('hidden', !pinConfigured);
+      changeButton?.classList.toggle('flex', pinConfigured);
+    }
+
+    function togglePinEnabled() {
+      showPinScreen(pinConfigured ? 'disable' : 'setup');
+    }
+
+    async function skipPinSetup() {
+      try {
+        await window.electronAPI.skipPinSetup();
+        pinSetupSkipped = true;
+        unlockApp();
+        updatePinButton();
+        showToast(pinText('ยกเลิกการตั้ง PIN แล้ว', 'PIN setup cancelled'), 'info');
+      } catch (error) {
+        document.getElementById('pin-message').innerText = error.message || pinText('ยกเลิกการตั้ง PIN ไม่สำเร็จ', 'Could not cancel PIN setup.');
+      }
+    }
+
+    function lockApp() {
+      if (!pinConfigured) {
+        showPinScreen('setup');
+        return;
+      }
+      ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => { document.getElementById(id).value = ''; });
+      showPinScreen('unlock');
+    }
+
+    async function submitPinScreen() {
+      const message = document.getElementById('pin-message');
+      const submit = document.getElementById('pin-submit');
+      updatePinSubmitState();
+      if (submit.disabled) return;
+      const isSetup = pinScreenMode === 'setup';
+      const isChange = pinScreenMode === 'change';
+      const isDisable = pinScreenMode === 'disable';
+      const pin = document.getElementById(isSetup || isChange ? 'pin-new' : isDisable ? 'pin-current' : 'pin-unlock').value;
+      if (!/^\d{6}$/.test(pin)) {
+        message.innerText = pinText('PIN ต้องเป็นตัวเลข 6 หลัก', 'PIN must contain exactly 6 digits.');
+        return;
+      }
+      if ((isSetup || isChange) && pin !== document.getElementById('pin-confirm').value) {
+        document.getElementById('pin-confirm').value = '';
+        setActivePinField('pin-confirm');
+        message.innerText = pinText('PIN ยืนยันไม่ตรงกัน', 'PIN confirmation does not match.');
+        return;
+      }
+      submit.disabled = true;
+      try {
+        let result;
+        if (isSetup) {
+          await window.electronAPI.setupPin(pin);
+          pinConfigured = true;
+          pinSetupSkipped = false;
+          updatePinButton();
+          updatePinSettingControl();
+          unlockApp();
+          showToast(pinText('ตั้ง PIN สำเร็จ', 'PIN set successfully'), 'success');
+          return;
+        }
+        if (isChange) {
+          result = await window.electronAPI.changePin(document.getElementById('pin-current').value, pin);
+        } else if (isDisable) {
+          result = await window.electronAPI.disablePin(document.getElementById('pin-current').value);
+        } else {
+          result = await window.electronAPI.verifyPin(pin);
+        }
+        if (result.ok) {
+          if (isChange) {
+            unlockApp();
+            showToast(pinText('เปลี่ยน PIN สำเร็จ', 'PIN changed successfully'), 'success');
+          } else if (isDisable) {
+            pinConfigured = false;
+            pinSetupSkipped = true;
+            updatePinButton();
+            updatePinSettingControl();
+            unlockApp();
+            showToast(pinText('ปิดการใช้ PIN แล้ว', 'PIN protection disabled'), 'success');
+          } else {
+            unlockApp();
+          }
+          return;
+        }
+        if (isChange || isDisable) {
+          document.getElementById('pin-current').value = '';
+          setActivePinField('pin-current');
+        } else if (!isSetup) {
+          document.getElementById('pin-unlock').value = '';
+          setActivePinField('pin-unlock');
+        }
+        message.innerText = result.locked
+          ? translateValue('ลองใหม่ได้ใน ' + result.seconds + ' วินาที')
+          : (isChange || isDisable)
+            ? pinText('PIN ปัจจุบันไม่ถูกต้อง', 'Current PIN is incorrect.')
+            : translateValue('PIN ไม่ถูกต้อง เหลืออีก ' + result.remaining + ' ครั้ง');
+      } catch (error) {
+        message.innerText = error.message || pinText('บันทึก PIN ไม่สำเร็จ', 'Could not save the PIN.');
+      } finally {
+        updatePinSubmitState();
+      }
+    }
+
+    function unlockApp() {
+      document.getElementById('pin-screen').classList.add('hidden');
+      ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => { document.getElementById(id).value = ''; });
+    }
+
+    document.addEventListener('keydown', event => {
+      if (document.getElementById('pin-screen').classList.contains('hidden')) return;
+      const digit = /^\d$/.test(event.key) ? event.key
+        : /^(?:Numpad|Digit)\d$/.test(event.code) ? event.code.slice(-1) : null;
+      if (digit !== null) {
+        event.preventDefault();
+        appendPinDigit(digit);
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        deletePinDigit();
+      } else if (event.key === 'Enter' && event.target.matches('input')) {
+        submitPinScreen();
+      }
+    });
+
     function updateActivationUI(activated) {
       isActivated = activated === true;
+      activationStateResolved = true;
       const screen = document.getElementById('activation-screen');
       screen?.classList.toggle('hidden', isActivated);
       const revokeButton = document.getElementById('btn-revoke-license');
@@ -891,8 +1406,7 @@
         const data = await response.json();
         updateActivationUI(data.activated);
       } catch (error) {
-        updateActivationUI(false);
-        if (!activationRequestLoaded) {
+        if (activationStateResolved && !isActivated && !activationRequestLoaded) {
           document.getElementById('activation-message').innerText = error.message || '';
         }
       }
@@ -983,6 +1497,8 @@
         button.title = label;
         button.setAttribute('aria-label', label);
       }
+      const labelElement = document.getElementById('theme-label');
+      if (labelElement) labelElement.innerText = label;
       if (icon) icon.className = `fa-solid ${currentTheme === 'dark' ? 'fa-sun' : 'fa-moon'}`;
     }
 
@@ -1051,7 +1567,7 @@
 
     // Consolidated Sidebar Navigation Switcher
     function switchTab(tab) {
-      const tabs = ['dashboard', 'inbound', 'outbound', 'logs'];
+      const tabs = ['dashboard', 'inbound', 'outbound', 'logs', 'settings'];
       if (!tabs.includes(tab)) return;
       tabs.forEach(t => {
         const sec = document.getElementById(`tab-${t}`);
@@ -1149,9 +1665,18 @@
         btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
         isRunning = false;
         setSftpListenerStatus(false);
-        // Keep the last verified activation state while the Windows service is offline.
-        // A previously activated installation must still be able to start the host service again.
-        updateActivationUI(isActivated);
+        // Windows service status may be unavailable during startup. Ask the API for the
+        // license state independently; keep activation hidden while the state is unknown.
+        try {
+          const response = await fetch(`${API_BASE}/status`);
+          if (!response.ok) throw new Error('Status API unavailable');
+          const bridge = await response.json();
+          isRunning = bridge.activated === true && (bridge.running === true || bridge.status === 'RUNNING');
+          updateActivationUI(bridge.activated === true);
+          setSftpListenerStatus(bridge.sftp_running === true);
+        } catch (_) {
+          if (activationStateResolved) updateActivationUI(isActivated);
+        }
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
         pill.innerHTML = '<span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span><span class="text-xs font-medium text-rose-400">Service Offline</span>';
         if (!activationRequestLoaded) document.getElementById('activation-message').innerText = e.message || '';
@@ -1717,6 +2242,7 @@
     // Initial Load & Auto Poll Status
     initializeLanguage();
     initializeTheme();
+    initializePinLock();
     switchTab('dashboard');
     refreshData();
     setInterval(loadStatus, 5000);
