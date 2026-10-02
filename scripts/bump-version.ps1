@@ -1,4 +1,12 @@
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
+# Keep Ctrl+C from stopping only Read-Host while the parent build.bat continues.
+$cancelHandler = [ConsoleCancelEventHandler]{
+    param($sender, $eventArgs)
+    $eventArgs.Cancel = $true
+    [Console]::Error.WriteLine('Build cancelled by Ctrl+C.')
+    [Environment]::Exit(130)
+}
+[Console]::add_CancelKeyPress($cancelHandler)
 
 $root = Split-Path -Parent $PSScriptRoot
 $packagePath = Join-Path $root 'package.json'
@@ -12,34 +20,6 @@ $currentVersion = $versionMatch.Groups[1].Value
 Write-Host ''
 Write-Host "Current Version: $currentVersion"
 Write-Host '--------------------------------------------------'
-Write-Host 'Select Build Option:'
-Write-Host "  [1] Build only (Keep current version: $currentVersion)"
-Write-Host '  [2] Update Version for Production (Bump Patch/Minor/Major)'
-Write-Host '  [3] Exit / Cancel'
-Write-Host '--------------------------------------------------'
-
-$option = ''
-while ($option -notin @('1', '2', '3', 'Q')) {
-    $option = (Read-Host 'Enter choice [1-3, or Q to cancel] (Default is 1)').Trim().ToUpperInvariant()
-    if (-not $option) {
-        $option = '1'
-    }
-}
-
-if ($option -in @('3', 'Q')) {
-    Write-Host 'Build cancelled.'
-    exit 1
-}
-
-if ($option -eq '1') {
-    Write-Host ''
-    Write-Host 'Version Mode : NONE (Build only - Version unchanged)'
-    Write-Host "Version Plan : $currentVersion (No change)"
-    Write-Host 'Target Output: dist\bridge_service.exe; dist_electron\win-unpacked\; output\OdooSCBBridgeSetup.exe'
-    Write-Host '--------------------------------------------------'
-    exit 0
-}
-
 $level = ''
 while ($level -notin @('1', '2', '3', 'Q')) {
     Write-Host ''
@@ -48,7 +28,7 @@ while ($level -notin @('1', '2', '3', 'Q')) {
     Write-Host '  [2] Minor (New features)'
     Write-Host '  [3] Major (Breaking changes)'
     Write-Host '  [Q] Cancel build'
-    $level = (Read-Host 'Enter choice [1-3, or Q to cancel] (Default is 1)').Trim().ToUpperInvariant()
+    $level = (Read-Host 'Enter choice [1-3, or Q to cancel] (Default is 1: Patch)').Trim().ToUpperInvariant()
     if (-not $level) {
         $level = '1'
     }

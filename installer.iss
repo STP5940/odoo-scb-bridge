@@ -7,7 +7,7 @@
 
 [Setup]
 AppName=Odoo SCB Bridge Service
-AppVersion=2.0.0
+AppVersion=0.0.3
 DefaultDirName={autopf}\OdooSCBBridge
 DefaultGroupName=Odoo SCB Bridge
 OutputDir={#OutputDir}

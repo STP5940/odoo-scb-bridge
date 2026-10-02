@@ -120,7 +120,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v2.0.0</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.3</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -145,7 +145,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v2.0.0</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.3</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -153,8 +153,8 @@
 
     <!-- Header Right Controls & Quick Actions -->
     <div class="flex items-center space-x-3">
-      <label for="language-select" class="sr-only">ภาษา / Language</label>
-      <select id="language-select" onchange="setLanguage(this.value)" aria-label="ภาษา / Language" class="glass-input rounded-lg px-2 py-1.5 text-xs text-white">
+      <label for="language-select" class="sr-only">Language</label>
+      <select id="language-select" onchange="setLanguage(this.value)" aria-label="Language" class="glass-input rounded-lg px-2 py-1.5 text-xs text-white">
         <option value="th">ไทย</option>
         <option value="en">English</option>
       </select>
@@ -232,7 +232,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v2.0.0</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.0.3</span>
       </div>
     </aside>
 
@@ -660,24 +660,9 @@
   </div>
 
   <!-- ================= SCRIPTS & FRONTEND LOGIC ================= -->
+  <script src="./locales.js"></script>
   <script>
     const API_BASE = "http://127.0.0.1:9527/api";
-    const LANGUAGE_PAIRS = [
-      ['Service Active', 'บริการกำลังทำงาน'], ['Service Stopped', 'บริการหยุดทำงาน'], ['Stop Service', 'หยุดบริการ'], ['Start Service', 'เริ่มบริการ'],
-      ['Service Offline', 'บริการออฟไลน์'], ['LISTENING', 'กำลังรับการเชื่อมต่อ'], ['STOPPED', 'หยุดแล้ว'], ['UNKNOWN', 'ไม่ทราบสถานะ'], ['CHECKING', 'กำลังตรวจสอบ'], ['● ACTIVE', '● ใช้งาน'], ['○ DISABLED', '○ ปิดใช้งาน'], ['SUCCESS', 'สำเร็จ'], ['WARNING', 'คำเตือน'], ['FAILED', 'ล้มเหลว'],
-      ['NAVIGATION', 'เมนูนำทาง'], ['4 Modules', '4 โมดูล'], ['Dashboard Overview', 'ภาพรวมระบบ'], ['Inbound SFTP Host', 'เซิร์ฟเวอร์ SFTP ขาเข้า'], ['Outbound Schedulers', 'ตารางเวลาส่งออก'], ['Audit & Security Logs', 'บันทึกตรวจสอบและความปลอดภัย'],
-      ['Automated Financial SFTP/FTPS Gateway & Microservice', 'เกตเวย์ SFTP/FTPS และไมโครเซอร์วิสสำหรับงานการเงิน'], ['Go Microservice', 'ไมโครเซอร์วิส Go'],
-      ['System Overview & Metric Cards', 'ภาพรวมระบบและการ์ดสถิติ'], ['ภาพรวมระบบ การเชื่อมต่อ และสถิติการรับ-ส่งข้อมูลล่าสุด', 'System connectivity and recent transfer metrics'],
-      ['SFTP Inbound Port', 'พอร์ต SFTP ขาเข้า'], ['ตั้งค่ารอบอัตโนมัติ', 'Scheduled automatically'], ['Active Outbound Jobs', 'งานส่งออกที่เปิดใช้งาน'], ['Total Audit Logs', 'บันทึกตรวจสอบทั้งหมด'], ['รายการบันทึก', 'records'],
-      ['กิจกรรมการถ่ายโอนไฟล์ล่าสุด (Recent File Transfers)', 'Recent File Transfers'], ['รายงาน 5 รายการล่าสุดที่ถูกบันทึกลงในระบบ', 'The 5 most recent activities recorded in the system'], ['ดูประวัติทั้งหมด', 'View all history'],
-      ['วัน/เวลา', 'Date / Time'], ['ประเภทกิจกรรม', 'Activity Type'], ['ประเภทเหตุการณ์', 'Event Type'], ['โปรโตคอล', 'Protocol'], ['ชื่อไฟล์', 'File Name'], ['ขนาด', 'Size'], ['สถานะ', 'Status'],
-      ['กำลังโหลดข้อมูลล่าสุด...', 'Loading recent data...'], ['ตั้งค่า SFTP Server ขาเข้า & จัดการผู้ใช้', 'Inbound SFTP Server & User Management'], ['กำหนดพอร์ต โฟลเดอร์จัดเก็บ และจัดการบัญชีผู้ใช้งานสำหรับธนาคาร SCB หรือระบบภายนอก', 'Configure the port, storage folders, and accounts for SCB or external systems'],
-      ['Server Listener Settings', 'ตั้งค่าเซิร์ฟเวอร์รับการเชื่อมต่อ'], ['พอร์ต SFTP สำหรับรับเข้า (Inbound Port)', 'SFTP inbound port'], ['โปรโตคอลการทำงาน', 'Protocol'], ['โฟลเดอร์ปลายทางสำหรับจัดเก็บไฟล์ (Target Destination)', 'Target folder for received files'], ['โฟลเดอร์ชั่วคราวขณะอัปโหลด (Temp Upload Folder)', 'Temporary upload folder'], ['บันทึกการตั้งค่าขาเข้า', 'Save inbound settings'],
-      ['จัดการผู้ใช้งาน SFTP (Accounts Management)', 'SFTP Account Management'], ['สร้างบัญชี กำหนดสถานะ Active/Inactive และจัดการสิทธิ์เข้าใช้งาน SFTP', 'Create accounts, set Active/Inactive status, and manage SFTP access'], ['เพิ่มผู้ใช้งานใหม่', 'Add a new user'], ['สถานะบัญชี', 'Account status'], ['Active', 'ใช้งาน'], ['Inactive', 'ปิดใช้งาน'], ['บันทึกผู้ใช้', 'Save user'], ['บันทึกการเปลี่ยนแปลง', 'Save changes'], ['ยกเลิก', 'Cancel'], ['ID', 'ID'], ['Username', 'ชื่อผู้ใช้'], ['สิทธิ์ / Root Path', 'Access / Root Path'], ['วันที่สร้าง', 'Created'], ['การจัดการ', 'Actions'], ['กำลังโหลดรายชื่อผู้ใช้...', 'Loading users...'], ['ยังไม่มีผู้ใช้งาน SFTP บันทึกไว้', 'No SFTP users have been added'], ['แก้ไข', 'Edit'], ['ลบ', 'Delete'],
-      ['รอบงานส่งออกไฟล์ (Outbound Push Jobs)', 'Outbound Push Jobs'], ['ระบบ Cron Job อัตโนมัติสำหรับดึงไฟล์ในเครื่องส่งไปยังธนาคาร SCB หรือ SFTP ปลายทาง', 'Automated cron jobs to send local files to SCB or a remote SFTP server'], ['สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)', 'Create / Edit Scheduled Transfers'], ['ชื่องาน (Job Name)', 'Job Name'], ['รอบเวลา Cron (Cron Expression)', 'Cron Schedule (Cron Expression)'], ['โฟลเดอร์ต้นทางที่เก็บไฟล์ (Source Folder)', 'Source Folder'], ['รูปแบบไฟล์ (Pattern Matching)', 'File Pattern'], ['โปรโตคอลปลายทาง', 'Destination Protocol'], ['โฟลเดอร์ปลายทาง (Remote Path)', 'Remote Path'], ['บันทึกงานส่งออก (Save Job)', 'Save Outbound Job'], ['รายการงานส่งออกไฟล์ทั้งหมด (Registered Jobs)', 'All Registered Outbound Jobs'], ['ควบคุมด้วย Go Cron Engine', 'Managed by Go Cron Engine'], ['ชื่องาน', 'Job Name'], ['รอบเวลา Cron', 'Cron Schedule'], ['โฟลเดอร์ต้นทาง', 'Source Folder'], ['ปลายทาง Host', 'Destination Host'], ['สถานะล่าสุด', 'Latest Status'], ['กำลังโหลดรายการงาน...', 'Loading jobs...'], ['ยังไม่มีรอบงานส่งออกไฟล์ (คลิกสร้างงานด้านบน)', 'No outbound jobs yet (create one above)'],
-      ['บันทึกเหตุการณ์และความปลอดภัย (Audit Trail Logs)', 'Audit Trail & Security Logs'], ['บันทึกประวัติการเข้าใช้งาน การรับและส่งไฟล์ พร้อมค่าแฮช SHA-256 ในฐานข้อมูล SQLite', 'Access and file transfer history with SHA-256 hashes, stored in SQLite'], ['ทั้งหมด (All Events)', 'All Events'], ['เฉพาะการล็อกอิน (LOGIN)', 'Logins (LOGIN)'], ['การรับเข้าไฟล์ (INBOUND)', 'Inbound Files'], ['การส่งออกไฟล์ (OUTBOUND)', 'Outbound Files'], ['การจัดการผู้ใช้ (USER_MGMT)', 'User Management'], ['รีเฟรช Log', 'Refresh Logs'], ['ผู้ใช้ / IP', 'User / IP'], ['ไฟล์ / รายละเอียด', 'File / Details'], ['SHA-256 Hash', 'SHA-256 Hash'], ['กำลังโหลด Audit Logs จาก SQLite...', 'Loading audit logs from SQLite...'], ['กำลังโหลดรายการ...', 'Loading records...'], ['แสดง', 'Show'], ['10 รายการ', '10 per page'], ['25 รายการ', '25 per page'], ['50 รายการ', '50 per page'], ['100 รายการ', '100 per page'], ['ก่อนหน้า', 'Previous'], ['ถัดไป', 'Next'],
-      ['ย่อหน้าต่าง', 'Minimize'], ['ขยายเต็มจอ', 'Maximize'], ['ปิดโปรแกรม', 'Close application'], ['รีเฟรชข้อมูลล่าสุด', 'Refresh data'], ['แสดงรหัสผ่าน', 'Show password'], ['ซ่อนรหัสผ่าน', 'Hide password'], ['Username (เช่น scb_gateway)', 'Username (e.g. scb_gateway)'], ['Password (รหัสผ่าน)', 'Password'], ['กรอกรหัสผ่านใหม่', 'Enter a new password'], ['เช่น ส่งรายงาน SCB ประจำวัน', 'e.g. Daily SCB report'], ['*/5 * * * * * (ทุก 5 วินาที)', '*/5 * * * * * (every 5 seconds)'], ['*.* หรือ *.txt', '*.* or *.txt'], ['เช่น 127.0.0.1 หรือ sftp.scb.co.th', 'e.g. 127.0.0.1 or sftp.scb.co.th'], ['โฟลเดอร์รับเข้า: Loading...', 'Inbound folder: Loading...'], ['ไม่มีรายการบันทึก', 'No records'], ['ไม่มีข้อมูลบันทึกเหตุการณ์', 'No audit events found'], ['ยังไม่มีข้อมูล', 'No data yet']
-    ];
     let currentLanguage = 'th';
     let languageLookup = new Map();
     let translatingPage = false;
@@ -690,7 +675,7 @@
 
     function languageMap(language) {
       const map = new Map();
-      LANGUAGE_PAIRS.forEach(([thai, english]) => {
+      window.APP_LANGUAGE_PAIRS.forEach(([thai, english]) => {
         const localized = language === 'en' ? english : thai;
         map.set(thai, localized);
         map.set(english, localized);
@@ -701,35 +686,7 @@
     function translateValue(value) {
       const trimmed = value.trim();
       let translated = languageLookup.get(trimmed);
-      if (translated === undefined && /^โฟลเดอร์รับเข้า: /.test(trimmed)) {
-        translated = (currentLanguage === 'en' ? 'Inbound folder: ' : 'โฟลเดอร์รับเข้า: ') + trimmed.slice('โฟลเดอร์รับเข้า: '.length);
-      } else if (translated === undefined && /^แก้ไขผู้ใช้: /.test(trimmed)) {
-        translated = (currentLanguage === 'en' ? 'Edit user: ' : 'แก้ไขผู้ใช้: ') + trimmed.slice('แก้ไขผู้ใช้: '.length);
-      } else if (translated === undefined && /^(Inbound folder|โฟลเดอร์รับเข้า): /.test(trimmed)) {
-        const path = trimmed.replace(/^(Inbound folder|โฟลเดอร์รับเข้า): /, '');
-        translated = (currentLanguage === 'en' ? 'Inbound folder: ' : 'โฟลเดอร์รับเข้า: ') + path;
-      } else if (translated === undefined) {
-        let match = trimmed.match(/^บันทึกบัญชีผู้ใช้ "(.+)" เรียบร้อยแล้ว$/);
-        if (match) translated = currentLanguage === 'en' ? `User account "${match[1]}" saved successfully` : trimmed;
-        match = trimmed.match(/^User account "(.+)" saved successfully$/);
-        if (match) translated = currentLanguage === 'th' ? `บันทึกบัญชีผู้ใช้ "${match[1]}" เรียบร้อยแล้ว` : trimmed;
-        match = trimmed.match(/^ลบบัญชีผู้ใช้ "(.+)" เรียบร้อยแล้ว$/);
-        if (match) translated = currentLanguage === 'en' ? `User account "${match[1]}" deleted successfully` : trimmed;
-        match = trimmed.match(/^User account "(.+)" deleted successfully$/);
-        if (match) translated = currentLanguage === 'th' ? `ลบบัญชีผู้ใช้ "${match[1]}" เรียบร้อยแล้ว` : trimmed;
-        match = trimmed.match(/^บันทึกรอบงาน "(.+)" เรียบร้อยแล้ว$/);
-        if (match) translated = currentLanguage === 'en' ? `Job "${match[1]}" saved successfully` : trimmed;
-        match = trimmed.match(/^Job "(.+)" saved successfully$/);
-        if (match) translated = currentLanguage === 'th' ? `บันทึกรอบงาน "${match[1]}" เรียบร้อยแล้ว` : trimmed;
-        match = trimmed.match(/^ลบรอบงาน "(.+)" เรียบร้อยแล้ว$/);
-        if (match) translated = currentLanguage === 'en' ? `Job "${match[1]}" deleted successfully` : trimmed;
-        match = trimmed.match(/^Job "(.+)" deleted successfully$/);
-        if (match) translated = currentLanguage === 'th' ? `ลบรอบงาน "${match[1]}" เรียบร้อยแล้ว` : trimmed;
-        match = trimmed.match(/^แสดง ([\d,]+)–([\d,]+) จาก ([\d,]+) รายการ · หน้า ([\d,]+) จาก ([\d,]+)$/);
-        if (match) translated = currentLanguage === 'en' ? `Showing ${match[1]}–${match[2]} of ${match[3]} records · Page ${match[4]} of ${match[5]}` : trimmed;
-        match = trimmed.match(/^Showing ([\d,]+)–([\d,]+) of ([\d,]+) records · Page ([\d,]+) of ([\d,]+)$/);
-        if (match) translated = currentLanguage === 'th' ? `แสดง ${match[1]}–${match[2]} จาก ${match[3]} รายการ · หน้า ${match[4]} จาก ${match[5]}` : trimmed;
-      }
+      if (translated === undefined) translated = window.translateAppDynamicText(trimmed, currentLanguage);
       if (translated === undefined || translated === trimmed) return value;
       const leading = value.match(/^\s*/)?.[0] || '';
       const trailing = value.match(/\s*$/)?.[0] || '';
@@ -746,16 +703,25 @@
           }
         });
         let node;
-        while ((node = walker.nextNode())) node.nodeValue = translateValue(node.nodeValue);
+        while ((node = walker.nextNode())) {
+          const translated = translateValue(node.nodeValue);
+          if (translated !== node.nodeValue) node.nodeValue = translated;
+        }
 
         const elements = root.nodeType === Node.ELEMENT_NODE ? [root, ...root.querySelectorAll('*')] : [];
         elements.forEach(element => {
           ['placeholder', 'title', 'aria-label'].forEach(attribute => {
             const value = element.getAttribute(attribute);
-            if (value) element.setAttribute(attribute, translateValue(value));
+            if (value) {
+              const translated = translateValue(value);
+              if (translated !== value) element.setAttribute(attribute, translated);
+            }
           });
         });
-        if (document.title) document.title = translateValue(document.title);
+        if (document.title) {
+          const translatedTitle = translateValue(document.title);
+          if (translatedTitle !== document.title) document.title = translatedTitle;
+        }
       } finally {
         translatingPage = false;
       }
@@ -792,7 +758,10 @@
         if (mutation.type === 'characterData') translateSubtree(mutation.target.parentElement);
         else if (mutation.type === 'childList') mutation.addedNodes.forEach(node => {
           if (node.nodeType === Node.ELEMENT_NODE) translateSubtree(node);
-          else if (node.nodeType === Node.TEXT_NODE) node.nodeValue = translateValue(node.nodeValue);
+          else if (node.nodeType === Node.TEXT_NODE) {
+            const translated = translateValue(node.nodeValue);
+            if (translated !== node.nodeValue) node.nodeValue = translated;
+          }
         });
         else if (mutation.type === 'attributes') translateSubtree(mutation.target);
       });
@@ -806,7 +775,7 @@
       const icon = document.getElementById('toast-icon');
       const text = document.getElementById('toast-msg');
 
-      text.innerText = msg;
+      text.innerText = translateValue(msg);
       if (type === 'success') {
         icon.className = 'fa-solid fa-circle-check text-brand-400 text-sm';
         box.className = 'px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium border bg-dark-900 border-emerald-500/30 text-white';
@@ -1037,7 +1006,7 @@
                   ${u.enabled ? '● ACTIVE' : '○ DISABLED'}
                 </span>
               </td>
-              <td class="p-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString('th-TH')}</td>
+              <td class="p-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString(getLocale())}</td>
               <td class="p-3 text-right space-x-2">
                 <button onclick="editUser('${u.username}')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white text-xs border border-white/5 transition">
                   <i class="fa-solid fa-pen text-[10px] mr-1"></i>แก้ไข
@@ -1124,7 +1093,7 @@
     }
 
     async function deleteUser(id, username) {
-      if (!confirm(`ยืนยันการลบบัญชีผู้ใช้ "${username}" ใช่หรือไม่?`)) return;
+      if (!confirm(translateValue(`ยืนยันการลบบัญชีผู้ใช้ "${username}" ใช่หรือไม่?`))) return;
       try {
         const res = await fetch(`${API_BASE}/users?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
@@ -1218,7 +1187,7 @@
     }
 
     async function deleteJob(id, name) {
-      if (!confirm(`ยืนยันการลบรอบงาน "${name}" ใช่หรือไม่?`)) return;
+      if (!confirm(translateValue(`ยืนยันการลบรอบงาน "${name}" ใช่หรือไม่?`))) return;
       try {
         const res = await fetch(`${API_BASE}/outbound/jobs?id=${id}`, { method: 'DELETE' });
         if (res.ok) {
@@ -1251,8 +1220,10 @@
           const firstItem = total === 0 ? 0 : (logsPage - 1) * logsPageSize + 1;
           const lastItem = Math.min(logsPage * logsPageSize, total);
           document.getElementById('logs-pagination-info').innerText = total === 0
-            ? 'ไม่มีรายการบันทึก'
-            : `แสดง ${firstItem.toLocaleString('th-TH')}–${lastItem.toLocaleString('th-TH')} จาก ${total.toLocaleString('th-TH')} รายการ · หน้า ${logsPage} จาก ${totalPages}`;
+            ? (currentLanguage === 'en' ? 'No records' : 'ไม่มีรายการบันทึก')
+            : currentLanguage === 'en'
+              ? `Showing ${firstItem.toLocaleString(getLocale())}–${lastItem.toLocaleString(getLocale())} of ${total.toLocaleString(getLocale())} records · Page ${logsPage} of ${totalPages}`
+              : `แสดง ${firstItem.toLocaleString(getLocale())}–${lastItem.toLocaleString(getLocale())} จาก ${total.toLocaleString(getLocale())} รายการ · หน้า ${logsPage} จาก ${totalPages}`;
           document.getElementById('logs-prev-page').disabled = logsPage <= 1;
           document.getElementById('logs-next-page').disabled = logsPage >= totalPages;
           
@@ -1271,7 +1242,7 @@
 
             return `
               <tr class="hover:bg-dark-850/50 transition">
-                <td class="p-3 text-slate-400 font-mono">${new Date(l.timestamp).toLocaleString('th-TH')}</td>
+                <td class="p-3 text-slate-400 font-mono">${new Date(l.timestamp).toLocaleString(getLocale())}</td>
                 <td class="p-3">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border ${badgeClass}">
                     ${l.event_type}
@@ -1292,7 +1263,7 @@
 
           if (logsPage === 1) dashTable.innerHTML = logs.slice(0, 5).map(l => `
             <tr class="hover:bg-dark-850/50 transition">
-              <td class="py-2.5 px-3 text-slate-400">${new Date(l.timestamp).toLocaleTimeString('th-TH')}</td>
+              <td class="py-2.5 px-3 text-slate-400">${new Date(l.timestamp).toLocaleTimeString(getLocale())}</td>
               <td class="py-2.5 px-3 font-semibold text-white">${l.event_type}</td>
               <td class="py-2.5 px-3 text-slate-300">${l.protocol}</td>
               <td class="py-2.5 px-3 text-slate-200">${l.file_name || '-'}</td>
@@ -1329,11 +1300,12 @@
       const clockEl = document.getElementById('current-clock');
       if (clockEl) {
         const now = new Date();
-        clockEl.innerText = now.toLocaleTimeString('th-TH');
+        clockEl.innerText = now.toLocaleTimeString(getLocale());
       }
     }, 1000);
 
     // Initial Load & Auto Poll Status
+    initializeLanguage();
     switchTab('dashboard');
     refreshData();
     setInterval(loadStatus, 5000);

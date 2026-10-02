@@ -100,7 +100,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"status":       statusStr,
 		"running":      running,
 		"sftp_running": sftpRunning,
-		"version":      "2.0.0",
+		"version":      "0.0.3",
 	})
 }
 
