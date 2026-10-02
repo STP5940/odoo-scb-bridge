@@ -52,6 +52,11 @@ window.APP_LANGUAGE_PAIRS = [
     "หยุดบริการ",
     "Stop Service"
   ],
+  ["บริการกำลังทำงาน", "Service Active"],
+  ["บริการหยุดทำงาน", "Service Stopped"],
+  ["เริ่มบริการ", "Start Service"],
+  ["กรุณา Activate โปรแกรมก่อนเริ่มบริการ", "Activate the product to start the service"],
+  ["ต้อง Activate ก่อน", "Activation Required"],
   ["ปิดใช้งาน License", "Deactivate License"],
   ["นำ License ออกจากเครื่องนี้หรือไม่? บริการที่ต้องใช้ License จะหยุด โดยสามารถกรอกรหัสเดิมเพื่อเปิดใช้งานเครื่องนี้อีกครั้งได้", "Remove the license from this computer? Licensed services will stop. The same key can be entered again on this computer."],
   ["นำ License ออกจากเครื่องนี้แล้ว", "License removed from this computer"],

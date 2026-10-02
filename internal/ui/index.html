@@ -157,7 +157,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.12</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.16</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -182,7 +182,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.12</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.16</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -199,18 +199,15 @@
         <i id="theme-icon" class="fa-solid fa-sun" aria-hidden="true"></i>
       </button>
       <!-- Service Status Badge -->
-      <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30 transition">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-        <span id="service-status-text" class="text-xs font-semibold text-emerald-400">Service Active</span>
+      <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 transition">
+        <span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+        <span id="service-status-text" class="text-xs font-semibold text-rose-400">Service Stopped</span>
       </div>
 
       <!-- Power Toggle Button (Stop / Start Service) -->
-      <button id="btn-toggle-service" onclick="toggleService()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm">
-        <i class="fa-solid fa-power-off text-[11px]"></i>
-        <span>Stop Service</span>
+      <button id="btn-toggle-service" onclick="toggleService()" disabled title="Activate the product to start the service" class="px-3.5 py-1.5 rounded-xl bg-dark-800 text-slate-500 border border-white/5 text-xs font-semibold transition flex items-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed">
+        <i class="fa-solid fa-lock text-[11px]"></i>
+        <span>Activation Required</span>
       </button>
 
       <button id="btn-revoke-license" onclick="deactivateProductLicense()" class="hidden px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs font-semibold transition items-center space-x-2" type="button">
@@ -225,7 +222,7 @@
     </div>
   </header>
 
-  <section id="activation-screen" class="fixed z-40 inset-x-0 bottom-0 overflow-y-auto bg-dark-950 p-6 md:p-10" style="top: 7rem" aria-labelledby="activation-title">
+  <section id="activation-screen" class="fixed z-40 inset-x-0 bottom-0 overflow-y-auto bg-dark-950 px-4 py-4 md:px-6 md:py-6" style="top: calc(2.25rem + 3.5rem)" aria-labelledby="activation-title">
     <div class="max-w-3xl mx-auto glass-card rounded-2xl p-6 md:p-8">
       <div class="flex items-start gap-4 border-b border-dark-800 pb-5 mb-5">
         <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-accent-amber flex items-center justify-center text-lg"><i class="fa-solid fa-key"></i></div>
@@ -308,7 +305,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.0.12</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.0.16</span>
       </div>
     </aside>
 
@@ -760,6 +757,19 @@
       const revokeButton = document.getElementById('btn-revoke-license');
       revokeButton?.classList.toggle('hidden', !isActivated);
       revokeButton?.classList.toggle('flex', isActivated);
+      const statusPill = document.getElementById('service-status-pill');
+      const serviceButton = document.getElementById('btn-toggle-service');
+      if (!isActivated) {
+        isRunning = false;
+        setServiceStatus(statusPill, serviceButton, false);
+        serviceButton.disabled = true;
+        serviceButton.title = currentLanguage === 'en' ? 'Activate the product to start the service' : 'กรุณา Activate โปรแกรมก่อนเริ่มบริการ';
+        serviceButton.innerHTML = `<i class="fa-solid fa-lock text-[11px]"></i><span>${currentLanguage === 'en' ? 'Activation Required' : 'ต้อง Activate ก่อน'}</span>`;
+      } else {
+        serviceButton.disabled = false;
+        serviceButton.removeAttribute('title');
+        setServiceStatus(statusPill, serviceButton, isRunning);
+      }
       if (!isActivated && !activationRequestLoaded) loadActivationRequest();
     }
 
@@ -1066,6 +1076,10 @@
     // Control the actual Windows Service in Electron. Browser preview retains the API fallback.
     async function toggleService() {
       const btn = document.getElementById('btn-toggle-service');
+      if (!isActivated) {
+        showToast(currentLanguage === 'en' ? 'Activate the product to start the service' : 'กรุณา Activate โปรแกรมก่อนเริ่มบริการ', 'error');
+        return;
+      }
       btn.disabled = true;
       try {
         const action = isRunning ? 'stop' : 'start';
@@ -1095,19 +1109,20 @@
         if (window.electronAPI?.getServiceStatus) {
           const data = await window.electronAPI.getServiceStatus();
           if (!data.available) throw new Error(data.error || 'Windows Service ไม่พร้อมใช้งาน');
-          isRunning = data.running;
-          setServiceStatus(pill, btn, isRunning);
-          await loadSftpListenerStatus(isRunning);
-          await refreshActivationState();
+          const response = await fetch(`${API_BASE}/status`);
+          if (!response.ok) throw new Error('Status API unavailable');
+          const bridge = await response.json();
+          isRunning = bridge.activated === true && bridge.running === true && data.running === true;
+          updateActivationUI(bridge.activated === true);
+          await loadSftpListenerStatus(data.running);
           return;
         }
         const res = await fetch(`${API_BASE}/status`);
         if (!res.ok) throw new Error('Status API unavailable');
         const data = await res.json();
-        isRunning = (data.running === true || data.status === "RUNNING");
-        setServiceStatus(pill, btn, isRunning);
+        isRunning = data.activated === true && (data.running === true || data.status === "RUNNING");
+        updateActivationUI(data.activated === true);
         setSftpListenerStatus(data.sftp_running === true);
-        updateActivationUI(data.activated);
       } catch (e) {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
         pill.innerHTML = `
@@ -1118,7 +1133,11 @@
         btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
         isRunning = false;
         setSftpListenerStatus(false);
-        updateActivationUI(false);
+        // Keep the last verified activation state while the Windows service is offline.
+        // A previously activated installation must still be able to start the host service again.
+        updateActivationUI(isActivated);
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
+        pill.innerHTML = '<span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span><span class="text-xs font-medium text-rose-400">Service Offline</span>';
         if (!activationRequestLoaded) document.getElementById('activation-message').innerText = e.message || '';
       }
     }
@@ -1156,14 +1175,16 @@
     function setServiceStatus(pill, btn, running) {
       if (running) {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-brand-400";
-        pill.innerHTML = `<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="text-xs font-semibold text-emerald-400">Service Active</span>`;
+        pill.innerHTML = `<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="text-xs font-semibold text-emerald-400">${currentLanguage === 'en' ? 'Service Active' : 'บริการกำลังทำงาน'}</span>`;
         btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
-        btn.innerHTML = '<i class="fa-solid fa-power-off text-[11px]"></i><span>Stop Service</span>';
+        btn.innerHTML = `<i class="fa-solid fa-power-off text-[11px]"></i><span>${currentLanguage === 'en' ? 'Stop Service' : 'หยุดบริการ'}</span>`;
+        btn.disabled = false;
       } else {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400";
-        pill.innerHTML = `<span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span><span class="text-xs font-semibold text-rose-400">Service Stopped</span>`;
+        pill.innerHTML = `<span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span><span class="text-xs font-semibold text-rose-400">${currentLanguage === 'en' ? 'Service Stopped' : 'บริการหยุดทำงาน'}</span>`;
         btn.className = "px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-brand-400 border border-emerald-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
-        btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
+        btn.innerHTML = `<i class="fa-solid fa-play text-[11px]"></i><span>${currentLanguage === 'en' ? 'Start Service' : 'เริ่มบริการ'}</span>`;
+        btn.disabled = !isActivated;
       }
     }
 

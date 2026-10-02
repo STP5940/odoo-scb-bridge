@@ -37,7 +37,7 @@ func NewServer(port int, db *database.DB, sch *scheduler.Manager, sftpSrv *sftp.
 		license:      licenseManager,
 		onActivate:   onActivate,
 		onDeactivate: onDeactivate,
-		running:      true,
+		running:      licenseManager != nil && licenseManager.Activated(),
 	}
 }
 
@@ -116,7 +116,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"sftp_running": sftpRunning,
 		"activated":    s.license != nil && s.license.Activated(),
 		"machine_id":   s.machineID(),
-		"version":      "0.0.12",
+		"version":      "0.0.16",
 	})
 }
 
@@ -181,6 +181,9 @@ func (s *Server) handleActivation(w http.ResponseWriter, r *http.Request) {
 	if s.onActivate != nil {
 		s.onActivate()
 	}
+	s.mu.Lock()
+	s.running = true
+	s.mu.Unlock()
 	jsonResponse(w, http.StatusOK, map[string]interface{}{"activated": true})
 }
 
@@ -209,6 +212,9 @@ func (s *Server) handleLicenseDeactivation(w http.ResponseWriter, r *http.Reques
 	if s.onDeactivate != nil {
 		s.onDeactivate()
 	}
+	s.mu.Lock()
+	s.running = false
+	s.mu.Unlock()
 	jsonResponse(w, http.StatusOK, map[string]interface{}{"activated": false})
 }
 
