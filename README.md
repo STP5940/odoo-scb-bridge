@@ -71,3 +71,22 @@ build.bat
 - **SFTP Account Management**: เพิ่ม แก้ไข เปิด/ปิดการใช้งาน หรือลบบัญชี SFTP ได้แบบ Real-time ผ่านหน้า GUI
 - **Inbound & Outbound Automation**: ตั้งรอบเวลาส่งไฟล์อัตโนมัติ พร้อมปุ่ม Manual Trigger ส่งไฟล์ทดสอบทันที
 - **Enterprise Dark UI**: หน้ากากโปรแกรมแบบ Modern VS Code Theme ดูสบายตา ตอบสนองรวดเร็ว มี Notification Toast แจ้งเตือนสถานะ
+
+## Offline Product Activation
+
+This build uses a machine-bound, perpetual offline license. On an unlicensed installation, the monitor displays a request code containing the hashed device ID plus the computer and profile names. The license issuer signs a license for that device with Ed25519. The Windows service verifies the signature locally; the SFTP listener, scheduler, and data-management API remain disabled until verification succeeds.
+
+### Customer activation
+
+1. Install and open Odoo SCB Bridge Monitor.
+2. Copy the **Activation Request Code** and send it to the license administrator through an approved channel.
+3. Paste the returned **License Key** and choose **Activate**.
+
+### Internal license issuer
+
+- The Ed25519 signing key is kept in `.secrets/issuer-ed25519-private.pem`; it is ignored by Git and is not copied into the installer. The desktop app does not need this private key to start or run; it contains only the public verification key. Store the private key in an encrypted, access-controlled backup and restore it to the issuer machine after cloning the repository. The issuer build script stops with a clear message if the key is missing.
+- Never replace a missing signing key with a random key while continuing to use existing app builds. A replacement key requires changing `publicKeyBase64` in `internal/license/license.go` to its matching public key, then rebuilding and redistributing the app. Previously issued licenses will not verify against the replacement public key. If no backup exists, treat this as a signing-key rotation and plan customer reactivation before distributing the new build.
+- Build the internal-only issuer with `build-license-issuer.bat` and run `tools\OdooSCBBridgeLicenseIssuer.exe` from the repository root. Paste the customer's request code. Never give customers the issuer executable together with the private key.
+- A license is valid only for the machine ID in its request code. Reinstallation on the same Windows machine normally preserves activation; hardware/OS changes may require re-issuance.
+
+The installed application contains only the public verification key. Signed licenses cannot be edited or created without the private key. No software running entirely on a customer's computer can guarantee resistance to binary patching or an administrator using a debugger; strict tamper prevention requires a trusted online activation service and signed/code-integrity enforcement.

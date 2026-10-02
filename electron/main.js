@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { execFile } = require('child_process');
+const os = require('os');
 const { promisify } = require('util');
 const path = require('path');
 
@@ -21,6 +22,12 @@ ipcMain.handle('service-status', async () => {
   } catch (error) {
     return { available: false, state: 'UNKNOWN', running: false, error: error.message };
   }
+});
+
+ipcMain.handle('machine-info', () => {
+  let profileName = process.env.USERNAME || process.env.USER || '';
+  try { profileName = os.userInfo().username || profileName; } catch (_) {}
+  return { computerName: os.hostname(), profileName };
 });
 
 ipcMain.handle('service-control', async (_event, action) => {

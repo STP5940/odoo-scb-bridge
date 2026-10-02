@@ -15,6 +15,31 @@ window.APP_LANGUAGE_PAIRS = [
     "เปลี่ยนเป็นธีมมืด",
     "Switch to dark theme"
   ],
+  ["ลงทะเบียนผลิตภัณฑ์", "Product Activation"],
+  ["ลงทะเบียนเครื่องนี้เพื่อเริ่มใช้บริการ SFTP และงานตามกำหนด", "Activate this computer to start the SFTP service and scheduled jobs."],
+  ["ชื่อเครื่อง", "Computer"],
+  ["ชื่อโปรไฟล์", "Profile"],
+  ["รหัสประจำเครื่อง", "Device ID"],
+  ["ไม่ทราบ", "Unknown"],
+  ["กำลังโหลด...", "Loading..."],
+  ["รหัสคำขอเปิดใช้งาน", "Activation Request Code"],
+  ["กำลังรอ Local Service...", "Waiting for the local service..."],
+  ["คัดลอกรหัสคำขอ", "Copy Request Code"],
+  ["รหัส License", "License Key"],
+  ["วาง License Key ที่ได้รับที่นี่", "Paste the license key here"],
+  ["ลองอีกครั้ง", "Retry"],
+  ["เปิดใช้งาน", "Activate"],
+  ["ไม่สามารถเชื่อมต่อ Local Service ได้ กรุณาเริ่มบริการแล้วลองใหม่", "Cannot connect to the local service. Start it and retry."],
+  ["ยังไม่พร้อมใช้งานระบบลงทะเบียน", "Activation service is unavailable"],
+  ["กรุณาวาง License Key ก่อน", "Paste a license key first."],
+  ["การลงทะเบียนไม่สำเร็จ", "Activation failed"],
+  ["รูปแบบ License Key ไม่ถูกต้อง", "invalid license code format"],
+  ["ข้อมูล License ไม่ถูกต้อง", "invalid license data"],
+  ["ลายเซ็น License ไม่ถูกต้อง", "invalid license signature"],
+  ["ตรวจสอบลายเซ็น License ไม่ผ่าน", "license signature is not valid"],
+  ["License นี้ใช้กับผลิตภัณฑ์อื่น", "license is for a different product"],
+  ["License นี้ออกให้กับเครื่องอื่น", "license is for a different computer"],
+  ["ข้อมูล License ไม่ครบถ้วน", "license is incomplete"],
   [
     "บริการกำลังทำงาน",
     "Service Active"
@@ -27,6 +52,10 @@ window.APP_LANGUAGE_PAIRS = [
     "หยุดบริการ",
     "Stop Service"
   ],
+  ["ปิดใช้งาน License", "Deactivate License"],
+  ["นำ License ออกจากเครื่องนี้หรือไม่? บริการที่ต้องใช้ License จะหยุด โดยสามารถกรอกรหัสเดิมเพื่อเปิดใช้งานเครื่องนี้อีกครั้งได้", "Remove the license from this computer? Licensed services will stop. The same key can be entered again on this computer."],
+  ["นำ License ออกจากเครื่องนี้แล้ว", "License removed from this computer"],
+  ["ไม่สามารถนำ License ออกได้", "License removal failed"],
   [
     "เริ่มบริการ",
     "Start Service"

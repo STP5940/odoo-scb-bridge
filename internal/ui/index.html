@@ -157,7 +157,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.5</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.12</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -182,7 +182,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.5</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.12</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -213,12 +213,48 @@
         <span>Stop Service</span>
       </button>
 
+      <button id="btn-revoke-license" onclick="deactivateProductLicense()" class="hidden px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs font-semibold transition items-center space-x-2" type="button">
+        <i class="fa-solid fa-key text-[11px]"></i>
+        <span>Deactivate License</span>
+      </button>
+
       <!-- Sync / Refresh Button -->
       <button onclick="refreshData()" title="รีเฟรชข้อมูลล่าสุด" class="w-8 h-8 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition active:scale-95">
         <i class="fa-solid fa-arrows-rotate"></i>
       </button>
     </div>
   </header>
+
+  <section id="activation-screen" class="fixed z-40 inset-x-0 bottom-0 overflow-y-auto bg-dark-950 p-6 md:p-10" style="top: 7rem" aria-labelledby="activation-title">
+    <div class="max-w-3xl mx-auto glass-card rounded-2xl p-6 md:p-8">
+      <div class="flex items-start gap-4 border-b border-dark-800 pb-5 mb-5">
+        <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-accent-amber flex items-center justify-center text-lg"><i class="fa-solid fa-key"></i></div>
+        <div>
+          <h1 id="activation-title" class="text-xl font-bold text-white">Product Activation</h1>
+          <p class="text-sm text-slate-400 mt-1">Activate this computer to start the SFTP service and scheduled jobs.</p>
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3 mb-5 text-sm">
+        <div class="rounded-xl bg-dark-950/70 border border-dark-800 p-3"><span class="text-slate-500">Computer</span><div id="activation-computer" class="font-medium text-white mt-1">Loading...</div></div>
+        <div class="rounded-xl bg-dark-950/70 border border-dark-800 p-3"><span class="text-slate-500">Profile</span><div id="activation-profile" class="font-medium text-white mt-1">Loading...</div></div>
+      </div>
+      <div class="rounded-xl bg-dark-950/70 border border-dark-800 p-3 mb-5 text-sm"><span class="text-slate-500">Device ID</span><div id="activation-device-id" class="font-mono text-xs text-slate-300 mt-1 break-all">Loading...</div></div>
+      <label for="activation-request-code" class="block text-sm font-semibold text-slate-300 mb-2">Activation Request Code</label>
+      <textarea id="activation-request-code" readonly rows="3" class="glass-input w-full rounded-xl p-3 text-xs font-mono text-slate-200 resize-y" placeholder="Waiting for the local service..."></textarea>
+      <div class="flex justify-end mt-2 mb-6">
+        <button onclick="copyActivationRequest()" class="px-3 py-2 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/5 text-xs"><i class="fa-regular fa-copy mr-1"></i>Copy Request Code</button>
+      </div>
+      <label for="activation-license-code" class="block text-sm font-semibold text-slate-300 mb-2">License Key</label>
+      <textarea id="activation-license-code" rows="3" class="glass-input w-full rounded-xl p-3 text-xs font-mono text-slate-200 resize-y" placeholder="Paste the license key here"></textarea>
+      <div class="flex items-center justify-between gap-3 mt-4">
+        <p id="activation-message" class="text-xs text-rose-400" role="status" aria-live="polite"></p>
+        <div class="flex gap-2 shrink-0">
+          <button onclick="loadActivationRequest()" class="px-3 py-2 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/5 text-xs"><i class="fa-solid fa-rotate mr-1"></i>Retry</button>
+          <button id="activation-submit" onclick="activateProduct()" class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-dark-950 font-semibold text-xs"><i class="fa-solid fa-unlock-keyhole mr-1"></i>Activate</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ================= WORKSPACE (SIDEBAR + FULL-WIDTH SCROLLABLE CONTENT) ================= -->
   <div class="flex flex-1 min-h-0 overflow-hidden">
@@ -272,7 +308,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.0.5</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.0.12</span>
       </div>
     </aside>
 
@@ -705,6 +741,9 @@
     const API_BASE = "http://127.0.0.1:9527/api";
     let currentLanguage = 'th';
     let currentTheme = 'dark';
+    let isActivated = false;
+    let activationRequestLoaded = false;
+    let activationRequestLoading = false;
     let languageLookup = new Map();
     let translatingPage = false;
     let cachedUsers = [];
@@ -713,6 +752,125 @@
     let logsPage = 1;
     let logsRequestId = 0;
     let logsPageSize = 10;
+
+    function updateActivationUI(activated) {
+      isActivated = activated === true;
+      const screen = document.getElementById('activation-screen');
+      screen?.classList.toggle('hidden', isActivated);
+      const revokeButton = document.getElementById('btn-revoke-license');
+      revokeButton?.classList.toggle('hidden', !isActivated);
+      revokeButton?.classList.toggle('flex', isActivated);
+      if (!isActivated && !activationRequestLoaded) loadActivationRequest();
+    }
+
+    async function loadActivationRequest() {
+      if (activationRequestLoading) return;
+      activationRequestLoading = true;
+      const message = document.getElementById('activation-message');
+      const requestField = document.getElementById('activation-request-code');
+      message.innerText = '';
+      try {
+        const machine = await window.electronAPI?.getMachineInfo?.() || {};
+        document.getElementById('activation-computer').innerText = machine.computerName || 'Unknown';
+        document.getElementById('activation-profile').innerText = machine.profileName || 'Unknown';
+        const params = new URLSearchParams({
+          computer_name: machine.computerName || '',
+          profile_name: machine.profileName || ''
+        });
+        const response = await fetch(`${API_BASE}/activation/request?${params.toString()}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Activation service is unavailable');
+        requestField.value = data.request_code || '';
+        document.getElementById('activation-device-id').innerText = data.machine_id || 'Unknown';
+        activationRequestLoaded = Boolean(data.request_code);
+      } catch (error) {
+        requestField.value = '';
+        activationRequestLoaded = false;
+        message.innerText = translateValue(error.message || 'Cannot connect to the local service. Start it and retry.');
+      } finally {
+        activationRequestLoading = false;
+      }
+    }
+
+    async function copyActivationRequest() {
+      const requestField = document.getElementById('activation-request-code');
+      if (!requestField.value) await loadActivationRequest();
+      if (!requestField.value) return;
+      try {
+        await navigator.clipboard.writeText(requestField.value);
+      } catch (_) {
+        requestField.focus();
+        requestField.select();
+        document.execCommand('copy');
+      }
+      showToast(currentLanguage === 'en' ? 'Request code copied' : 'คัดลอกรหัสคำขอแล้ว', 'success');
+    }
+
+    async function activateProduct() {
+      const code = document.getElementById('activation-license-code').value.trim();
+      const message = document.getElementById('activation-message');
+      const button = document.getElementById('activation-submit');
+      if (!code) {
+        message.innerText = currentLanguage === 'en' ? 'Paste a license key first.' : 'กรุณาวาง License Key ก่อน';
+        return;
+      }
+      button.disabled = true;
+      message.innerText = '';
+      try {
+        const response = await fetch(`${API_BASE}/activation/activate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ license_code: code })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Activation failed');
+        document.getElementById('activation-license-code').value = '';
+        activationRequestLoaded = false;
+        updateActivationUI(true);
+        await refreshData();
+        showToast(currentLanguage === 'en' ? 'Product activated successfully' : 'ลงทะเบียนโปรแกรมสำเร็จ', 'success');
+      } catch (error) {
+        message.innerText = translateValue(error.message || (currentLanguage === 'en' ? 'Activation failed' : 'การลงทะเบียนไม่สำเร็จ'));
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function deactivateProductLicense() {
+      const message = currentLanguage === 'en'
+        ? 'Remove the license from this computer? Licensed services will stop. The same key can be entered again on this computer.'
+        : 'นำ License ออกจากเครื่องนี้หรือไม่? บริการที่ต้องใช้ License จะหยุด โดยสามารถกรอกรหัสเดิมเพื่อเปิดใช้งานเครื่องนี้อีกครั้งได้';
+      if (!isActivated || !window.confirm(message)) return;
+
+      const button = document.getElementById('btn-revoke-license');
+      button.disabled = true;
+      try {
+        const response = await fetch(`${API_BASE}/activation/deactivate`, { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'License revocation failed');
+        activationRequestLoaded = false;
+        updateActivationUI(false);
+        showToast(currentLanguage === 'en' ? 'License removed from this computer' : 'นำ License ออกจากเครื่องนี้แล้ว', 'success');
+      } catch (error) {
+        showToast(translateValue(error.message || 'License removal failed'), 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function refreshActivationState() {
+      try {
+        const response = await fetch(`${API_BASE}/status`);
+        if (!response.ok) throw new Error('Activation service is unavailable');
+        const data = await response.json();
+        updateActivationUI(data.activated);
+      } catch (error) {
+        updateActivationUI(false);
+        if (!activationRequestLoaded) {
+          document.getElementById('activation-message').innerText = error.message || '';
+        }
+      }
+    }
 
     function languageMap(language) {
       const map = new Map();
@@ -777,7 +935,7 @@
       const selector = document.getElementById('language-select');
       if (selector) selector.value = currentLanguage;
       translateSubtree(document.body);
-      if (isRunning) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+      if (isRunning && isActivated) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
     }
 
     function getLocale() {
@@ -896,6 +1054,7 @@
     // Refresh all data
     async function refreshData() {
       await loadStatus();
+      if (!isActivated) return;
       if (!isRunning) {
         showToast('Windows Service หยุดทำงานอยู่ จึงยังโหลดข้อมูลระบบไม่ได้', 'info');
         return;
@@ -939,6 +1098,7 @@
           isRunning = data.running;
           setServiceStatus(pill, btn, isRunning);
           await loadSftpListenerStatus(isRunning);
+          await refreshActivationState();
           return;
         }
         const res = await fetch(`${API_BASE}/status`);
@@ -947,6 +1107,7 @@
         isRunning = (data.running === true || data.status === "RUNNING");
         setServiceStatus(pill, btn, isRunning);
         setSftpListenerStatus(data.sftp_running === true);
+        updateActivationUI(data.activated);
       } catch (e) {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
         pill.innerHTML = `
@@ -957,6 +1118,8 @@
         btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
         isRunning = false;
         setSftpListenerStatus(false);
+        updateActivationUI(false);
+        if (!activationRequestLoaded) document.getElementById('activation-message').innerText = e.message || '';
       }
     }
 

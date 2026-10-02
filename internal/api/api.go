@@ -5,32 +5,39 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"odoo-scb-bridge/internal/database"
+	"odoo-scb-bridge/internal/license"
 	"odoo-scb-bridge/internal/models"
 	"odoo-scb-bridge/internal/scheduler"
 	"odoo-scb-bridge/internal/server/sftp"
 	"odoo-scb-bridge/internal/ui"
-	"sync"
 )
 
 type Server struct {
-	port       int
-	db         *database.DB
-	scheduler  *scheduler.Manager
-	sftpServer *sftp.Server
-	srv        *http.Server
-	mu         sync.Mutex
-	running    bool
+	port         int
+	db           *database.DB
+	scheduler    *scheduler.Manager
+	sftpServer   *sftp.Server
+	license      *license.Manager
+	onActivate   func()
+	onDeactivate func()
+	srv          *http.Server
+	mu           sync.Mutex
+	running      bool
 }
 
-func NewServer(port int, db *database.DB, sch *scheduler.Manager, sftpSrv *sftp.Server) *Server {
+func NewServer(port int, db *database.DB, sch *scheduler.Manager, sftpSrv *sftp.Server, licenseManager *license.Manager, onActivate, onDeactivate func()) *Server {
 	return &Server{
-		port:       port,
-		db:         db,
-		scheduler:  sch,
-		sftpServer: sftpSrv,
-		running:    true,
+		port:         port,
+		db:           db,
+		scheduler:    sch,
+		sftpServer:   sftpSrv,
+		license:      licenseManager,
+		onActivate:   onActivate,
+		onDeactivate: onDeactivate,
+		running:      true,
 	}
 }
 
@@ -53,12 +60,19 @@ func (s *Server) Start() error {
 	}
 
 	mux.HandleFunc("/api/status", cors(s.handleStatus))
-	mux.HandleFunc("/api/service/start", cors(s.handleServiceStart))
-	mux.HandleFunc("/api/service/stop", cors(s.handleServiceStop))
-	mux.HandleFunc("/api/logs", cors(s.handleLogs))
-	mux.HandleFunc("/api/inbound", cors(s.handleInboundConfig))
-	mux.HandleFunc("/api/users", cors(s.handleUsers))
-	mux.HandleFunc("/api/outbound/jobs", cors(s.handleOutboundJobs))
+	mux.HandleFunc("/api/activation/request", cors(s.handleActivationRequest))
+	mux.HandleFunc("/api/activation/activate", cors(s.handleActivation))
+	mux.HandleFunc("/api/activation/deactivate", cors(s.handleLicenseDeactivation))
+	mux.HandleFunc("/api/service/start", cors(s.requireLicense(s.handleServiceStart)))
+	mux.HandleFunc("/api/service/stop", cors(s.requireLicense(s.handleServiceStop)))
+	mux.HandleFunc("/api/logs", cors(s.requireLicense(s.handleLogs)))
+	mux.HandleFunc("/api/inbound", cors(s.requireLicense(s.handleInboundConfig)))
+	mux.HandleFunc("/api/users", cors(s.requireLicense(s.handleUsers)))
+	mux.HandleFunc("/api/outbound/jobs", cors(s.requireLicense(s.handleOutboundJobs)))
+	mux.HandleFunc("/locales.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		_, _ = w.Write([]byte(ui.LocalesContent))
+	})
 
 	// Serve Frontend Web Console directly from the microservice
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -100,8 +114,102 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"status":       statusStr,
 		"running":      running,
 		"sftp_running": sftpRunning,
-		"version":      "0.0.5",
+		"activated":    s.license != nil && s.license.Activated(),
+		"machine_id":   s.machineID(),
+		"version":      "0.0.12",
 	})
+}
+
+func (s *Server) machineID() string {
+	if s.license == nil {
+		return ""
+	}
+	return s.license.MachineID()
+}
+
+func (s *Server) requireLicense(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.license == nil || !s.license.Activated() {
+			jsonResponse(w, http.StatusForbidden, map[string]interface{}{"error": "product activation required", "activated": false})
+			return
+		}
+		next(w, r)
+	}
+}
+
+func (s *Server) handleActivationRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.license == nil {
+		jsonResponse(w, http.StatusServiceUnavailable, map[string]string{"error": "activation unavailable"})
+		return
+	}
+	requestCode, err := s.license.RequestCode(r.URL.Query().Get("computer_name"), r.URL.Query().Get("profile_name"))
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"activated":    s.license.Activated(),
+		"machine_id":   s.license.MachineID(),
+		"request_code": requestCode,
+	})
+}
+
+func (s *Server) handleActivation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.license == nil {
+		jsonResponse(w, http.StatusServiceUnavailable, map[string]string{"error": "activation unavailable"})
+		return
+	}
+	var request struct {
+		Code string `json:"license_code"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16*1024)).Decode(&request); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid activation payload"})
+		return
+	}
+	if err := s.license.Activate(request.Code); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	if s.onActivate != nil {
+		s.onActivate()
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{"activated": true})
+}
+
+func (s *Server) handleLicenseDeactivation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if s.license == nil {
+		jsonResponse(w, http.StatusServiceUnavailable, map[string]string{"error": "activation unavailable"})
+		return
+	}
+	if err := s.license.Deactivate(); err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if s.db != nil {
+		_ = s.db.LogAudit(models.AuditLog{
+			EventType: "LICENSE",
+			Protocol:  "SYSTEM",
+			Username:  "admin",
+			Status:    "WARNING",
+			Details:   "Product license deactivated locally via Desktop UI",
+		})
+	}
+	if s.onDeactivate != nil {
+		s.onDeactivate()
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{"activated": false})
 }
 
 func (s *Server) handleServiceStart(w http.ResponseWriter, r *http.Request) {

@@ -4,9 +4,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"odoo-scb-bridge/internal/api"
 	"odoo-scb-bridge/internal/database"
+	"odoo-scb-bridge/internal/license"
 	"odoo-scb-bridge/internal/scheduler"
 	"odoo-scb-bridge/internal/server/sftp"
 
@@ -14,10 +16,12 @@ import (
 )
 
 type program struct {
-	exit       chan struct{}
-	sftpServer *sftp.Server
-	apiServer  *api.Server
-	scheduler  *scheduler.Manager
+	exit         chan struct{}
+	sftpServer   *sftp.Server
+	apiServer    *api.Server
+	scheduler    *scheduler.Manager
+	license      *license.Manager
+	activationMu sync.Mutex
 }
 
 func (p *program) Start(s service.Service) error {
@@ -46,29 +50,57 @@ func (p *program) run() {
 		log.Fatalf("[Service] Config error: %v", err)
 	}
 
-	// 1. Start Embedded Inbound SFTP Server
+	// Keep activation and status APIs available before activation, but do not
+	// expose SFTP or scheduled transfers until the signed license is valid.
 	p.sftpServer = sftp.NewServer(inboundCfg.SFTPPort, inboundCfg.TargetDir, inboundCfg.TempDir, db)
-	if err := p.sftpServer.Start(); err != nil {
-		log.Printf("[Service] Failed to start SFTP: %v", err)
-	}
-
-	// 2. Start Outbound Cron Scheduler
 	p.scheduler = scheduler.NewManager(db)
-	p.scheduler.Start()
-
-	// 3. Start Local REST API Server (Port 9527) for Desktop UI
-	p.apiServer = api.NewServer(9527, db, p.scheduler, p.sftpServer)
+	p.license = license.NewManager(filepath.Join(baseDir, "data", "license.dat"))
+	p.apiServer = api.NewServer(9527, db, p.scheduler, p.sftpServer, p.license, p.startLicensedServices, p.stopLicensedServices)
 	go func() {
 		if err := p.apiServer.Start(); err != nil {
 			log.Printf("[Service] API server stopped: %v", err)
 		}
 	}()
 
-	log.Println("[Service] Data Bridge Microservice running successfully")
+	if p.license.Activated() {
+		p.startLicensedServices()
+		log.Println("[Service] Activated Data Bridge Microservice running successfully")
+	} else {
+		log.Println("[Service] Activation required; SFTP and scheduler remain disabled")
+	}
 	<-p.exit
 }
 
+func (p *program) startLicensedServices() {
+	p.activationMu.Lock()
+	defer p.activationMu.Unlock()
+	if p.license == nil || !p.license.Activated() {
+		return
+	}
+	if p.sftpServer != nil {
+		if err := p.sftpServer.Start(); err != nil {
+			log.Printf("[Service] Failed to start SFTP: %v", err)
+		}
+	}
+	if p.scheduler != nil {
+		p.scheduler.Start()
+	}
+}
+
+func (p *program) stopLicensedServices() {
+	p.activationMu.Lock()
+	defer p.activationMu.Unlock()
+	if p.sftpServer != nil {
+		p.sftpServer.Stop()
+	}
+	if p.scheduler != nil {
+		p.scheduler.Stop()
+	}
+}
+
 func (p *program) Stop(s service.Service) error {
+	p.activationMu.Lock()
+	defer p.activationMu.Unlock()
 	if p.sftpServer != nil {
 		p.sftpServer.Stop()
 	}

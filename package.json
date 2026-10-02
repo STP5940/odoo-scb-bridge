@@ -1,6 +1,6 @@
 {
   "name": "odoo-scb-bridge-monitor",
-  "version": "0.0.5",
+  "version": "0.0.12",
   "description": "Desktop GUI Monitor for Odoo SCB Bridge Service",
   "main": "electron/main.js",
   "scripts": {

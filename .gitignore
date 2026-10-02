@@ -16,6 +16,7 @@ package-lock.json
 *.db-journal
 *.log
 host_rsa.key
+.secrets/
 
 # OS & IDE
 .vscode/
@@ -27,3 +28,6 @@ host_rsa.key
 *.sw?
 Thumbs.db
 Desktop.ini
+
+tools/
+.cache/
