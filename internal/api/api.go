@@ -43,6 +43,7 @@ func (s *Server) Start() error {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Expose-Headers", "X-Total-Count, X-Page, X-Page-Size, X-Total-Pages")
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusOK)
 				return
@@ -99,7 +100,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"status":       statusStr,
 		"running":      running,
 		"sftp_running": sftpRunning,
-		"version":      "1.0.0",
+		"version":      "2.0.0",
 	})
 }
 
@@ -156,18 +157,46 @@ func (s *Server) handleServiceStop(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
-	limitStr := r.URL.Query().Get("limit")
-	limit := 100
-	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-		limit = l
+	query := r.URL.Query()
+	pageSize := 20
+	pageSizeStr := query.Get("page_size")
+	if pageSizeStr == "" {
+		pageSizeStr = query.Get("limit")
 	}
-	eventType := r.URL.Query().Get("event_type")
+	if size, err := strconv.Atoi(pageSizeStr); err == nil && size > 0 {
+		pageSize = size
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+	page := 1
+	if requestedPage, err := strconv.Atoi(query.Get("page")); err == nil && requestedPage > 0 {
+		page = requestedPage
+	}
+	eventType := query.Get("event_type")
 
-	logs, err := s.db.GetRecentLogs(limit, eventType)
+	total, err := s.db.CountLogs(eventType)
 	if err != nil {
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
+	totalPages := (total + pageSize - 1) / pageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+	offset := (page - 1) * pageSize
+	logs, err := s.db.GetRecentLogs(pageSize, eventType, offset)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("X-Total-Count", strconv.Itoa(total))
+	w.Header().Set("X-Page", strconv.Itoa(page))
+	w.Header().Set("X-Page-Size", strconv.Itoa(pageSize))
+	w.Header().Set("X-Total-Pages", strconv.Itoa(totalPages))
 	jsonResponse(w, http.StatusOK, logs)
 }
 

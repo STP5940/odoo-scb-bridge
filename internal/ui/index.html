@@ -120,7 +120,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v1.0</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v2.0.0</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -145,7 +145,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v1.0</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v2.0.0</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -227,12 +227,12 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v1.0.0</span>
+        <span class="font-mono text-[10px] text-slate-400">v2.0.0</span>
       </div>
     </aside>
 
     <!-- ================= CENTER MAIN CONTENT (FULL-WIDTH SCROLLABLE AREA) ================= -->
-    <main id="main-scroll-area" class="flex-1 min-w-0 h-full min-h-0 overflow-y-auto overflow-x-hidden p-6 space-y-6 scroll-smooth pb-28">
+    <main id="main-scroll-area" class="flex-1 min-w-0 h-full min-h-0 overflow-y-auto overflow-x-hidden p-6 scroll-smooth pb-28">
 
       <!-- ================= TAB 1: DASHBOARD ================= -->
       <section id="tab-dashboard" class="space-y-6">
@@ -360,7 +360,7 @@
         </div>
 
         <!-- Inbound Configuration Card -->
-        <div class="glass-card rounded-2xl p-6 max-w-3xl space-y-5">
+        <div class="glass-card rounded-2xl p-6 w-full space-y-5">
           <div class="flex items-center space-x-3 pb-3 border-b border-dark-800">
             <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-brand-400 flex items-center justify-center">
               <i class="fa-solid fa-sliders"></i>
@@ -469,7 +469,7 @@
         </div>
 
         <!-- Add Job Form Card -->
-        <div class="glass-card rounded-2xl p-6 max-w-4xl space-y-4">
+        <div class="glass-card rounded-2xl p-6 w-full space-y-4">
           <div class="flex items-center space-x-3 pb-3 border-b border-dark-800">
             <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-accent-purple flex items-center justify-center">
               <i class="fa-solid fa-plus"></i>
@@ -577,7 +577,7 @@
           <div class="flex items-center space-x-3">
             <div class="relative">
               <i class="fa-solid fa-filter absolute left-3 top-2.5 text-slate-500 text-xs"></i>
-              <select id="log-filter" onchange="loadLogs()" class="glass-input rounded-xl pl-8 pr-4 py-2 text-xs text-white">
+              <select id="log-filter" onchange="changeLogFilter()" class="glass-input rounded-xl pl-8 pr-4 py-2 text-xs text-white">
                 <option value="">ทั้งหมด (All Events)</option>
                 <option value="LOGIN">เฉพาะการล็อกอิน (LOGIN)</option>
                 <option value="INBOUND_FILE">การรับเข้าไฟล์ (INBOUND)</option>
@@ -614,6 +614,18 @@
           </div>
         </div>
 
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+          <p id="logs-pagination-info" class="text-xs text-slate-400" aria-live="polite">กำลังโหลดรายการ...</p>
+          <div class="flex items-center gap-2">
+            <button id="logs-prev-page" type="button" onclick="changeLogsPage(-1)" disabled class="px-3 py-2 rounded-lg bg-dark-800 text-slate-200 text-xs border border-white/5 transition enabled:hover:bg-dark-750 disabled:opacity-40 disabled:cursor-not-allowed">
+              <i class="fa-solid fa-chevron-left mr-1"></i>ก่อนหน้า
+            </button>
+            <button id="logs-next-page" type="button" onclick="changeLogsPage(1)" disabled class="px-3 py-2 rounded-lg bg-dark-800 text-slate-200 text-xs border border-white/5 transition enabled:hover:bg-dark-750 disabled:opacity-40 disabled:cursor-not-allowed">
+              ถัดไป<i class="fa-solid fa-chevron-right ml-1"></i>
+            </button>
+          </div>
+        </div>
+
       </section>
 
     </main>
@@ -632,6 +644,9 @@
   <script>
     const API_BASE = "http://127.0.0.1:9527/api";
     let isRunning = true;
+    let logsPage = 1;
+    let logsRequestId = 0;
+    const LOGS_PAGE_SIZE = 20;
 
     // Toast Notification Utility
     function showToast(msg, type = 'success') {
@@ -1057,18 +1072,31 @@
 
     // Load Audit Logs
     async function loadLogs() {
+      const requestId = ++logsRequestId;
       try {
         const filter = document.getElementById('log-filter').value;
-        const res = await fetch(`${API_BASE}/logs?limit=50&event_type=${filter}`);
+        const params = new URLSearchParams({ page: String(logsPage), page_size: String(LOGS_PAGE_SIZE) });
+        if (filter) params.set('event_type', filter);
+        const res = await fetch(`${API_BASE}/logs?${params.toString()}`);
+        if (requestId !== logsRequestId) return;
         if (res.ok) {
           const logs = await res.json() || [];
-          document.getElementById('stat-logs-count').innerText = logs.length;
+          if (requestId !== logsRequestId) return;
+          const total = Number(res.headers.get('X-Total-Count') || logs.length);
+          const totalPages = Math.max(1, Number(res.headers.get('X-Total-Pages') || 1));
+          logsPage = Number(res.headers.get('X-Page') || logsPage);
+          document.getElementById('stat-logs-count').innerText = total;
           const table = document.getElementById('logs-table');
           const dashTable = document.getElementById('dash-recent-logs');
+          document.getElementById('logs-pagination-info').innerText = total === 0
+            ? 'ไม่มีรายการบันทึก'
+            : `หน้า ${logsPage} จาก ${totalPages} · ${total.toLocaleString('th-TH')} รายการ`;
+          document.getElementById('logs-prev-page').disabled = logsPage <= 1;
+          document.getElementById('logs-next-page').disabled = logsPage >= totalPages;
           
           if (logs.length === 0) {
             table.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">ไม่มีข้อมูลบันทึกเหตุการณ์</td></tr>';
-            dashTable.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีข้อมูล</td></tr>';
+            if (logsPage === 1) dashTable.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีข้อมูล</td></tr>';
             return;
           }
 
@@ -1100,7 +1128,7 @@
             `;
           }).join('');
 
-          dashTable.innerHTML = logs.slice(0, 5).map(l => `
+          if (logsPage === 1) dashTable.innerHTML = logs.slice(0, 5).map(l => `
             <tr class="hover:bg-dark-850/50 transition">
               <td class="py-2.5 px-3 text-slate-400">${new Date(l.timestamp).toLocaleTimeString('th-TH')}</td>
               <td class="py-2.5 px-3 font-semibold text-white">${l.event_type}</td>
@@ -1116,6 +1144,16 @@
           `).join('');
         }
       } catch (e) {}
+    }
+
+    function changeLogFilter() {
+      logsPage = 1;
+      loadLogs();
+    }
+
+    function changeLogsPage(delta) {
+      logsPage = Math.max(1, logsPage + delta);
+      loadLogs();
     }
 
     // Live Clock

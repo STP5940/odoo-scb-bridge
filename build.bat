@@ -7,7 +7,7 @@ echo       Odoo SCB Bridge Build Script
 echo ========================================================
 
 echo.
-echo [0/3] Version
+echo [0/3] Build Option
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\bump-version.ps1"
 if errorlevel 1 (
     echo [!] Version selection failed. Build cancelled.

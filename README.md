@@ -44,7 +44,7 @@ odoo-scb-bridge/
 build.bat
 ```
 
-ก่อนเริ่ม Build สคริปต์จะถามว่าต้องการอัปเดต Version หรือไม่ หากเลือกอัปเดต ให้เลือกระดับ Major, Minor หรือ Patch โดยจะเพิ่มเลขระดับนั้น 1 และรีเซ็ตระดับที่ต่ำกว่าตามหลัก Semantic Versioning หรือเลือกไม่อัปเดตเพื่อใช้เลขเดิม
+ก่อนเริ่ม Build สคริปต์จะแสดงเมนูให้เลือก Build only (ค่าเริ่มต้น คงเลขเดิม), Update Version for Production หรือ Exit/Cancel หากเลือกอัปเดต จะให้เลือกระดับ Patch, Minor หรือ Major และเพิ่มเลขระดับนั้น 1 ตามหลัก Semantic Versioning
 
 ขั้นตอนการทำงานของสคริปต์:
 1. คอมไพล์ Go Microservice เป็น `dist\bridge_service.exe`

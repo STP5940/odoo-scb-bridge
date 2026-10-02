@@ -183,18 +183,23 @@ func (d *DB) internalLogAudit(log models.AuditLog) error {
 	return err
 }
 
-// GetRecentLogs retrieves audit logs with limit and optional filter
-func (d *DB) GetRecentLogs(limit int, eventType string) ([]models.AuditLog, error) {
+// GetRecentLogs retrieves a page of audit logs with an optional event filter.
+func (d *DB) GetRecentLogs(limit int, eventType string, offsets ...int) ([]models.AuditLog, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
+
+	offset := 0
+	if len(offsets) > 0 && offsets[0] > 0 {
+		offset = offsets[0]
+	}
 
 	var rows *sql.Rows
 	var err error
 
 	if eventType != "" {
-		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs WHERE event_type = ? ORDER BY id DESC LIMIT ?", eventType, limit)
+		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs WHERE event_type = ? ORDER BY id DESC LIMIT ? OFFSET ?", eventType, limit, offset)
 	} else {
-		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs ORDER BY id DESC LIMIT ?", limit)
+		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs ORDER BY id DESC LIMIT ? OFFSET ?", limit, offset)
 	}
 
 	if err != nil {
@@ -211,6 +216,21 @@ func (d *DB) GetRecentLogs(limit int, eventType string) ([]models.AuditLog, erro
 		logs = append(logs, l)
 	}
 	return logs, nil
+}
+
+// CountLogs returns the number of audit logs matching an optional event filter.
+func (d *DB) CountLogs(eventType string) (int, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	var count int
+	var err error
+	if eventType != "" {
+		err = d.conn.QueryRow("SELECT COUNT(*) FROM audit_logs WHERE event_type = ?", eventType).Scan(&count)
+	} else {
+		err = d.conn.QueryRow("SELECT COUNT(*) FROM audit_logs").Scan(&count)
+	}
+	return count, err
 }
 
 // GetInboundConfig retrieves the active inbound configuration
@@ -417,4 +437,3 @@ func (d *DB) DeleteOutboundJob(id int64) error {
 	_, err := d.conn.Exec("DELETE FROM outbound_jobs WHERE id = ?", id)
 	return err
 }
-
