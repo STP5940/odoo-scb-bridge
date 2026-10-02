@@ -88,7 +88,7 @@ window.APP_LANGUAGE_PAIRS = [
     "Outbound Schedulers"
   ],
   [
-    "บันทึกตรวจสอบและความปลอดภัย",
+    "บันทึกความปลอดภัย",
     "Audit & Security Logs"
   ],
   [
@@ -112,7 +112,7 @@ window.APP_LANGUAGE_PAIRS = [
     "SFTP Inbound Port"
   ],
   [
-    "ตั้งค่ารอบอัตโนมัติ",
+    "ตั้งรอบอัตโนมัติ",
     "Scheduled automatically"
   ],
   [
@@ -126,6 +126,10 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "รายการบันทึก",
     "records"
+  ],
+  [
+    "เก็บบันทึก Login & File Transfers",
+    "Stores login and file transfer records"
   ],
   [
     "กิจกรรมการถ่ายโอนไฟล์ล่าสุด (Recent File Transfers)",
@@ -258,6 +262,10 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "การจัดการ",
     "Actions"
+  ],
+  [
+    "จำนวนรายการต่อหน้า",
+    "Items per page"
   ],
   [
     "กำลังโหลดรายชื่อผู้ใช้...",
@@ -508,6 +516,10 @@ window.APP_LANGUAGE_PAIRS = [
     "e.g. 127.0.0.1 or sftp.scb.co.th"
   ],
   [
+    "127.0.0.1 หรือ sftp.scb.co.th",
+    "127.0.0.1 or sftp.scb.co.th"
+  ],
+  [
     "โฟลเดอร์รับเข้า: Loading...",
     "Inbound folder: Loading..."
   ],
@@ -522,6 +534,10 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "ยังไม่มีข้อมูล",
     "No data yet"
+  ],
+  [
+    "ข้อความแจ้งเตือน",
+    "Notification"
   ],
   [
     "Windows Service หยุดทำงานอยู่ จึงยังโหลดข้อมูลระบบไม่ได้",

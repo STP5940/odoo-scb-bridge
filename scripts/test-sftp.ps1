@@ -1,10 +1,14 @@
 $ErrorActionPreference = 'Stop'
-trap [System.Management.Automation.PipelineStoppedException] {
-    Write-Host "`n[CANCELLED] SFTP upload test was cancelled."
-    exit 130
+$cancelHandler = [ConsoleCancelEventHandler]{
+    param($sender, $eventArgs)
+    $eventArgs.Cancel = $true
+    [Console]::Error.WriteLine("`n[CANCELLED] SFTP upload test was cancelled.")
+    [Environment]::Exit(130)
 }
+[Console]::add_CancelKeyPress($cancelHandler)
 
-$hostName = '127.0.0.1'
+$hostName = Read-Host 'SFTP host/IP [127.0.0.1]'
+if ([string]::IsNullOrWhiteSpace($hostName)) { $hostName = '127.0.0.1' }
 
 $portText = Read-Host 'SFTP port [2222]'
 if ([string]::IsNullOrWhiteSpace($portText)) { $portText = '2222' }

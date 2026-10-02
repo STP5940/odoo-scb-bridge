@@ -7,7 +7,7 @@
 
 [Setup]
 AppName=Odoo SCB Bridge Service
-AppVersion=0.0.3
+AppVersion=0.0.4
 DefaultDirName={autopf}\OdooSCBBridge
 DefaultGroupName=Odoo SCB Bridge
 OutputDir={#OutputDir}
@@ -18,7 +18,7 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 SetupIconFile=icon\app.ico
-UninstallDisplayIcon={app}\bridge_service.exe
+UninstallDisplayIcon={app}\ServiceMonitor.exe
 CloseApplications=no
 
 [Files]
@@ -35,8 +35,8 @@ Name: "{app}\data\outbound"; Permissions: users-modify
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Icons]
-Name: "{group}\Odoo SCB Bridge Monitor"; Filename: "{app}\ServiceMonitor.exe"; IconFilename: "{app}\bridge_service.exe"
-Name: "{autodesktop}\Odoo SCB Bridge Monitor"; Filename: "{app}\ServiceMonitor.exe"; Tasks: desktopicon; IconFilename: "{app}\bridge_service.exe"
+Name: "{group}\Odoo SCB Bridge Monitor"; Filename: "{app}\ServiceMonitor.exe"; IconFilename: "{app}\ServiceMonitor.exe"
+Name: "{autodesktop}\Odoo SCB Bridge Monitor"; Filename: "{app}\ServiceMonitor.exe"; Tasks: desktopicon; IconFilename: "{app}\ServiceMonitor.exe"
 
 [Run]
 Filename: "{app}\bridge_service.exe"; Parameters: "install"; Flags: runhidden waituntilterminated
