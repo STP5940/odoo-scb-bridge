@@ -192,7 +192,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.15</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.16</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -217,7 +217,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.15</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.16</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -329,14 +329,12 @@
         <button type="button" onclick="appendPinDigit('7')" aria-label="7" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">7</button>
         <button type="button" onclick="appendPinDigit('8')" aria-label="8" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">8</button>
         <button type="button" onclick="appendPinDigit('9')" aria-label="9" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">9</button>
-        <span aria-hidden="true"></span>
+        <span class="relative block w-16 h-16">
+          <span id="pin-zero-spacer" class="block w-16 h-16" aria-hidden="true"></span>
+          <button id="pin-back-button" type="button" onclick="backToPinEntry()" aria-label="ย้อนกลับ" title="ย้อนกลับ" class="hidden pin-keypad-button absolute inset-0 w-16 h-16 rounded-full text-base"><i class="fa-solid fa-arrow-left"></i></button>
+        </span>
         <button type="button" onclick="appendPinDigit('0')" aria-label="0" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">0</button>
         <button id="pin-delete-button" type="button" onclick="deletePinDigit()" aria-label="ลบตัวเลขล่าสุด" title="ลบตัวเลขล่าสุด" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-delete-left"></i></button>
-        <div id="pin-back-row" class="hidden col-span-3 grid-cols-3 justify-items-center">
-          <span aria-hidden="true"></span>
-          <button id="pin-back-button" type="button" onclick="backToPinEntry()" aria-label="ย้อนกลับ" title="ย้อนกลับ" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-arrow-left"></i></button>
-          <span aria-hidden="true"></span>
-        </div>
       </div>
       <p id="pin-message" class="text-xs text-rose-400" role="status" aria-live="polite"></p>
       <div class="flex gap-2">
@@ -409,7 +407,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.15</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.16</span>
       </div>
     </aside>
 
@@ -1026,10 +1024,9 @@
 
     function updatePinFieldFocus() {
       const isConfirmStep = activePinField === 'pin-confirm';
-      const backRow = document.getElementById('pin-back-row');
-      backRow?.classList.toggle('hidden', !isConfirmStep);
-      backRow?.classList.toggle('grid', isConfirmStep);
       const backButton = document.getElementById('pin-back-button');
+      backButton?.classList.toggle('hidden', !isConfirmStep);
+      document.getElementById('pin-zero-spacer')?.classList.toggle('hidden', isConfirmStep);
       if (backButton) {
         const label = pinText('ย้อนกลับ', 'Back');
         backButton.title = label;
