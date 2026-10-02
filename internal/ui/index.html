@@ -161,6 +161,35 @@
     }
     .pin-keypad-button:active { transform: scale(0.96); }
     .pin-entry-active label { color: #67e8f9; }
+    .pin-input-shell { position: relative; height: 2.75rem; }
+    .pin-value-input,
+    .pin-value-input:focus {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      padding: 0 !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent;
+      caret-color: transparent;
+      background: transparent !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    .pin-dot-row {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      pointer-events: none;
+    }
+    .pin-dot { width: 0.55rem; height: 0.55rem; border-radius: 9999px; background: #424a58; transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+    .pin-dot.filled { background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.42); transform: scale(1.08); }
+    .pin-message:empty { display: none; }
+    .pin-message:not(:empty) { margin-top: 0.5rem; }
     .startup-spinner {
       width: 2rem;
       height: 2rem;
@@ -192,7 +221,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.17</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.19</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -217,7 +246,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.17</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.19</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -304,20 +333,33 @@
       </div>
       <div id="pin-current-wrap" class="hidden mb-4">
         <label id="pin-current-label" for="pin-current" class="block text-sm font-semibold text-slate-300 mb-2">PIN ปัจจุบัน</label>
-        <input id="pin-current" onclick="setActivePinField('pin-current')" oninput="handlePinFieldInput('pin-current')" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="Current PIN">
+        <div class="pin-input-shell">
+          <input id="pin-current" onclick="setActivePinField('pin-current')" oninput="handlePinFieldInput('pin-current')" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" readonly class="pin-value-input glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center" aria-label="Current PIN">
+          <div class="pin-dot-row" data-pin-dots-for="pin-current" aria-hidden="true"><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i></div>
+        </div>
       </div>
       <div id="pin-new-wrap" class="hidden mb-4">
         <label id="pin-new-label" for="pin-new" class="block text-sm font-semibold text-slate-300 mb-2">PIN 6 หลัก</label>
-        <input id="pin-new" onclick="setActivePinField('pin-new')" oninput="handlePinFieldInput('pin-new')" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="6-digit PIN">
+        <div class="pin-input-shell">
+          <input id="pin-new" onclick="setActivePinField('pin-new')" oninput="handlePinFieldInput('pin-new')" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" readonly class="pin-value-input glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center" aria-label="6-digit PIN">
+          <div class="pin-dot-row" data-pin-dots-for="pin-new" aria-hidden="true"><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i></div>
+        </div>
       </div>
       <div id="pin-confirm-wrap" class="hidden mb-4">
         <label id="pin-confirm-label" for="pin-confirm" class="block text-sm font-semibold text-slate-300 mb-2">ยืนยัน PIN</label>
-        <input id="pin-confirm" onclick="setActivePinField('pin-confirm')" oninput="handlePinFieldInput('pin-confirm')" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="Confirm PIN">
+        <div class="pin-input-shell">
+          <input id="pin-confirm" onclick="setActivePinField('pin-confirm')" oninput="handlePinFieldInput('pin-confirm')" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" pattern="[0-9]{6}" readonly class="pin-value-input glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center" aria-label="Confirm PIN">
+          <div class="pin-dot-row" data-pin-dots-for="pin-confirm" aria-hidden="true"><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i></div>
+        </div>
       </div>
       <div id="pin-unlock-wrap" class="mb-4">
         <label id="pin-unlock-label" for="pin-unlock" class="block text-sm font-semibold text-slate-300 mb-2">PIN</label>
-        <input id="pin-unlock" onclick="setActivePinField('pin-unlock')" oninput="handlePinFieldInput('pin-unlock')" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" readonly class="glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center text-white" aria-label="PIN">
+        <div class="pin-input-shell">
+          <input id="pin-unlock" onclick="setActivePinField('pin-unlock')" oninput="handlePinFieldInput('pin-unlock')" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" readonly class="pin-value-input glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center" aria-label="PIN">
+          <div class="pin-dot-row" data-pin-dots-for="pin-unlock" aria-hidden="true"><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i></div>
+        </div>
       </div>
+      <p id="pin-message" class="pin-message text-xs text-rose-400" role="status" aria-live="polite"></p>
       <p id="pin-keypad-label" class="text-center text-xs text-slate-500 mb-4">กดตัวเลขเพื่อกรอก PIN</p>
       <div class="mx-auto grid w-full max-w-[360px] grid-cols-3 justify-items-center gap-x-4 gap-y-3 mb-4" aria-label="PIN keypad">
         <button type="button" onclick="appendPinDigit('1')" aria-label="1" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">1</button>
@@ -336,7 +378,6 @@
         <button type="button" onclick="appendPinDigit('0')" aria-label="0" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">0</button>
         <button id="pin-delete-button" type="button" onclick="deletePinDigit()" aria-label="ลบตัวเลขล่าสุด" title="ลบตัวเลขล่าสุด" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-delete-left"></i></button>
       </div>
-      <p id="pin-message" class="text-xs text-rose-400" role="status" aria-live="polite"></p>
       <div class="flex gap-2">
         <button id="pin-submit" onclick="submitPinScreen()" class="flex-1 px-4 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-700">Unlock</button>
         <button id="pin-skip-button" onclick="skipPinSetup()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">ข้ามไปก่อน</button>
@@ -407,7 +448,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.17</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.19</span>
       </div>
     </aside>
 
@@ -1035,15 +1076,26 @@
       }
       ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => {
         const field = document.getElementById(id);
-        const wrapper = field?.parentElement;
+        const wrapper = field?.closest('[id$="-wrap"]');
         wrapper?.classList.toggle('hidden', id !== activePinField);
         wrapper?.classList.toggle('pin-entry-active', id === activePinField);
+      });
+    }
+
+    function renderPinDots() {
+      document.querySelectorAll('.pin-dot-row').forEach(row => {
+        const input = document.getElementById(row.dataset.pinDotsFor);
+        const count = input?.value.length || 0;
+        row.querySelectorAll('.pin-dot').forEach((dot, index) => {
+          dot.classList.toggle('filled', index < count);
+        });
       });
     }
 
     function updatePinSubmitState() {
       const submit = document.getElementById('pin-submit');
       if (!submit) return;
+      renderPinDots();
       const value = id => document.getElementById(id)?.value || '';
       const isSetup = pinScreenMode === 'setup';
       const isChange = pinScreenMode === 'change';
