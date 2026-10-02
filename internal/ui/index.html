@@ -71,6 +71,43 @@
     ::-webkit-scrollbar-thumb { background: #2c3242; border-radius: 9999px; border: 2px solid #12151b; }
     ::-webkit-scrollbar-thumb:hover { background: #47516b; }
 
+    html[data-theme="light"],
+    html[data-theme="light"] body { background-color: #f3f6fa; color: #263244; }
+    html[data-theme="light"] body.bg-dark-950 { background-color: #f3f6fa !important; }
+    html[data-theme="light"] .titlebar-drag { background-color: #ffffff !important; }
+    html[data-theme="light"] [class*="bg-dark-950"] { background-color: #f3f6fa !important; }
+    html[data-theme="light"] [class*="bg-dark-900"] { background-color: #ffffff !important; }
+    html[data-theme="light"] [class*="bg-dark-850"] { background-color: #f8fafc !important; }
+    html[data-theme="light"] [class*="bg-dark-800"] { background-color: #eef2f7 !important; }
+    html[data-theme="light"] [class*="bg-dark-750"] { background-color: #e4eaf1 !important; }
+    html[data-theme="light"] [class*="bg-dark-700"] { background-color: #d8e0ea !important; }
+    html[data-theme="light"] [class*="text-white"],
+    html[data-theme="light"] [class~="text-slate-200"] { color: #172033 !important; }
+    html[data-theme="light"] [class~="text-slate-300"] { color: #344054 !important; }
+    html[data-theme="light"] [class~="text-slate-400"] { color: #475467 !important; }
+    html[data-theme="light"] [class~="text-slate-500"] { color: #667085 !important; }
+    html[data-theme="light"] [class~="text-brand-400"],
+    html[data-theme="light"] [class~="text-emerald-400"] { color: #15803d !important; }
+    html[data-theme="light"] [class~="text-rose-400"] { color: #be123c !important; }
+    html[data-theme="light"] [class~="text-accent-purple"] { color: #7e22ce !important; }
+    html[data-theme="light"] [class~="text-accent-cyan"] { color: #0e7490 !important; }
+    html[data-theme="light"] [class~="text-accent-amber"] { color: #a16207 !important; }
+    html[data-theme="light"] [class*="border-dark-800"],
+    html[data-theme="light"] [class*="border-white"] { border-color: #dce3eb !important; }
+    html[data-theme="light"] .nav-active { background-color: #e9f8ef !important; color: #15803d !important; border-color: #86d5a5 !important; }
+    html[data-theme="light"] .nav-active i { color: #15803d !important; }
+    html[data-theme="light"] .glass-card { background: rgba(255, 255, 255, 0.94); border-color: #e1e7ef; }
+    html[data-theme="light"] .glass-card:hover { border-color: #cbd5e1; }
+    html[data-theme="light"] .glass-input { background: #ffffff; border-color: #d0d7e2; color: #172033; }
+    html[data-theme="light"] .glass-input:focus { background: #ffffff; }
+    html[data-theme="light"] .glass-input::placeholder { color: #7b8798; }
+    html[data-theme="light"] select.glass-input option { background: #ffffff; color: #172033; }
+    html[data-theme="light"] [class*="hover:bg-dark-850"]:hover { background-color: #eef2f7 !important; }
+    html[data-theme="light"] thead { background-color: #edf1f6 !important; }
+    html[data-theme="light"] ::-webkit-scrollbar-track { background: #eef2f7; }
+    html[data-theme="light"] ::-webkit-scrollbar-thumb { background: #c4ceda; border-color: #eef2f7; }
+    html[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #9aa8b8; }
+
     #main-scroll-area {
       scrollbar-gutter: stable;
       scroll-behavior: smooth;
@@ -120,7 +157,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.4</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.5</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -145,7 +182,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.4</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.5</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -158,6 +195,9 @@
         <option value="th">ไทย</option>
         <option value="en">English</option>
       </select>
+      <button id="theme-toggle" onclick="toggleTheme()" title="Switch to light theme" aria-label="Switch to light theme" class="w-9 h-8 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition" type="button">
+        <i id="theme-icon" class="fa-solid fa-sun" aria-hidden="true"></i>
+      </button>
       <!-- Service Status Badge -->
       <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30 transition">
         <span class="relative flex h-2 w-2">
@@ -232,7 +272,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.0.4</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.0.5</span>
       </div>
     </aside>
 
@@ -664,6 +704,7 @@
   <script>
     const API_BASE = "http://127.0.0.1:9527/api";
     let currentLanguage = 'th';
+    let currentTheme = 'dark';
     let languageLookup = new Map();
     let translatingPage = false;
     let cachedUsers = [];
@@ -732,6 +773,7 @@
       languageLookup = languageMap(currentLanguage);
       document.documentElement.lang = currentLanguage;
       try { localStorage.setItem('odoo-scb-bridge-language', currentLanguage); } catch (_) {}
+      applyTheme(currentTheme, false);
       const selector = document.getElementById('language-select');
       if (selector) selector.value = currentLanguage;
       translateSubtree(document.body);
@@ -740,6 +782,34 @@
 
     function getLocale() {
       return currentLanguage === 'en' ? 'en-US' : 'th-TH';
+    }
+
+    function applyTheme(theme, persist = true) {
+      currentTheme = theme === 'light' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = currentTheme;
+      if (persist) {
+        try { localStorage.setItem('odoo-scb-bridge-theme', currentTheme); } catch (_) {}
+      }
+      const button = document.getElementById('theme-toggle');
+      const icon = document.getElementById('theme-icon');
+      const label = currentTheme === 'dark'
+        ? (currentLanguage === 'en' ? 'Switch to light theme' : 'เปลี่ยนเป็นธีมสว่าง')
+        : (currentLanguage === 'en' ? 'Switch to dark theme' : 'เปลี่ยนเป็นธีมมืด');
+      if (button) {
+        button.title = label;
+        button.setAttribute('aria-label', label);
+      }
+      if (icon) icon.className = `fa-solid ${currentTheme === 'dark' ? 'fa-sun' : 'fa-moon'}`;
+    }
+
+    function toggleTheme() {
+      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    function initializeTheme() {
+      let savedTheme = 'dark';
+      try { savedTheme = localStorage.getItem('odoo-scb-bridge-theme') || 'dark'; } catch (_) {}
+      applyTheme(savedTheme, false);
     }
 
     function initializeLanguage() {
@@ -1306,6 +1376,7 @@
 
     // Initial Load & Auto Poll Status
     initializeLanguage();
+    initializeTheme();
     switchTab('dashboard');
     refreshData();
     setInterval(loadStatus, 5000);

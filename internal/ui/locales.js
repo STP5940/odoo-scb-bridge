@@ -8,6 +8,14 @@ window.APP_LANGUAGE_PAIRS = [
     "Language"
   ],
   [
+    "เปลี่ยนเป็นธีมสว่าง",
+    "Switch to light theme"
+  ],
+  [
+    "เปลี่ยนเป็นธีมมืด",
+    "Switch to dark theme"
+  ],
+  [
     "บริการกำลังทำงาน",
     "Service Active"
   ],
