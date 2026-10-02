@@ -1,8 +1,18 @@
 @echo off
+cd /d "%~dp0"
+chcp 65001 >nul
 
 echo ========================================================
 echo       Odoo SCB Bridge Build Script
 echo ========================================================
+
+echo.
+echo [0/3] Version
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\bump-version.ps1"
+if errorlevel 1 (
+    echo [!] Version selection failed. Build cancelled.
+    exit /b 1
+)
 
 if not exist dist mkdir dist
 if not exist output mkdir output

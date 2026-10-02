@@ -71,9 +71,10 @@
     ::-webkit-scrollbar-thumb { background: #2c3242; border-radius: 9999px; border: 2px solid #12151b; }
     ::-webkit-scrollbar-thumb:hover { background: #47516b; }
 
-    main {
+    #main-scroll-area {
       scrollbar-gutter: stable;
       scroll-behavior: smooth;
+      overscroll-behavior: contain;
     }
 
     /* Frosted Glass Effect */
@@ -113,7 +114,7 @@
 <body class="bg-dark-950 text-slate-200 h-screen flex flex-col select-none overflow-hidden antialiased">
 
   <!-- ================= TOP WINDOW BAR (Frameless Window Drag Area) ================= -->
-  <div class="titlebar-drag bg-dark-950/90 border-b border-dark-800/80 h-9 flex items-center justify-between px-3 text-xs select-none z-50">
+  <div class="titlebar-drag bg-dark-950/90 border-b border-dark-800/80 h-9 shrink-0 flex items-center justify-between px-3 text-xs select-none z-50">
     <div class="flex items-center space-x-2.5">
       <div class="w-5 h-5 rounded-md bg-gradient-to-tr from-brand-500 to-accent-cyan flex items-center justify-center shadow-sm">
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
@@ -175,10 +176,10 @@
   </header>
 
   <!-- ================= WORKSPACE (SIDEBAR + FULL-WIDTH SCROLLABLE CONTENT) ================= -->
-  <div class="flex flex-1 min-h-0 h-[calc(100vh-92px)] overflow-hidden">
+  <div class="flex flex-1 min-h-0 overflow-hidden">
 
     <!-- ================= LEFT SIDEBAR (Single Consolidated Navigation) ================= -->
-    <aside class="w-60 bg-dark-900/80 border-r border-dark-800/80 flex flex-col justify-between py-4 select-none shrink-0 h-full">
+    <aside class="w-60 bg-dark-900/80 border-r border-dark-800/80 flex flex-col justify-between py-4 select-none shrink-0 h-full min-h-0 overflow-y-auto">
       <div class="px-3 space-y-4">
         <!-- Section: MODULE NAVIGATION -->
         <div>
@@ -218,21 +219,6 @@
           </div>
         </div>
 
-        <!-- System Status Summary Pill in Sidebar -->
-        <div class="p-3 rounded-xl bg-dark-950/70 border border-white/5 space-y-2 text-xs">
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="text-slate-400">Microservice</span>
-            <span id="sidebar-status-badge" class="font-mono text-[10px] text-brand-400 font-bold">ONLINE</span>
-          </div>
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="text-slate-400">Port SFTP</span>
-            <span class="text-slate-200 font-mono">2222</span>
-          </div>
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="text-slate-400">REST API</span>
-            <span class="text-slate-200 font-mono">9527</span>
-          </div>
-        </div>
       </div>
 
       <!-- Sidebar Footer Badge -->
@@ -246,7 +232,7 @@
     </aside>
 
     <!-- ================= CENTER MAIN CONTENT (FULL-WIDTH SCROLLABLE AREA) ================= -->
-    <main id="main-scroll-area" class="flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden p-6 space-y-6 scroll-smooth pb-28">
+    <main id="main-scroll-area" class="flex-1 min-w-0 h-full min-h-0 overflow-y-auto overflow-x-hidden p-6 space-y-6 scroll-smooth pb-28">
 
       <!-- ================= TAB 1: DASHBOARD ================= -->
       <section id="tab-dashboard" class="space-y-6">
@@ -275,7 +261,7 @@
               <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-brand-400 flex items-center justify-center text-lg font-bold">
                 <i class="fa-solid fa-network-wired"></i>
               </div>
-              <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20">LISTENING</span>
+              <span id="sftp-listener-status" class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20">CHECKING</span>
             </div>
             <div class="mt-4">
               <p class="text-xs font-medium text-slate-400">SFTP Inbound Port</p>
@@ -331,24 +317,6 @@
             </div>
           </div>
 
-        </div>
-
-        <!-- System Quick Alert Badges Banner (Styled after preview notification pills) -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-brand-400">
-            <div class="flex items-center space-x-2.5">
-              <i class="fa-solid fa-circle-check text-sm"></i>
-              <span class="font-medium">Odoo SCB Bridge Core Service ทำงานปกติบน Windows Service (PID Running)</span>
-            </div>
-            <span class="text-[10px] font-mono text-emerald-300">Ready for data transfer</span>
-          </div>
-          <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-accent-cyan">
-            <div class="flex items-center space-x-2.5">
-              <i class="fa-solid fa-circle-info text-sm"></i>
-              <span class="font-medium">พอร์ต 2222 ได้รับการเปิดผ่าน Windows Firewall Rule อัตโนมัติ</span>
-            </div>
-            <span class="text-[10px] font-mono text-cyan-300">Firewall OK</span>
-          </div>
         </div>
 
         <!-- Recent Transfer Activity Table -->
@@ -452,7 +420,12 @@
                 <input type="text" id="user-username" placeholder="Username (เช่น scb_gateway)" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
               </div>
               <div>
-                <input type="password" id="user-password" placeholder="Password (รหัสผ่าน)" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+                <div class="relative">
+                  <input type="password" id="user-password" placeholder="Password (รหัสผ่าน)" class="w-full glass-input rounded-xl p-2.5 pr-10 text-xs text-white">
+                  <button type="button" id="toggle-user-password" onclick="toggleUserPassword()" aria-label="แสดงรหัสผ่าน" aria-pressed="false" title="แสดงรหัสผ่าน" class="absolute inset-y-0 right-0 px-3 text-slate-400 hover:text-white transition">
+                    <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
               <div class="flex items-center space-x-2">
                 <button onclick="addUser()" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-brand-500/20">
@@ -690,18 +663,25 @@
     // Consolidated Sidebar Navigation Switcher
     function switchTab(tab) {
       const tabs = ['dashboard', 'inbound', 'outbound', 'logs'];
+      if (!tabs.includes(tab)) return;
       tabs.forEach(t => {
         const sec = document.getElementById(`tab-${t}`);
         if (sec) sec.classList.add('hidden');
         const nav = document.getElementById(`nav-${t}`);
-        if (nav) nav.classList.remove('nav-active');
+        if (nav) {
+          nav.classList.remove('nav-active');
+          nav.setAttribute('aria-current', 'false');
+        }
       });
 
       const targetSec = document.getElementById(`tab-${tab}`);
       if (targetSec) targetSec.classList.remove('hidden');
 
       const targetNav = document.getElementById(`nav-${tab}`);
-      if (targetNav) targetNav.classList.add('nav-active');
+      if (targetNav) {
+        targetNav.classList.add('nav-active');
+        targetNav.setAttribute('aria-current', 'page');
+      }
 
       // Scroll to top of main container when tab switches
       const scrollArea = document.getElementById('main-scroll-area');
@@ -710,28 +690,32 @@
 
     // Refresh all data
     async function refreshData() {
-      await Promise.all([loadStatus(), loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+      await loadStatus();
+      if (!isRunning) {
+        showToast('Windows Service หยุดทำงานอยู่ จึงยังโหลดข้อมูลระบบไม่ได้', 'info');
+        return;
+      }
+      await Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
       showToast('รีเฟรชข้อมูลล่าสุดสำเร็จ', 'info');
     }
 
-    // Toggle Windows Service (Start / Stop)
+    // Control the actual Windows Service in Electron. Browser preview retains the API fallback.
     async function toggleService() {
       const btn = document.getElementById('btn-toggle-service');
       btn.disabled = true;
       try {
-        if (isRunning) {
-          const res = await fetch(`${API_BASE}/service/stop`, { method: 'POST' });
-          if (res.ok) {
-            showToast('หยุดการทำงานของ Bridge Service เรียบร้อยแล้ว', 'info');
-          }
+        const action = isRunning ? 'stop' : 'start';
+        if (window.electronAPI?.controlService) {
+          const result = await window.electronAPI.controlService(action);
+          isRunning = result.running;
+          showToast(action === 'stop' ? 'หยุด Windows Service เรียบร้อยแล้ว' : 'เริ่ม Windows Service เรียบร้อยแล้ว', action === 'stop' ? 'info' : 'success');
         } else {
-          const res = await fetch(`${API_BASE}/service/start`, { method: 'POST' });
-          if (res.ok) {
-            showToast('เริ่มการทำงานของ Bridge Service เรียบร้อยแล้ว', 'success');
-          }
+          const res = await fetch(`${API_BASE}/service/${action}`, { method: 'POST' });
+          if (!res.ok) throw new Error('Service command failed');
+          showToast(action === 'stop' ? 'หยุดการทำงานของ Bridge Service เรียบร้อยแล้ว' : 'เริ่มการทำงานของ Bridge Service เรียบร้อยแล้ว', action === 'stop' ? 'info' : 'success');
         }
       } catch (e) {
-        showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ Service', 'error');
+        showToast(e.message || 'เกิดข้อผิดพลาดในการควบคุม Service', 'error');
       } finally {
         await loadStatus();
         btn.disabled = false;
@@ -743,43 +727,21 @@
       const pill = document.getElementById('service-status-pill');
       const text = document.getElementById('service-status-text');
       const btn = document.getElementById('btn-toggle-service');
-      const sidebarBadge = document.getElementById('sidebar-status-badge');
-
       try {
-        const res = await fetch(`${API_BASE}/status`);
-        if (res.ok) {
-          const data = await res.json();
-          isRunning = (data.running === true || data.status === "RUNNING");
-
-          if (isRunning) {
-            pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-brand-400";
-            pill.innerHTML = `
-              <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span class="text-xs font-semibold text-emerald-400">Service Active</span>
-            `;
-            btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
-            btn.innerHTML = '<i class="fa-solid fa-power-off text-[11px]"></i><span>Stop Service</span>';
-            if (sidebarBadge) {
-              sidebarBadge.innerText = "ONLINE";
-              sidebarBadge.className = "font-mono text-[10px] text-brand-400 font-bold";
-            }
-          } else {
-            pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400";
-            pill.innerHTML = `
-              <span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              <span class="text-xs font-semibold text-rose-400">Service Stopped</span>
-            `;
-            btn.className = "px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-brand-400 border border-emerald-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
-            btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
-            if (sidebarBadge) {
-              sidebarBadge.innerText = "STOPPED";
-              sidebarBadge.className = "font-mono text-[10px] text-rose-400 font-bold";
-            }
-          }
+        if (window.electronAPI?.getServiceStatus) {
+          const data = await window.electronAPI.getServiceStatus();
+          if (!data.available) throw new Error(data.error || 'Windows Service ไม่พร้อมใช้งาน');
+          isRunning = data.running;
+          setServiceStatus(pill, btn, isRunning);
+          await loadSftpListenerStatus(isRunning);
+          return;
         }
+        const res = await fetch(`${API_BASE}/status`);
+        if (!res.ok) throw new Error('Status API unavailable');
+        const data = await res.json();
+        isRunning = (data.running === true || data.status === "RUNNING");
+        setServiceStatus(pill, btn, isRunning);
+        setSftpListenerStatus(data.sftp_running === true);
       } catch (e) {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
         pill.innerHTML = `
@@ -788,11 +750,52 @@
         `;
         btn.className = "px-3.5 py-1.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95";
         btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
-        if (sidebarBadge) {
-          sidebarBadge.innerText = "OFFLINE";
-          sidebarBadge.className = "font-mono text-[10px] text-slate-500 font-bold";
-        }
         isRunning = false;
+        setSftpListenerStatus(false);
+      }
+    }
+
+    async function loadSftpListenerStatus(serviceRunning) {
+      if (!serviceRunning) {
+        setSftpListenerStatus(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/status`);
+        if (!res.ok) throw new Error('Status API unavailable');
+        const data = await res.json();
+        setSftpListenerStatus(data.sftp_running === true);
+      } catch (_) {
+        setSftpListenerStatus(null);
+      }
+    }
+
+    function setSftpListenerStatus(running) {
+      const badge = document.getElementById('sftp-listener-status');
+      if (!badge) return;
+      if (running === true) {
+        badge.innerText = 'LISTENING';
+        badge.className = 'text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20';
+      } else if (running === false) {
+        badge.innerText = 'STOPPED';
+        badge.className = 'text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20';
+      } else {
+        badge.innerText = 'UNKNOWN';
+        badge.className = 'text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20';
+      }
+    }
+
+    function setServiceStatus(pill, btn, running) {
+      if (running) {
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-brand-400";
+        pill.innerHTML = `<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="text-xs font-semibold text-emerald-400">Service Active</span>`;
+        btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
+        btn.innerHTML = '<i class="fa-solid fa-power-off text-[11px]"></i><span>Stop Service</span>';
+      } else {
+        pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400";
+        pill.innerHTML = `<span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span><span class="text-xs font-semibold text-rose-400">Service Stopped</span>`;
+        btn.className = "px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-brand-400 border border-emerald-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
+        btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
       }
     }
 
@@ -913,6 +916,7 @@
       document.getElementById('user-form-title').innerText = `แก้ไขผู้ใช้: ${username}`;
       document.getElementById('user-username').value = username;
       document.getElementById('user-password').value = '';
+      setUserPasswordVisibility(false);
       document.getElementById('user-password').focus();
       document.getElementById('user-password').placeholder = 'กรอกรหัสผ่านใหม่';
       document.getElementById('btn-user-submit-text').innerText = 'อัปเดตรหัสผ่าน';
@@ -924,8 +928,24 @@
       document.getElementById('user-username').value = '';
       document.getElementById('user-password').value = '';
       document.getElementById('user-password').placeholder = 'Password (รหัสผ่าน)';
+      setUserPasswordVisibility(false);
       document.getElementById('btn-user-submit-text').innerText = 'บันทึกผู้ใช้';
       document.getElementById('btn-cancel-user-edit').classList.add('hidden');
+    }
+
+    function toggleUserPassword() {
+      const passwordInput = document.getElementById('user-password');
+      setUserPasswordVisibility(passwordInput.type === 'password');
+    }
+
+    function setUserPasswordVisibility(visible) {
+      const passwordInput = document.getElementById('user-password');
+      const toggleButton = document.getElementById('toggle-user-password');
+      passwordInput.type = visible ? 'text' : 'password';
+      toggleButton.setAttribute('aria-pressed', String(visible));
+      toggleButton.setAttribute('aria-label', visible ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน');
+      toggleButton.title = visible ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน';
+      toggleButton.innerHTML = `<i class="${visible ? 'fa-solid fa-eye-slash' : 'fa-regular fa-eye'}" aria-hidden="true"></i>`;
     }
 
     async function deleteUser(id, username) {

@@ -44,6 +44,8 @@ odoo-scb-bridge/
 build.bat
 ```
 
+ก่อนเริ่ม Build สคริปต์จะถามว่าต้องการอัปเดต Version หรือไม่ หากเลือกอัปเดต ให้เลือกระดับ Major, Minor หรือ Patch โดยจะเพิ่มเลขระดับนั้น 1 และรีเซ็ตระดับที่ต่ำกว่าตามหลัก Semantic Versioning หรือเลือกไม่อัปเดตเพื่อใช้เลขเดิม
+
 ขั้นตอนการทำงานของสคริปต์:
 1. คอมไพล์ Go Microservice เป็น `dist\bridge_service.exe`
 2. คอมไพล์และแพ็กเกจ Electron Desktop App เป็น `dist\ServiceMonitor.exe` (รวมทั้ง `dist_electron\win-unpacked`)
