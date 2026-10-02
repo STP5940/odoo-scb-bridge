@@ -153,6 +153,11 @@
 
     <!-- Header Right Controls & Quick Actions -->
     <div class="flex items-center space-x-3">
+      <label for="language-select" class="sr-only">ภาษา / Language</label>
+      <select id="language-select" onchange="setLanguage(this.value)" aria-label="ภาษา / Language" class="glass-input rounded-lg px-2 py-1.5 text-xs text-white">
+        <option value="th">ไทย</option>
+        <option value="en">English</option>
+      </select>
       <!-- Service Status Badge -->
       <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30 transition">
         <span class="relative flex h-2 w-2">
@@ -404,7 +409,7 @@
               </div>
               <div>
                 <h3 class="font-semibold text-white text-sm">จัดการผู้ใช้งาน SFTP (Accounts Management)</h3>
-                <p class="text-xs text-slate-400">สร้างบัญชีผู้ใช้สำหรับเชื่อมต่อ SFTP เพื่อรับไฟล์ (บันทึกลง SQLite ทันที)</p>
+                <p class="text-xs text-slate-400">สร้างบัญชี กำหนดสถานะ Active/Inactive และจัดการสิทธิ์เข้าใช้งาน SFTP</p>
               </div>
             </div>
           </div>
@@ -415,7 +420,7 @@
               <i class="fa-solid fa-user-plus text-brand-400 text-[11px]"></i>
               <span id="user-form-title">เพิ่มผู้ใช้งานใหม่</span>
             </span>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
                 <input type="text" id="user-username" placeholder="Username (เช่น scb_gateway)" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
               </div>
@@ -426,6 +431,13 @@
                     <i class="fa-regular fa-eye" aria-hidden="true"></i>
                   </button>
                 </div>
+              </div>
+              <div>
+                <label for="user-enabled" class="sr-only">สถานะบัญชี</label>
+                <select id="user-enabled" class="w-full glass-input rounded-xl p-2.5 text-xs text-white" aria-label="สถานะบัญชี">
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
               </div>
               <div class="flex items-center space-x-2">
                 <button onclick="addUser()" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-brand-500/20">
@@ -617,6 +629,13 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
           <p id="logs-pagination-info" class="text-xs text-slate-400" aria-live="polite">กำลังโหลดรายการ...</p>
           <div class="flex items-center gap-2">
+            <label for="logs-page-size" class="text-xs text-slate-400">แสดง</label>
+            <select id="logs-page-size" onchange="changeLogsPageSize()" class="glass-input rounded-lg px-2.5 py-2 text-xs text-white" aria-label="จำนวนรายการต่อหน้า">
+              <option value="10" selected>10 รายการ</option>
+              <option value="25">25 รายการ</option>
+              <option value="50">50 รายการ</option>
+              <option value="100">100 รายการ</option>
+            </select>
             <button id="logs-prev-page" type="button" onclick="changeLogsPage(-1)" disabled class="px-3 py-2 rounded-lg bg-dark-800 text-slate-200 text-xs border border-white/5 transition enabled:hover:bg-dark-750 disabled:opacity-40 disabled:cursor-not-allowed">
               <i class="fa-solid fa-chevron-left mr-1"></i>ก่อนหน้า
             </button>
@@ -643,10 +662,142 @@
   <!-- ================= SCRIPTS & FRONTEND LOGIC ================= -->
   <script>
     const API_BASE = "http://127.0.0.1:9527/api";
+    const LANGUAGE_PAIRS = [
+      ['Service Active', 'บริการกำลังทำงาน'], ['Service Stopped', 'บริการหยุดทำงาน'], ['Stop Service', 'หยุดบริการ'], ['Start Service', 'เริ่มบริการ'],
+      ['Service Offline', 'บริการออฟไลน์'], ['LISTENING', 'กำลังรับการเชื่อมต่อ'], ['STOPPED', 'หยุดแล้ว'], ['UNKNOWN', 'ไม่ทราบสถานะ'], ['CHECKING', 'กำลังตรวจสอบ'], ['● ACTIVE', '● ใช้งาน'], ['○ DISABLED', '○ ปิดใช้งาน'], ['SUCCESS', 'สำเร็จ'], ['WARNING', 'คำเตือน'], ['FAILED', 'ล้มเหลว'],
+      ['NAVIGATION', 'เมนูนำทาง'], ['4 Modules', '4 โมดูล'], ['Dashboard Overview', 'ภาพรวมระบบ'], ['Inbound SFTP Host', 'เซิร์ฟเวอร์ SFTP ขาเข้า'], ['Outbound Schedulers', 'ตารางเวลาส่งออก'], ['Audit & Security Logs', 'บันทึกตรวจสอบและความปลอดภัย'],
+      ['Automated Financial SFTP/FTPS Gateway & Microservice', 'เกตเวย์ SFTP/FTPS และไมโครเซอร์วิสสำหรับงานการเงิน'], ['Go Microservice', 'ไมโครเซอร์วิส Go'],
+      ['System Overview & Metric Cards', 'ภาพรวมระบบและการ์ดสถิติ'], ['ภาพรวมระบบ การเชื่อมต่อ และสถิติการรับ-ส่งข้อมูลล่าสุด', 'System connectivity and recent transfer metrics'],
+      ['SFTP Inbound Port', 'พอร์ต SFTP ขาเข้า'], ['ตั้งค่ารอบอัตโนมัติ', 'Scheduled automatically'], ['Active Outbound Jobs', 'งานส่งออกที่เปิดใช้งาน'], ['Total Audit Logs', 'บันทึกตรวจสอบทั้งหมด'], ['รายการบันทึก', 'records'],
+      ['กิจกรรมการถ่ายโอนไฟล์ล่าสุด (Recent File Transfers)', 'Recent File Transfers'], ['รายงาน 5 รายการล่าสุดที่ถูกบันทึกลงในระบบ', 'The 5 most recent activities recorded in the system'], ['ดูประวัติทั้งหมด', 'View all history'],
+      ['วัน/เวลา', 'Date / Time'], ['ประเภทกิจกรรม', 'Activity Type'], ['ประเภทเหตุการณ์', 'Event Type'], ['โปรโตคอล', 'Protocol'], ['ชื่อไฟล์', 'File Name'], ['ขนาด', 'Size'], ['สถานะ', 'Status'],
+      ['กำลังโหลดข้อมูลล่าสุด...', 'Loading recent data...'], ['ตั้งค่า SFTP Server ขาเข้า & จัดการผู้ใช้', 'Inbound SFTP Server & User Management'], ['กำหนดพอร์ต โฟลเดอร์จัดเก็บ และจัดการบัญชีผู้ใช้งานสำหรับธนาคาร SCB หรือระบบภายนอก', 'Configure the port, storage folders, and accounts for SCB or external systems'],
+      ['Server Listener Settings', 'ตั้งค่าเซิร์ฟเวอร์รับการเชื่อมต่อ'], ['พอร์ต SFTP สำหรับรับเข้า (Inbound Port)', 'SFTP inbound port'], ['โปรโตคอลการทำงาน', 'Protocol'], ['โฟลเดอร์ปลายทางสำหรับจัดเก็บไฟล์ (Target Destination)', 'Target folder for received files'], ['โฟลเดอร์ชั่วคราวขณะอัปโหลด (Temp Upload Folder)', 'Temporary upload folder'], ['บันทึกการตั้งค่าขาเข้า', 'Save inbound settings'],
+      ['จัดการผู้ใช้งาน SFTP (Accounts Management)', 'SFTP Account Management'], ['สร้างบัญชี กำหนดสถานะ Active/Inactive และจัดการสิทธิ์เข้าใช้งาน SFTP', 'Create accounts, set Active/Inactive status, and manage SFTP access'], ['เพิ่มผู้ใช้งานใหม่', 'Add a new user'], ['สถานะบัญชี', 'Account status'], ['Active', 'ใช้งาน'], ['Inactive', 'ปิดใช้งาน'], ['บันทึกผู้ใช้', 'Save user'], ['บันทึกการเปลี่ยนแปลง', 'Save changes'], ['ยกเลิก', 'Cancel'], ['ID', 'ID'], ['Username', 'ชื่อผู้ใช้'], ['สิทธิ์ / Root Path', 'Access / Root Path'], ['วันที่สร้าง', 'Created'], ['การจัดการ', 'Actions'], ['กำลังโหลดรายชื่อผู้ใช้...', 'Loading users...'], ['ยังไม่มีผู้ใช้งาน SFTP บันทึกไว้', 'No SFTP users have been added'], ['แก้ไข', 'Edit'], ['ลบ', 'Delete'],
+      ['รอบงานส่งออกไฟล์ (Outbound Push Jobs)', 'Outbound Push Jobs'], ['ระบบ Cron Job อัตโนมัติสำหรับดึงไฟล์ในเครื่องส่งไปยังธนาคาร SCB หรือ SFTP ปลายทาง', 'Automated cron jobs to send local files to SCB or a remote SFTP server'], ['สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)', 'Create / Edit Scheduled Transfers'], ['ชื่องาน (Job Name)', 'Job Name'], ['รอบเวลา Cron (Cron Expression)', 'Cron Schedule (Cron Expression)'], ['โฟลเดอร์ต้นทางที่เก็บไฟล์ (Source Folder)', 'Source Folder'], ['รูปแบบไฟล์ (Pattern Matching)', 'File Pattern'], ['โปรโตคอลปลายทาง', 'Destination Protocol'], ['โฟลเดอร์ปลายทาง (Remote Path)', 'Remote Path'], ['บันทึกงานส่งออก (Save Job)', 'Save Outbound Job'], ['รายการงานส่งออกไฟล์ทั้งหมด (Registered Jobs)', 'All Registered Outbound Jobs'], ['ควบคุมด้วย Go Cron Engine', 'Managed by Go Cron Engine'], ['ชื่องาน', 'Job Name'], ['รอบเวลา Cron', 'Cron Schedule'], ['โฟลเดอร์ต้นทาง', 'Source Folder'], ['ปลายทาง Host', 'Destination Host'], ['สถานะล่าสุด', 'Latest Status'], ['กำลังโหลดรายการงาน...', 'Loading jobs...'], ['ยังไม่มีรอบงานส่งออกไฟล์ (คลิกสร้างงานด้านบน)', 'No outbound jobs yet (create one above)'],
+      ['บันทึกเหตุการณ์และความปลอดภัย (Audit Trail Logs)', 'Audit Trail & Security Logs'], ['บันทึกประวัติการเข้าใช้งาน การรับและส่งไฟล์ พร้อมค่าแฮช SHA-256 ในฐานข้อมูล SQLite', 'Access and file transfer history with SHA-256 hashes, stored in SQLite'], ['ทั้งหมด (All Events)', 'All Events'], ['เฉพาะการล็อกอิน (LOGIN)', 'Logins (LOGIN)'], ['การรับเข้าไฟล์ (INBOUND)', 'Inbound Files'], ['การส่งออกไฟล์ (OUTBOUND)', 'Outbound Files'], ['การจัดการผู้ใช้ (USER_MGMT)', 'User Management'], ['รีเฟรช Log', 'Refresh Logs'], ['ผู้ใช้ / IP', 'User / IP'], ['ไฟล์ / รายละเอียด', 'File / Details'], ['SHA-256 Hash', 'SHA-256 Hash'], ['กำลังโหลด Audit Logs จาก SQLite...', 'Loading audit logs from SQLite...'], ['กำลังโหลดรายการ...', 'Loading records...'], ['แสดง', 'Show'], ['10 รายการ', '10 per page'], ['25 รายการ', '25 per page'], ['50 รายการ', '50 per page'], ['100 รายการ', '100 per page'], ['ก่อนหน้า', 'Previous'], ['ถัดไป', 'Next'],
+      ['ย่อหน้าต่าง', 'Minimize'], ['ขยายเต็มจอ', 'Maximize'], ['ปิดโปรแกรม', 'Close application'], ['รีเฟรชข้อมูลล่าสุด', 'Refresh data'], ['แสดงรหัสผ่าน', 'Show password'], ['ซ่อนรหัสผ่าน', 'Hide password'], ['Username (เช่น scb_gateway)', 'Username (e.g. scb_gateway)'], ['Password (รหัสผ่าน)', 'Password'], ['กรอกรหัสผ่านใหม่', 'Enter a new password'], ['เช่น ส่งรายงาน SCB ประจำวัน', 'e.g. Daily SCB report'], ['*/5 * * * * * (ทุก 5 วินาที)', '*/5 * * * * * (every 5 seconds)'], ['*.* หรือ *.txt', '*.* or *.txt'], ['เช่น 127.0.0.1 หรือ sftp.scb.co.th', 'e.g. 127.0.0.1 or sftp.scb.co.th'], ['โฟลเดอร์รับเข้า: Loading...', 'Inbound folder: Loading...'], ['ไม่มีรายการบันทึก', 'No records'], ['ไม่มีข้อมูลบันทึกเหตุการณ์', 'No audit events found'], ['ยังไม่มีข้อมูล', 'No data yet']
+    ];
+    let currentLanguage = 'th';
+    let languageLookup = new Map();
+    let translatingPage = false;
+    let cachedUsers = [];
+    let editingUser = false;
     let isRunning = true;
     let logsPage = 1;
     let logsRequestId = 0;
-    const LOGS_PAGE_SIZE = 20;
+    let logsPageSize = 10;
+
+    function languageMap(language) {
+      const map = new Map();
+      LANGUAGE_PAIRS.forEach(([thai, english]) => {
+        const localized = language === 'en' ? english : thai;
+        map.set(thai, localized);
+        map.set(english, localized);
+      });
+      return map;
+    }
+
+    function translateValue(value) {
+      const trimmed = value.trim();
+      let translated = languageLookup.get(trimmed);
+      if (translated === undefined && /^โฟลเดอร์รับเข้า: /.test(trimmed)) {
+        translated = (currentLanguage === 'en' ? 'Inbound folder: ' : 'โฟลเดอร์รับเข้า: ') + trimmed.slice('โฟลเดอร์รับเข้า: '.length);
+      } else if (translated === undefined && /^แก้ไขผู้ใช้: /.test(trimmed)) {
+        translated = (currentLanguage === 'en' ? 'Edit user: ' : 'แก้ไขผู้ใช้: ') + trimmed.slice('แก้ไขผู้ใช้: '.length);
+      } else if (translated === undefined && /^(Inbound folder|โฟลเดอร์รับเข้า): /.test(trimmed)) {
+        const path = trimmed.replace(/^(Inbound folder|โฟลเดอร์รับเข้า): /, '');
+        translated = (currentLanguage === 'en' ? 'Inbound folder: ' : 'โฟลเดอร์รับเข้า: ') + path;
+      } else if (translated === undefined) {
+        let match = trimmed.match(/^บันทึกบัญชีผู้ใช้ "(.+)" เรียบร้อยแล้ว$/);
+        if (match) translated = currentLanguage === 'en' ? `User account "${match[1]}" saved successfully` : trimmed;
+        match = trimmed.match(/^User account "(.+)" saved successfully$/);
+        if (match) translated = currentLanguage === 'th' ? `บันทึกบัญชีผู้ใช้ "${match[1]}" เรียบร้อยแล้ว` : trimmed;
+        match = trimmed.match(/^ลบบัญชีผู้ใช้ "(.+)" เรียบร้อยแล้ว$/);
+        if (match) translated = currentLanguage === 'en' ? `User account "${match[1]}" deleted successfully` : trimmed;
+        match = trimmed.match(/^User account "(.+)" deleted successfully$/);
+        if (match) translated = currentLanguage === 'th' ? `ลบบัญชีผู้ใช้ "${match[1]}" เรียบร้อยแล้ว` : trimmed;
+        match = trimmed.match(/^บันทึกรอบงาน "(.+)" เรียบร้อยแล้ว$/);
+        if (match) translated = currentLanguage === 'en' ? `Job "${match[1]}" saved successfully` : trimmed;
+        match = trimmed.match(/^Job "(.+)" saved successfully$/);
+        if (match) translated = currentLanguage === 'th' ? `บันทึกรอบงาน "${match[1]}" เรียบร้อยแล้ว` : trimmed;
+        match = trimmed.match(/^ลบรอบงาน "(.+)" เรียบร้อยแล้ว$/);
+        if (match) translated = currentLanguage === 'en' ? `Job "${match[1]}" deleted successfully` : trimmed;
+        match = trimmed.match(/^Job "(.+)" deleted successfully$/);
+        if (match) translated = currentLanguage === 'th' ? `ลบรอบงาน "${match[1]}" เรียบร้อยแล้ว` : trimmed;
+        match = trimmed.match(/^แสดง ([\d,]+)–([\d,]+) จาก ([\d,]+) รายการ · หน้า ([\d,]+) จาก ([\d,]+)$/);
+        if (match) translated = currentLanguage === 'en' ? `Showing ${match[1]}–${match[2]} of ${match[3]} records · Page ${match[4]} of ${match[5]}` : trimmed;
+        match = trimmed.match(/^Showing ([\d,]+)–([\d,]+) of ([\d,]+) records · Page ([\d,]+) of ([\d,]+)$/);
+        if (match) translated = currentLanguage === 'th' ? `แสดง ${match[1]}–${match[2]} จาก ${match[3]} รายการ · หน้า ${match[4]} จาก ${match[5]}` : trimmed;
+      }
+      if (translated === undefined || translated === trimmed) return value;
+      const leading = value.match(/^\s*/)?.[0] || '';
+      const trailing = value.match(/\s*$/)?.[0] || '';
+      return leading + translated + trailing;
+    }
+
+    function translateSubtree(root = document.body) {
+      if (translatingPage || !root) return;
+      translatingPage = true;
+      try {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+          acceptNode(node) {
+            return ['SCRIPT', 'STYLE'].includes(node.parentElement?.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+          }
+        });
+        let node;
+        while ((node = walker.nextNode())) node.nodeValue = translateValue(node.nodeValue);
+
+        const elements = root.nodeType === Node.ELEMENT_NODE ? [root, ...root.querySelectorAll('*')] : [];
+        elements.forEach(element => {
+          ['placeholder', 'title', 'aria-label'].forEach(attribute => {
+            const value = element.getAttribute(attribute);
+            if (value) element.setAttribute(attribute, translateValue(value));
+          });
+        });
+        if (document.title) document.title = translateValue(document.title);
+      } finally {
+        translatingPage = false;
+      }
+    }
+
+    function setLanguage(language) {
+      currentLanguage = language === 'en' ? 'en' : 'th';
+      languageLookup = languageMap(currentLanguage);
+      document.documentElement.lang = currentLanguage;
+      try { localStorage.setItem('odoo-scb-bridge-language', currentLanguage); } catch (_) {}
+      const selector = document.getElementById('language-select');
+      if (selector) selector.value = currentLanguage;
+      translateSubtree(document.body);
+      if (isRunning) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+    }
+
+    function getLocale() {
+      return currentLanguage === 'en' ? 'en-US' : 'th-TH';
+    }
+
+    function initializeLanguage() {
+      let savedLanguage = 'th';
+      try { savedLanguage = localStorage.getItem('odoo-scb-bridge-language') || 'th'; } catch (_) {}
+      currentLanguage = savedLanguage === 'en' ? 'en' : 'th';
+      languageLookup = languageMap(currentLanguage);
+      document.documentElement.lang = currentLanguage;
+      document.getElementById('language-select').value = currentLanguage;
+      translateSubtree(document.body);
+    }
+
+    const languageObserver = new MutationObserver(mutations => {
+      if (translatingPage) return;
+      mutations.forEach(mutation => {
+        if (mutation.type === 'characterData') translateSubtree(mutation.target.parentElement);
+        else if (mutation.type === 'childList') mutation.addedNodes.forEach(node => {
+          if (node.nodeType === Node.ELEMENT_NODE) translateSubtree(node);
+          else if (node.nodeType === Node.TEXT_NODE) node.nodeValue = translateValue(node.nodeValue);
+        });
+        else if (mutation.type === 'attributes') translateSubtree(mutation.target);
+      });
+    });
+    languageObserver.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title', 'aria-label'] });
 
     // Toast Notification Utility
     function showToast(msg, type = 'success') {
@@ -863,6 +1014,7 @@
         const res = await fetch(`${API_BASE}/users`);
         if (res.ok) {
           const users = await res.json() || [];
+          cachedUsers = users;
           const table = document.getElementById('user-list-table');
           if (users.length === 0) {
             table.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีผู้ใช้งาน SFTP บันทึกไว้</td></tr>';
@@ -904,15 +1056,15 @@
     async function addUser() {
       const u = document.getElementById('user-username').value.trim();
       const p = document.getElementById('user-password').value.trim();
-      if (!u || !p) {
-        showToast('กรุณากรอก Username และ Password ให้ครบถ้วน', 'error');
+      if (!u || (!editingUser && !p)) {
+        showToast(editingUser ? 'กรุณากรอก Username' : 'กรุณากรอก Username และ Password ให้ครบถ้วน', 'error');
         return;
       }
       try {
         const res = await fetch(`${API_BASE}/users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p, root_dir: '.', enabled: true })
+          body: JSON.stringify({ username: u, password: p, root_dir: cachedUsers.find(user => user.username === u)?.root_dir || '.', enabled: document.getElementById('user-enabled').value === 'true' })
         });
         if (res.ok) {
           cancelUserEdit();
@@ -928,19 +1080,27 @@
     }
 
     function editUser(username) {
+      const user = cachedUsers.find(item => item.username === username);
+      if (!user) return;
+      editingUser = true;
       document.getElementById('user-form-title').innerText = `แก้ไขผู้ใช้: ${username}`;
       document.getElementById('user-username').value = username;
+      document.getElementById('user-username').readOnly = true;
+      document.getElementById('user-enabled').value = String(Boolean(user.enabled));
       document.getElementById('user-password').value = '';
       setUserPasswordVisibility(false);
       document.getElementById('user-password').focus();
       document.getElementById('user-password').placeholder = 'กรอกรหัสผ่านใหม่';
-      document.getElementById('btn-user-submit-text').innerText = 'อัปเดตรหัสผ่าน';
+      document.getElementById('btn-user-submit-text').innerText = 'บันทึกการเปลี่ยนแปลง';
       document.getElementById('btn-cancel-user-edit').classList.remove('hidden');
     }
 
     function cancelUserEdit() {
+      editingUser = false;
       document.getElementById('user-form-title').innerText = 'เพิ่มผู้ใช้งานใหม่';
       document.getElementById('user-username').value = '';
+      document.getElementById('user-username').readOnly = false;
+      document.getElementById('user-enabled').value = 'true';
       document.getElementById('user-password').value = '';
       document.getElementById('user-password').placeholder = 'Password (รหัสผ่าน)';
       setUserPasswordVisibility(false);
@@ -1075,7 +1235,7 @@
       const requestId = ++logsRequestId;
       try {
         const filter = document.getElementById('log-filter').value;
-        const params = new URLSearchParams({ page: String(logsPage), page_size: String(LOGS_PAGE_SIZE) });
+        const params = new URLSearchParams({ page: String(logsPage), page_size: String(logsPageSize) });
         if (filter) params.set('event_type', filter);
         const res = await fetch(`${API_BASE}/logs?${params.toString()}`);
         if (requestId !== logsRequestId) return;
@@ -1088,9 +1248,11 @@
           document.getElementById('stat-logs-count').innerText = total;
           const table = document.getElementById('logs-table');
           const dashTable = document.getElementById('dash-recent-logs');
+          const firstItem = total === 0 ? 0 : (logsPage - 1) * logsPageSize + 1;
+          const lastItem = Math.min(logsPage * logsPageSize, total);
           document.getElementById('logs-pagination-info').innerText = total === 0
             ? 'ไม่มีรายการบันทึก'
-            : `หน้า ${logsPage} จาก ${totalPages} · ${total.toLocaleString('th-TH')} รายการ`;
+            : `แสดง ${firstItem.toLocaleString('th-TH')}–${lastItem.toLocaleString('th-TH')} จาก ${total.toLocaleString('th-TH')} รายการ · หน้า ${logsPage} จาก ${totalPages}`;
           document.getElementById('logs-prev-page').disabled = logsPage <= 1;
           document.getElementById('logs-next-page').disabled = logsPage >= totalPages;
           
@@ -1147,6 +1309,12 @@
     }
 
     function changeLogFilter() {
+      logsPage = 1;
+      loadLogs();
+    }
+
+    function changeLogsPageSize() {
+      logsPageSize = Number(document.getElementById('logs-page-size').value) || 10;
       logsPage = 1;
       loadLogs();
     }

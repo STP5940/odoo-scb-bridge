@@ -158,7 +158,7 @@ func (s *Server) handleServiceStop(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	pageSize := 20
+	pageSize := 10
 	pageSizeStr := query.Get("page_size")
 	if pageSizeStr == "" {
 		pageSizeStr = query.Get("limit")
