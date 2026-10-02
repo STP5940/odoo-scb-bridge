@@ -54,15 +54,27 @@
 
   <style>
     * { box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; user-select: none; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      background-color: #101317;
+    }
     .titlebar-drag { -webkit-app-region: drag; }
     .titlebar-nodrag { -webkit-app-region: no-drag; }
     
-    /* Modern Custom Scrollbar */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(16, 19, 23, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(71, 81, 107, 0.4); border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(71, 81, 107, 0.8); }
+    /* Modern Custom Scrollbar with high visibility */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #12151b; }
+    ::-webkit-scrollbar-thumb { background: #2c3242; border-radius: 9999px; border: 2px solid #12151b; }
+    ::-webkit-scrollbar-thumb:hover { background: #47516b; }
+
+    main {
+      scrollbar-gutter: stable;
+      scroll-behavior: smooth;
+    }
 
     /* Frosted Glass Effect */
     .glass-card {
@@ -86,11 +98,19 @@
       outline: none;
     }
     
-    /* Smooth transitions */
-    .tab-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    /* Navigation button active state styling */
+    .nav-active {
+      background-color: rgba(34, 197, 94, 0.1) !important;
+      color: #4ade80 !important;
+      border: 1px solid rgba(74, 222, 128, 0.3) !important;
+      box-shadow: 0 2px 8px -2px rgba(34, 197, 94, 0.25) !important;
+    }
+    .nav-active i {
+      color: #4ade80 !important;
+    }
   </style>
 </head>
-<body class="bg-dark-950 text-slate-200 min-h-screen flex flex-col select-none overflow-hidden antialiased">
+<body class="bg-dark-950 text-slate-200 h-screen flex flex-col select-none overflow-hidden antialiased">
 
   <!-- ================= TOP WINDOW BAR (Frameless Window Drag Area) ================= -->
   <div class="titlebar-drag bg-dark-950/90 border-b border-dark-800/80 h-9 flex items-center justify-between px-3 text-xs select-none z-50">
@@ -115,146 +135,102 @@
   </div>
 
   <!-- ================= TOP APP HEADER / TOOLBAR ================= -->
-  <header class="bg-dark-900 border-b border-dark-800/80 px-5 py-2.5 flex items-center justify-between z-40">
-    <div class="flex items-center space-x-4">
+  <header class="bg-dark-900 border-b border-dark-800/80 px-5 py-2.5 h-14 flex items-center justify-between z-40 shrink-0">
+    <div class="flex items-center space-x-3">
       <!-- App Brand Logo Pill -->
-      <div class="flex items-center space-x-3 pr-4 border-r border-dark-800">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-          <i class="fa-solid fa-network-wired text-brand-400 text-sm"></i>
-        </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="font-bold text-sm tracking-tight text-white">Bridge Console</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">ENTERPRISE</span>
-          </div>
-          <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway</p>
-        </div>
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+        <i class="fa-solid fa-network-wired text-brand-400 text-sm"></i>
       </div>
-
-      <!-- Quick Breadcrumb / Context Nav Tabs -->
-      <div class="flex items-center space-x-1 bg-dark-950/70 p-1 rounded-xl border border-white/5">
-        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white flex items-center space-x-2">
-          <i class="fa-solid fa-grip text-[11px]"></i>
-          <span>Dashboard</span>
-        </button>
-        <button onclick="switchTab('inbound')" id="btn-inbound" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-2">
-          <i class="fa-solid fa-arrow-down-left-and-arrow-up-right-to-center text-[11px]"></i>
-          <span>Inbound SFTP</span>
-        </button>
-        <button onclick="switchTab('outbound')" id="btn-outbound" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-2">
-          <i class="fa-solid fa-paper-plane text-[11px]"></i>
-          <span>Outbound Jobs</span>
-        </button>
-        <button onclick="switchTab('logs')" id="btn-logs" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-2">
-          <i class="fa-solid fa-timeline text-[11px]"></i>
-          <span>Audit Logs</span>
-        </button>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v1.0</span>
+        </div>
+        <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
     </div>
 
     <!-- Header Right Controls & Quick Actions -->
     <div class="flex items-center space-x-3">
       <!-- Service Status Badge -->
-      <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30">
+      <div id="service-status-pill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30 transition">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-        <span id="service-status-text" class="text-xs font-medium text-emerald-400">Service Active</span>
+        <span id="service-status-text" class="text-xs font-semibold text-emerald-400">Service Active</span>
       </div>
 
-      <!-- Power Toggle Button -->
-      <button id="btn-toggle-service" onclick="toggleService()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95">
+      <!-- Power Toggle Button (Stop / Start Service) -->
+      <button id="btn-toggle-service" onclick="toggleService()" class="px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm">
         <i class="fa-solid fa-power-off text-[11px]"></i>
         <span>Stop Service</span>
       </button>
 
       <!-- Sync / Refresh Button -->
-      <button onclick="refreshData()" title="รีเฟรชข้อมูลล่าสุด" class="w-8 h-8 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition active:rotate-180">
+      <button onclick="refreshData()" title="รีเฟรชข้อมูลล่าสุด" class="w-8 h-8 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition active:scale-95">
         <i class="fa-solid fa-arrows-rotate"></i>
       </button>
-
-      <!-- User Avatar Profile Pill (Modern Header element like preview) -->
-      <div class="flex items-center space-x-2 pl-3 border-l border-dark-800">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-accent-pink to-accent-purple flex items-center justify-center text-white text-xs font-bold ring-2 ring-white/10 shadow-sm">
-          A
-        </div>
-      </div>
     </div>
   </header>
 
-  <!-- ================= WORKSPACE (3-COLUMN LAYOUT) ================= -->
-  <div class="flex flex-1 overflow-hidden">
+  <!-- ================= WORKSPACE (SIDEBAR + FULL-WIDTH SCROLLABLE CONTENT) ================= -->
+  <div class="flex flex-1 min-h-0 h-[calc(100vh-92px)] overflow-hidden">
 
-    <!-- ================= LEFT SIDEBAR (Explorer / Modules) ================= -->
-    <aside class="w-60 bg-dark-900/60 border-r border-dark-800/80 flex flex-col justify-between py-4 select-none">
+    <!-- ================= LEFT SIDEBAR (Single Consolidated Navigation) ================= -->
+    <aside class="w-60 bg-dark-900/80 border-r border-dark-800/80 flex flex-col justify-between py-4 select-none shrink-0 h-full">
       <div class="px-3 space-y-4">
-        <!-- Quick Search Pill -->
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
-          <input type="text" placeholder="ค้นหาการตั้งค่า..." class="w-full glass-input text-xs rounded-xl pl-8 pr-3 py-2 text-slate-200 placeholder-slate-500">
-        </div>
-
-        <!-- Section: MODULES -->
+        <!-- Section: MODULE NAVIGATION -->
         <div>
-          <div class="flex items-center justify-between px-2 mb-2">
-            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">MODULES</span>
-            <span class="text-[10px] font-mono text-slate-500">4 Active</span>
+          <div class="flex items-center justify-between px-2 mb-2.5">
+            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">NAVIGATION</span>
+            <span class="text-[10px] font-mono text-slate-500">4 Modules</span>
           </div>
-          <div class="space-y-1">
-            <button onclick="switchTab('dashboard')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
-              <div class="flex items-center space-x-2.5">
-                <span class="w-6 h-6 rounded-lg bg-blue-500/10 text-accent-blue flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-chart-pie text-[11px]"></i></span>
-                <span>Dashboard Overview</span>
+          <div class="space-y-1.5">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group border border-transparent">
+              <div class="flex items-center space-x-3">
+                <span class="w-7 h-7 rounded-lg bg-blue-500/10 text-accent-blue flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-chart-pie text-xs"></i></span>
+                <span class="font-medium">Dashboard Overview</span>
               </div>
               <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
             </button>
-            <button onclick="switchTab('inbound')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
-              <div class="flex items-center space-x-2.5">
-                <span class="w-6 h-6 rounded-lg bg-emerald-500/10 text-brand-400 flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-server text-[11px]"></i></span>
-                <span>Inbound SFTP Host</span>
+            <button onclick="switchTab('inbound')" id="nav-inbound" class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group border border-transparent">
+              <div class="flex items-center space-x-3">
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-brand-400 flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-server text-xs"></i></span>
+                <span class="font-medium">Inbound SFTP Host</span>
               </div>
               <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
             </button>
-            <button onclick="switchTab('outbound')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
-              <div class="flex items-center space-x-2.5">
-                <span class="w-6 h-6 rounded-lg bg-purple-500/10 text-accent-purple flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-clock-rotate-left text-[11px]"></i></span>
-                <span>Outbound Schedulers</span>
+            <button onclick="switchTab('outbound')" id="nav-outbound" class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group border border-transparent">
+              <div class="flex items-center space-x-3">
+                <span class="w-7 h-7 rounded-lg bg-purple-500/10 text-accent-purple flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-paper-plane text-xs"></i></span>
+                <span class="font-medium">Outbound Schedulers</span>
               </div>
               <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
             </button>
-            <button onclick="switchTab('logs')" class="sidebar-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group">
-              <div class="flex items-center space-x-2.5">
-                <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-accent-amber flex items-center justify-center group-hover:scale-110 transition"><i class="fa-solid fa-shield-halved text-[11px]"></i></span>
-                <span>Audit & Security Logs</span>
+            <button onclick="switchTab('logs')" id="nav-logs" class="sidebar-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-dark-800/60 transition group border border-transparent">
+              <div class="flex items-center space-x-3">
+                <span class="w-7 h-7 rounded-lg bg-amber-500/10 text-accent-amber flex items-center justify-center group-hover:scale-105 transition"><i class="fa-solid fa-shield-halved text-xs"></i></span>
+                <span class="font-medium">Audit & Security Logs</span>
               </div>
               <i class="fa-solid fa-chevron-right text-[9px] text-slate-600"></i>
             </button>
           </div>
         </div>
 
-        <!-- Section: FOLDERS & PATHS -->
-        <div>
-          <div class="flex items-center justify-between px-2 mb-2">
-            <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">SYSTEM DIRECTORIES</span>
+        <!-- System Status Summary Pill in Sidebar -->
+        <div class="p-3 rounded-xl bg-dark-950/70 border border-white/5 space-y-2 text-xs">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Microservice</span>
+            <span id="sidebar-status-badge" class="font-mono text-[10px] text-brand-400 font-bold">ONLINE</span>
           </div>
-          <div class="space-y-1.5 text-[11px] font-mono text-slate-400 px-2">
-            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
-              <i class="fa-regular fa-folder-closed text-accent-cyan"></i>
-              <span class="truncate">data/inbound</span>
-            </div>
-            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
-              <i class="fa-regular fa-folder-closed text-accent-purple"></i>
-              <span class="truncate">data/outbound</span>
-            </div>
-            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
-              <i class="fa-regular fa-folder-closed text-accent-amber"></i>
-              <span class="truncate">data/temp</span>
-            </div>
-            <div class="flex items-center space-x-2 truncate hover:text-slate-200 cursor-pointer">
-              <i class="fa-solid fa-database text-brand-400"></i>
-              <span class="truncate">data/bridge.db</span>
-            </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">Port SFTP</span>
+            <span class="text-slate-200 font-mono">2222</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-400">REST API</span>
+            <span class="text-slate-200 font-mono">9527</span>
           </div>
         </div>
       </div>
@@ -263,14 +239,14 @@
       <div class="px-4 pt-3 border-t border-dark-800/80 flex items-center justify-between text-[11px] text-slate-500">
         <div class="flex items-center space-x-2">
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
-          <span>Go Service 1.26</span>
+          <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-brand-400">ONLINE</span>
+        <span class="font-mono text-[10px] text-slate-400">v1.0.0</span>
       </div>
     </aside>
 
-    <!-- ================= CENTER MAIN CONTENT ================= -->
-    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+    <!-- ================= CENTER MAIN CONTENT (FULL-WIDTH SCROLLABLE AREA) ================= -->
+    <main id="main-scroll-area" class="flex-1 h-full min-h-0 overflow-y-auto overflow-x-hidden p-6 space-y-6 scroll-smooth pb-28">
 
       <!-- ================= TAB 1: DASHBOARD ================= -->
       <section id="tab-dashboard" class="space-y-6">
@@ -669,79 +645,6 @@
 
     </main>
 
-    <!-- ================= RIGHT PANEL (System Inspector & Quick Info) ================= -->
-    <aside class="w-72 bg-dark-900/60 border-l border-dark-800/80 p-4 flex flex-col justify-between select-none overflow-y-auto">
-      <div class="space-y-5">
-        <!-- Inspector Title -->
-        <div class="flex items-center justify-between pb-3 border-b border-dark-800">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SYSTEM INSPECTOR</span>
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        </div>
-
-        <!-- Metrics Preview Box (like preview right sidebar) -->
-        <div class="space-y-3">
-          <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">GATEWAY METRICS</span>
-          <div class="grid grid-cols-2 gap-2 text-center font-mono">
-            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
-              <p class="text-[10px] text-slate-500">PORT</p>
-              <p class="text-sm font-bold text-slate-200 mt-0.5">2222</p>
-            </div>
-            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
-              <p class="text-[10px] text-slate-500">API PORT</p>
-              <p class="text-sm font-bold text-slate-200 mt-0.5">9527</p>
-            </div>
-            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
-              <p class="text-[10px] text-slate-500">CIPHER</p>
-              <p class="text-[11px] font-bold text-brand-400 mt-1">AES-256</p>
-            </div>
-            <div class="p-2.5 rounded-xl bg-dark-950/80 border border-white/5">
-              <p class="text-[10px] text-slate-500">DATABASE</p>
-              <p class="text-[11px] font-bold text-accent-cyan mt-1">SQLite</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Segmented Quick Status -->
-        <div class="space-y-2">
-          <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">SERVICE HEALTH</span>
-          <div class="p-3 rounded-xl bg-dark-950/80 border border-white/5 space-y-2 text-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-400">Windows Service</span>
-              <span class="text-brand-400 font-mono text-[11px] font-medium">Running</span>
-            </div>
-            <div class="w-full bg-dark-800 rounded-full h-1.5 overflow-hidden">
-              <div class="bg-brand-500 h-1.5 rounded-full" style="width: 100%"></div>
-            </div>
-            <div class="flex items-center justify-between pt-1">
-              <span class="text-slate-400">Memory Usage</span>
-              <span class="text-slate-300 font-mono text-[11px]">~24.8 MB</span>
-            </div>
-            <div class="w-full bg-dark-800 rounded-full h-1.5 overflow-hidden">
-              <div class="bg-accent-cyan h-1.5 rounded-full" style="width: 18%"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Help & Note -->
-        <div class="p-3.5 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 text-xs space-y-1.5">
-          <div class="flex items-center space-x-1.5 text-accent-cyan font-semibold">
-            <i class="fa-solid fa-lightbulb"></i>
-            <span>Quick Tip</span>
-          </div>
-          <p class="text-slate-400 text-[11px] leading-relaxed">
-            ไฟล์ที่อัปโหลดเข้า SFTP จะถูกจัดเก็บลง <code class="text-white font-mono">data/inbound</code> โดยอัตโนมัติพร้อมตรวจสอบ SHA-256 Hash ทุกไฟล์
-          </p>
-        </div>
-
-      </div>
-
-      <!-- Bottom System Version -->
-      <div class="pt-4 border-t border-dark-800 text-[10px] text-slate-500 flex items-center justify-between">
-        <span>Electron + Go Service</span>
-        <span class="font-mono text-slate-400">100% Native</span>
-      </div>
-    </aside>
-
   </div>
 
   <!-- ================= NOTIFICATION TOAST ================= -->
@@ -784,22 +687,25 @@
       }, 3000);
     }
 
-    // Tab Navigation Switcher
+    // Consolidated Sidebar Navigation Switcher
     function switchTab(tab) {
-      ['dashboard', 'inbound', 'outbound', 'logs'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        const btn = document.getElementById(`btn-${t}`);
-        if (btn) {
-          btn.classList.remove('bg-dark-800', 'text-white', 'shadow-sm');
-          btn.classList.add('text-slate-400');
-        }
+      const tabs = ['dashboard', 'inbound', 'outbound', 'logs'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`tab-${t}`);
+        if (sec) sec.classList.add('hidden');
+        const nav = document.getElementById(`nav-${t}`);
+        if (nav) nav.classList.remove('nav-active');
       });
-      document.getElementById(`tab-${tab}`).classList.remove('hidden');
-      const activeBtn = document.getElementById(`btn-${tab}`);
-      if (activeBtn) {
-        activeBtn.classList.add('bg-dark-800', 'text-white', 'shadow-sm');
-        activeBtn.classList.remove('text-slate-400');
-      }
+
+      const targetSec = document.getElementById(`tab-${tab}`);
+      if (targetSec) targetSec.classList.remove('hidden');
+
+      const targetNav = document.getElementById(`nav-${tab}`);
+      if (targetNav) targetNav.classList.add('nav-active');
+
+      // Scroll to top of main container when tab switches
+      const scrollArea = document.getElementById('main-scroll-area');
+      if (scrollArea) scrollArea.scrollTop = 0;
     }
 
     // Refresh all data
@@ -814,19 +720,22 @@
       btn.disabled = true;
       try {
         if (isRunning) {
-          await fetch(`${API_BASE}/service/stop`, { method: 'POST' });
-          showToast('ส่งคำสั่งหยุดการทำงาน Service สำเร็จ', 'info');
+          const res = await fetch(`${API_BASE}/service/stop`, { method: 'POST' });
+          if (res.ok) {
+            showToast('หยุดการทำงานของ Bridge Service เรียบร้อยแล้ว', 'info');
+          }
         } else {
-          await fetch(`${API_BASE}/service/start`, { method: 'POST' });
-          showToast('ส่งคำสั่งเริ่มการทำงาน Service สำเร็จ', 'success');
+          const res = await fetch(`${API_BASE}/service/start`, { method: 'POST' });
+          if (res.ok) {
+            showToast('เริ่มการทำงานของ Bridge Service เรียบร้อยแล้ว', 'success');
+          }
         }
       } catch (e) {
         showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ Service', 'error');
-      }
-      setTimeout(async () => {
+      } finally {
         await loadStatus();
         btn.disabled = false;
-      }, 1000);
+      }
     }
 
     // Load Service Status
@@ -834,21 +743,42 @@
       const pill = document.getElementById('service-status-pill');
       const text = document.getElementById('service-status-text');
       const btn = document.getElementById('btn-toggle-service');
+      const sidebarBadge = document.getElementById('sidebar-status-badge');
 
       try {
         const res = await fetch(`${API_BASE}/status`);
         if (res.ok) {
-          pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-emerald-500/30";
-          pill.innerHTML = `
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span class="text-xs font-medium text-emerald-400">Service Active</span>
-          `;
-          btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95";
-          btn.innerHTML = '<i class="fa-solid fa-power-off text-[11px]"></i><span>Stop Service</span>';
-          isRunning = true;
+          const data = await res.json();
+          isRunning = (data.running === true || data.status === "RUNNING");
+
+          if (isRunning) {
+            pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-brand-400";
+            pill.innerHTML = `
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span class="text-xs font-semibold text-emerald-400">Service Active</span>
+            `;
+            btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
+            btn.innerHTML = '<i class="fa-solid fa-power-off text-[11px]"></i><span>Stop Service</span>';
+            if (sidebarBadge) {
+              sidebarBadge.innerText = "ONLINE";
+              sidebarBadge.className = "font-mono text-[10px] text-brand-400 font-bold";
+            }
+          } else {
+            pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400";
+            pill.innerHTML = `
+              <span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              <span class="text-xs font-semibold text-rose-400">Service Stopped</span>
+            `;
+            btn.className = "px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-brand-400 border border-emerald-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
+            btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
+            if (sidebarBadge) {
+              sidebarBadge.innerText = "STOPPED";
+              sidebarBadge.className = "font-mono text-[10px] text-rose-400 font-bold";
+            }
+          }
         }
       } catch (e) {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-dark-950/80 border border-rose-500/30";
@@ -858,6 +788,10 @@
         `;
         btn.className = "px-3.5 py-1.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95";
         btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
+        if (sidebarBadge) {
+          sidebarBadge.innerText = "OFFLINE";
+          sidebarBadge.className = "font-mono text-[10px] text-slate-500 font-bold";
+        }
         isRunning = false;
       }
     }

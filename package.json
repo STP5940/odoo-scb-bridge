@@ -17,6 +17,7 @@
     "directories": {
       "output": "dist_electron"
     },
+    "asar": false,
     "files": [
       "electron/**/*",
       "internal/ui/**/*",

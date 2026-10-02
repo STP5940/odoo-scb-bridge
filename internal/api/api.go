@@ -9,21 +9,28 @@ import (
 	"odoo-scb-bridge/internal/database"
 	"odoo-scb-bridge/internal/models"
 	"odoo-scb-bridge/internal/scheduler"
+	"odoo-scb-bridge/internal/server/sftp"
 	"odoo-scb-bridge/internal/ui"
+	"sync"
 )
 
 type Server struct {
-	port      int
-	db        *database.DB
-	scheduler *scheduler.Manager
-	srv       *http.Server
+	port       int
+	db         *database.DB
+	scheduler  *scheduler.Manager
+	sftpServer *sftp.Server
+	srv        *http.Server
+	mu         sync.Mutex
+	running    bool
 }
 
-func NewServer(port int, db *database.DB, sch *scheduler.Manager) *Server {
+func NewServer(port int, db *database.DB, sch *scheduler.Manager, sftpSrv *sftp.Server) *Server {
 	return &Server{
-		port:      port,
-		db:        db,
-		scheduler: sch,
+		port:       port,
+		db:         db,
+		scheduler:  sch,
+		sftpServer: sftpSrv,
+		running:    true,
 	}
 }
 
@@ -74,20 +81,78 @@ func (s *Server) Stop() error {
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	running := s.running
+	s.mu.Unlock()
+
+	statusStr := "RUNNING"
+	if !running {
+		statusStr = "STOPPED"
+	}
+
+	sftpRunning := false
+	if s.sftpServer != nil {
+		sftpRunning = s.sftpServer.IsRunning()
+	}
+
 	jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"status":  "RUNNING",
-		"version": "1.0.0",
+		"status":       statusStr,
+		"running":      running,
+		"sftp_running": sftpRunning,
+		"version":      "1.0.0",
 	})
 }
 
 func (s *Server) handleServiceStart(w http.ResponseWriter, r *http.Request) {
-	s.scheduler.Start()
-	jsonResponse(w, http.StatusOK, map[string]string{"status": "started"})
+	s.mu.Lock()
+	s.running = true
+	s.mu.Unlock()
+
+	if s.sftpServer != nil {
+		_ = s.sftpServer.Start()
+	}
+	if s.scheduler != nil {
+		s.scheduler.Start()
+	}
+
+	_ = s.db.LogAudit(models.AuditLog{
+		EventType: "SERVICE",
+		Protocol:  "SYSTEM",
+		Username:  "admin",
+		Status:    "SUCCESS",
+		Details:   "Bridge Service started via Desktop UI",
+	})
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"status":  "started",
+		"running": true,
+	})
 }
 
 func (s *Server) handleServiceStop(w http.ResponseWriter, r *http.Request) {
-	s.scheduler.Stop()
-	jsonResponse(w, http.StatusOK, map[string]string{"status": "stopped"})
+	s.mu.Lock()
+	s.running = false
+	s.mu.Unlock()
+
+	if s.sftpServer != nil {
+		s.sftpServer.Stop()
+	}
+	if s.scheduler != nil {
+		s.scheduler.Stop()
+	}
+
+	_ = s.db.LogAudit(models.AuditLog{
+		EventType: "SERVICE",
+		Protocol:  "SYSTEM",
+		Username:  "admin",
+		Status:    "WARNING",
+		Details:   "Bridge Service stopped via Desktop UI",
+	})
+
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"status":  "stopped",
+		"running": false,
+	})
 }
 
 func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {

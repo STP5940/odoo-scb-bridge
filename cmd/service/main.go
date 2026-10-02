@@ -57,7 +57,7 @@ func (p *program) run() {
 	p.scheduler.Start()
 
 	// 3. Start Local REST API Server (Port 9527) for Desktop UI
-	p.apiServer = api.NewServer(9527, db, p.scheduler)
+	p.apiServer = api.NewServer(9527, db, p.scheduler, p.sftpServer)
 	go func() {
 		if err := p.apiServer.Start(); err != nil {
 			log.Printf("[Service] API server stopped: %v", err)

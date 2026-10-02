@@ -166,7 +166,10 @@ func (d *DB) migrate() error {
 func (d *DB) LogAudit(log models.AuditLog) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	return d.internalLogAudit(log)
+}
 
+func (d *DB) internalLogAudit(log models.AuditLog) error {
 	query := `
 		INSERT INTO audit_logs (event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -280,7 +283,7 @@ func (d *DB) SaveUser(u *models.User) error {
 			updated_at=CURRENT_TIMESTAMP
 	`, u.Username, u.Password, u.RootDir, enabled)
 	if err == nil {
-		_ = d.LogAudit(models.AuditLog{
+		_ = d.internalLogAudit(models.AuditLog{
 			EventType: "USER_MGMT",
 			Protocol:  "ADMIN",
 			Username:  u.Username,
@@ -302,7 +305,7 @@ func (d *DB) DeleteUser(id int64) error {
 
 	_, err := d.conn.Exec("DELETE FROM users WHERE id = ?", id)
 	if err == nil && username != "" {
-		_ = d.LogAudit(models.AuditLog{
+		_ = d.internalLogAudit(models.AuditLog{
 			EventType: "USER_MGMT",
 			Protocol:  "ADMIN",
 			Username:  username,

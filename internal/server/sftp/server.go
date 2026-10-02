@@ -30,6 +30,8 @@ type Server struct {
 	db        *database.DB
 	quit      chan struct{}
 	wg        sync.WaitGroup
+	mu        sync.Mutex
+	running   bool
 }
 
 func NewServer(port int, targetDir, tempDir string, db *database.DB) *Server {
@@ -38,12 +40,19 @@ func NewServer(port int, targetDir, tempDir string, db *database.DB) *Server {
 		targetDir: targetDir,
 		tempDir:   tempDir,
 		db:        db,
-		quit:      make(chan struct{}),
+		running:   false,
 	}
 }
 
 // Start launches the SFTP server
 func (s *Server) Start() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.running {
+		return nil
+	}
+
 	_ = os.MkdirAll(s.targetDir, 0755)
 	_ = os.MkdirAll(s.tempDir, 0755)
 
@@ -88,6 +97,8 @@ func (s *Server) Start() error {
 		return fmt.Errorf("failed to listen on %s: %w", addr, err)
 	}
 	s.listener = listener
+	s.quit = make(chan struct{})
+	s.running = true
 	log.Printf("[SFTP] Server listening on %s (Drop folder: %s)", addr, s.targetDir)
 
 	s.wg.Add(1)
@@ -97,12 +108,29 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop() {
-	close(s.quit)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.running {
+		return
+	}
+
+	s.running = false
+	if s.quit != nil {
+		close(s.quit)
+	}
 	if s.listener != nil {
-		s.listener.Close()
+		_ = s.listener.Close()
+		s.listener = nil
 	}
 	s.wg.Wait()
 	log.Printf("[SFTP] Server stopped")
+}
+
+func (s *Server) IsRunning() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.running
 }
 
 func (s *Server) acceptLoop(sshConfig *ssh.ServerConfig) {
