@@ -157,7 +157,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.0.16</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.3</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -182,7 +182,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.0.16</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.3</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -305,7 +305,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.0.16</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.3</span>
       </div>
     </aside>
 
@@ -559,7 +559,7 @@
             <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-accent-purple flex items-center justify-center">
               <i class="fa-solid fa-plus"></i>
             </div>
-            <h3 class="font-semibold text-white text-sm">สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)</h3>
+            <h3 id="job-form-title" class="font-semibold text-white text-sm">สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)</h3>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -587,9 +587,10 @@
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1.5">โปรโตคอลปลายทาง</label>
-              <select id="job-proto" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+              <select id="job-proto" onchange="updateOutboundPortDefault()" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
                 <option value="sftp">SFTP (SSH)</option>
-                <option value="ftp">FTP / FTPS</option>
+                <option value="ftp">FTP</option>
+                <option value="ftps">FTPS (Explicit TLS)</option>
               </select>
             </div>
             <div>
@@ -609,7 +610,12 @@
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1.5">Remote Password</label>
-              <input type="password" id="job-pass" placeholder="Password" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+              <div class="relative">
+                <input type="password" id="job-pass" placeholder="Password" class="w-full glass-input rounded-xl p-2.5 pr-10 text-xs font-mono text-white">
+                <button type="button" id="toggle-job-password" onclick="toggleJobPassword()" aria-label="แสดงรหัสผ่าน" aria-pressed="false" title="แสดงรหัสผ่าน" class="absolute inset-y-0 right-0 px-3 text-slate-400 hover:text-white transition">
+                  <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1.5">โฟลเดอร์ปลายทาง (Remote Path)</label>
@@ -617,11 +623,21 @@
             </div>
           </div>
 
-          <div class="pt-2">
-            <button onclick="saveOutboundJob()" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-purple-600/20 active:scale-95">
-              <i class="fa-solid fa-plus"></i>
-              <span>บันทึกงานส่งออก (Save Job)</span>
-            </button>
+          <div class="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p id="job-test-result" class="text-xs text-slate-400 min-h-4" role="status" aria-live="polite"></p>
+            <div class="flex flex-wrap gap-2">
+              <button id="job-test-button" onclick="testOutboundConnection()" class="px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-xs transition flex items-center space-x-2 active:scale-95">
+                <i class="fa-solid fa-plug-circle-check"></i>
+                <span>Test Connection</span>
+              </button>
+              <button onclick="saveOutboundJob()" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-purple-600/20 active:scale-95">
+                <i id="job-save-icon" class="fa-solid fa-plus"></i>
+                <span id="job-save-label">บันทึกงานส่งออก (Save Job)</span>
+              </button>
+              <button id="job-cancel-edit" onclick="cancelEditJob()" class="hidden px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 border border-white/10 font-semibold text-xs transition">
+                <span>Cancel</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1346,6 +1362,20 @@
       toggleButton.innerHTML = `<i class="${visible ? 'fa-solid fa-eye-slash' : 'fa-regular fa-eye'}" aria-hidden="true"></i>`;
     }
 
+    function toggleJobPassword() {
+      const passwordInput = document.getElementById('job-pass');
+      const visible = passwordInput.type !== 'password';
+      passwordInput.type = visible ? 'password' : 'text';
+      const toggleButton = document.getElementById('toggle-job-password');
+      const label = visible
+        ? (currentLanguage === 'en' ? 'Show password' : 'แสดงรหัสผ่าน')
+        : (currentLanguage === 'en' ? 'Hide password' : 'ซ่อนรหัสผ่าน');
+      toggleButton.setAttribute('aria-pressed', String(!visible));
+      toggleButton.setAttribute('aria-label', label);
+      toggleButton.title = label;
+      toggleButton.innerHTML = `<i class="${visible ? 'fa-regular fa-eye' : 'fa-solid fa-eye-slash'}" aria-hidden="true"></i>`;
+    }
+
     async function deleteUser(id, username) {
       if (!confirm(translateValue(`ยืนยันการลบบัญชีผู้ใช้ "${username}" ใช่หรือไม่?`))) return;
       try {
@@ -1360,12 +1390,16 @@
       }
     }
 
+    let outboundJobsById = new Map();
+    let editingOutboundJobId = null;
+
     // Load Outbound Jobs
     async function loadJobs() {
       try {
         const res = await fetch(`${API_BASE}/outbound/jobs`);
         if (res.ok) {
           const jobs = await res.json() || [];
+          outboundJobsById = new Map(jobs.map(job => [Number(job.id), job]));
           document.getElementById('stat-jobs-count').innerText = jobs.length;
           const table = document.getElementById('job-list-table');
           if (jobs.length === 0) {
@@ -1391,9 +1425,17 @@
                 </span>
               </td>
               <td class="p-3 text-right">
-                <button onclick="deleteJob(${j.id}, '${j.name}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs border border-rose-500/20 transition">
-                  <i class="fa-solid fa-trash text-[10px] mr-1"></i>ลบ
-                </button>
+                <div class="flex justify-end gap-1.5">
+                  <button onclick="testSavedOutboundJob(${Number(j.id)}, this)" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs border border-cyan-500/20 transition whitespace-nowrap">
+                    <i class="fa-solid fa-plug-circle-check text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Test' : 'ทดสอบ'}
+                  </button>
+                  <button onclick="editOutboundJob(${Number(j.id)})" class="px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs border border-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-pen text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Edit' : 'แก้ไข'}
+                  </button>
+                  <button onclick="deleteJob(${Number(j.id)})" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs border border-rose-500/20 transition whitespace-nowrap">
+                    <i class="fa-solid fa-trash text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Delete' : 'ลบ'}
+                  </button>
+                </div>
               </td>
             </tr>
           `).join('');
@@ -1401,15 +1443,11 @@
       } catch (e) {}
     }
 
-    // Save Outbound Job
-    async function saveOutboundJob() {
-      const name = document.getElementById('job-name').value.trim();
-      if (!name) {
-        showToast('กรุณากรอกชื่องานส่งออก', 'error');
-        return;
-      }
-      const payload = {
-        name: name,
+    function getOutboundJobPayload() {
+      const existingJob = editingOutboundJobId ? outboundJobsById.get(Number(editingOutboundJobId)) : null;
+      return {
+        id: editingOutboundJobId || 0,
+        name: document.getElementById('job-name').value.trim(),
         cron_expr: document.getElementById('job-cron').value.trim(),
         source_dir: document.getElementById('job-source').value.trim(),
         file_pattern: document.getElementById('job-pattern').value.trim(),
@@ -1419,10 +1457,126 @@
         remote_user: document.getElementById('job-user').value.trim(),
         remote_password: document.getElementById('job-pass').value.trim(),
         remote_dir: document.getElementById('job-remote-dir').value.trim(),
-        post_action: "archive",
-        archive_dir: document.getElementById('job-source').value.trim() + "/archive",
-        enabled: true
+        post_action: existingJob?.post_action || "archive",
+        archive_dir: existingJob?.archive_dir || document.getElementById('job-source').value.trim() + "/archive",
+        enabled: existingJob ? existingJob.enabled : true
       };
+    }
+
+    function editOutboundJob(id) {
+      const job = outboundJobsById.get(Number(id));
+      if (!job) return;
+      editingOutboundJobId = Number(job.id);
+      const fields = {
+        'job-name': job.name, 'job-cron': job.cron_expr, 'job-source': job.source_dir,
+        'job-pattern': job.file_pattern, 'job-proto': job.protocol, 'job-host': job.remote_host,
+        'job-port': job.remote_port, 'job-user': job.remote_user, 'job-pass': job.remote_password,
+        'job-remote-dir': job.remote_dir
+      };
+      for (const [fieldId, value] of Object.entries(fields)) document.getElementById(fieldId).value = value ?? '';
+      document.getElementById('job-form-title').innerText = currentLanguage === 'en' ? 'Edit Scheduled Transfer' : 'แก้ไขรอบงานส่งไฟล์';
+      document.getElementById('job-save-icon').className = 'fa-solid fa-floppy-disk';
+      document.getElementById('job-save-label').innerText = currentLanguage === 'en' ? 'Update Job' : 'บันทึกการแก้ไข';
+      document.getElementById('job-cancel-edit').classList.remove('hidden');
+      document.getElementById('job-test-result').innerText = '';
+      document.getElementById('job-pass').type = 'password';
+      const toggle = document.getElementById('toggle-job-password');
+      toggle.setAttribute('aria-pressed', 'false');
+      toggle.setAttribute('aria-label', currentLanguage === 'en' ? 'Show password' : 'แสดงรหัสผ่าน');
+      toggle.title = toggle.getAttribute('aria-label');
+      toggle.innerHTML = '<i class="fa-regular fa-eye" aria-hidden="true"></i>';
+      document.getElementById('tab-outbound').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelEditJob() {
+      editingOutboundJobId = null;
+      for (const id of ['job-name', 'job-source', 'job-host', 'job-user', 'job-pass']) document.getElementById(id).value = '';
+      document.getElementById('job-cron').value = '*/5 * * * * *';
+      document.getElementById('job-pattern').value = '*.*';
+      document.getElementById('job-proto').value = 'sftp';
+      document.getElementById('job-port').value = '22';
+      document.getElementById('job-remote-dir').value = '/upload';
+      document.getElementById('job-pass').type = 'password';
+      const toggle = document.getElementById('toggle-job-password');
+      toggle.setAttribute('aria-pressed', 'false');
+      toggle.innerHTML = '<i class="fa-regular fa-eye" aria-hidden="true"></i>';
+      document.getElementById('job-form-title').innerText = currentLanguage === 'en' ? 'Create / Edit Scheduled Transfers' : 'สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)';
+      document.getElementById('job-save-icon').className = 'fa-solid fa-plus';
+      document.getElementById('job-save-label').innerText = currentLanguage === 'en' ? 'Save Outbound Job' : 'บันทึกงานส่งออก (Save Job)';
+      document.getElementById('job-cancel-edit').classList.add('hidden');
+      document.getElementById('job-test-result').innerText = '';
+    }
+
+    async function testSavedOutboundJob(id, button) {
+      const job = outboundJobsById.get(Number(id));
+      if (!job || button.disabled) return;
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      try {
+        const response = await fetch(API_BASE + '/outbound/test-connection', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(job)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Connection test failed');
+        showToast(currentLanguage === 'en' ? 'Connection to "' + job.name + '" succeeded' : 'ทดสอบการเชื่อมต่อ "' + job.name + '" สำเร็จ', 'success');
+      } catch (error) {
+        showToast((currentLanguage === 'en' ? 'Connection test failed: ' : 'ทดสอบการเชื่อมต่อไม่สำเร็จ: ') + (error.message || ''), 'error');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+    }
+
+    function updateOutboundPortDefault() {
+      const protocol = document.getElementById('job-proto').value;
+      document.getElementById('job-port').value = protocol === 'sftp' ? '22' : '21';
+    }
+
+    async function testOutboundConnection() {
+      const payload = getOutboundJobPayload();
+      const button = document.getElementById('job-test-button');
+      const result = document.getElementById('job-test-result');
+      if (!payload.remote_host || !payload.remote_port || !payload.remote_user || !payload.remote_password) {
+        result.innerText = currentLanguage === 'en'
+          ? 'Enter host, port, username, and password first.'
+          : 'กรุณากรอก Host, Port, Username และ Password ก่อน';
+        result.className = 'text-xs text-rose-400 min-h-4';
+        return;
+      }
+
+      button.disabled = true;
+      button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>${currentLanguage === 'en' ? 'Testing...' : 'กำลังทดสอบ...'}</span>`;
+      result.innerText = '';
+      try {
+        const response = await fetch(`${API_BASE}/outbound/test-connection`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Connection test failed');
+        result.innerText = currentLanguage === 'en'
+          ? 'Connected, authenticated, and remote folder is accessible.'
+          : 'เชื่อมต่อและยืนยันตัวตนสำเร็จ พร้อมเข้าโฟลเดอร์ปลายทางได้';
+        result.className = 'text-xs text-emerald-400 min-h-4';
+      } catch (error) {
+        result.innerText = `${currentLanguage === 'en' ? 'Connection failed: ' : 'ทดสอบไม่สำเร็จ: '}${error.message || ''}`;
+        result.className = 'text-xs text-rose-400 min-h-4 break-words';
+      } finally {
+        button.disabled = false;
+        button.innerHTML = `<i class="fa-solid fa-plug-circle-check"></i><span>${currentLanguage === 'en' ? 'Test Connection' : 'ทดสอบการเชื่อมต่อ'}</span>`;
+      }
+    }
+
+    // Save Outbound Job
+    async function saveOutboundJob() {
+      const name = document.getElementById('job-name').value.trim();
+      if (!name) {
+        showToast('กรุณากรอกชื่องานส่งออก', 'error');
+        return;
+      }
+      const payload = getOutboundJobPayload();
       try {
         const res = await fetch(`${API_BASE}/outbound/jobs`, {
           method: 'POST',
@@ -1431,6 +1585,7 @@
         });
         if (res.ok) {
           showToast(`บันทึกรอบงาน "${name}" เรียบร้อยแล้ว`, 'success');
+          cancelEditJob();
           loadJobs();
         } else {
           showToast('เกิดข้อผิดพลาดในการบันทึกงาน', 'error');
@@ -1440,7 +1595,8 @@
       }
     }
 
-    async function deleteJob(id, name) {
+    async function deleteJob(id) {
+      const name = outboundJobsById.get(Number(id))?.name || '';
       if (!confirm(translateValue(`ยืนยันการลบรอบงาน "${name}" ใช่หรือไม่?`))) return;
       try {
         const res = await fetch(`${API_BASE}/outbound/jobs?id=${id}`, { method: 'DELETE' });

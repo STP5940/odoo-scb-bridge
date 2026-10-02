@@ -10,6 +10,7 @@ import (
 	"odoo-scb-bridge/internal/database"
 	"odoo-scb-bridge/internal/license"
 	"odoo-scb-bridge/internal/models"
+	"odoo-scb-bridge/internal/outbound"
 	"odoo-scb-bridge/internal/scheduler"
 	"odoo-scb-bridge/internal/server/sftp"
 	"odoo-scb-bridge/internal/ui"
@@ -69,6 +70,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/inbound", cors(s.requireLicense(s.handleInboundConfig)))
 	mux.HandleFunc("/api/users", cors(s.requireLicense(s.handleUsers)))
 	mux.HandleFunc("/api/outbound/jobs", cors(s.requireLicense(s.handleOutboundJobs)))
+	mux.HandleFunc("/api/outbound/test-connection", cors(s.requireLicense(s.handleOutboundTestConnection)))
 	mux.HandleFunc("/locales.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		_, _ = w.Write([]byte(ui.LocalesContent))
@@ -116,7 +118,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"sftp_running": sftpRunning,
 		"activated":    s.license != nil && s.license.Activated(),
 		"machine_id":   s.machineID(),
-		"version":      "0.0.16",
+		"version":      "0.1.3",
 	})
 }
 
@@ -429,6 +431,23 @@ func (s *Server) handleOutboundJobs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+}
+
+func (s *Server) handleOutboundTestConnection(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var job models.OutboundJob
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16*1024)).Decode(&job); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid connection settings"})
+		return
+	}
+	if err := outbound.TestConnection(&job); err != nil {
+		jsonResponse(w, http.StatusBadGateway, map[string]interface{}{"ok": false, "error": err.Error()})
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{"ok": true})
 }
 
 func jsonResponse(w http.ResponseWriter, code int, data interface{}) {

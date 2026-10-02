@@ -6,7 +6,7 @@ chcp 65001 >nul
 echo ========================================================
 echo       Odoo SCB Bridge SFTP Upload Test
 echo ========================================================
-echo The verified test file will remain in the inbound folder.
+echo The probe is uploaded to inbound; scheduled jobs may move it to archive.
 echo.
 
 where go >nul 2>nul

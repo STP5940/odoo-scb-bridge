@@ -40,6 +40,13 @@ window.APP_LANGUAGE_PAIRS = [
   ["License นี้ใช้กับผลิตภัณฑ์อื่น", "license is for a different product"],
   ["License นี้ออกให้กับเครื่องอื่น", "license is for a different computer"],
   ["ข้อมูล License ไม่ครบถ้วน", "license is incomplete"],
+  ["ทดสอบการเชื่อมต่อ", "Test Connection"],
+  ["กำลังทดสอบ...", "Testing..."],
+  ["กรุณากรอก Host, Port, Username และ Password ก่อน", "Enter host, port, username, and password first."],
+  ["เชื่อมต่อและยืนยันตัวตนสำเร็จ พร้อมเข้าโฟลเดอร์ปลายทางได้", "Connected, authenticated, and remote folder is accessible."],
+  ["ทดสอบไม่สำเร็จ: ", "Connection failed: "],
+  ["FTP (Plain)", "FTP"],
+  ["FTPS (Explicit TLS)", "FTPS (Explicit TLS)"],
   [
     "บริการกำลังทำงาน",
     "Service Active"

@@ -84,7 +84,8 @@ func main() {
 		fail("Could not verify the uploaded file: %v. The probe was removed.", verifyErr)
 	}
 
-	fmt.Printf("PASS: inbound file content verified; test file kept at %s\n", filepath.Join(config.TargetDir, name))
+	fmt.Printf("PASS: inbound file content verified at %s\n", filepath.Join(config.TargetDir, name))
+	fmt.Println("Note: a scheduled outbound job may move this file to its archive folder after verification.")
 }
 
 func isLoopback(host string) bool {

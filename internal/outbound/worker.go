@@ -1,6 +1,7 @@
 package outbound
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -138,7 +139,8 @@ func (w *Worker) sendViaSFTP(job *models.OutboundJob, localPath, fileName string
 
 func (w *Worker) sendViaFTP(job *models.OutboundJob, localPath, fileName string) error {
 	addr := net.JoinHostPort(job.RemoteHost, fmt.Sprintf("%d", job.RemotePort))
-	c, err := ftp.Dial(addr, ftp.DialWithTimeout(10*time.Second))
+	opts := ftpDialOptions(job)
+	c, err := ftp.Dial(addr, opts...)
 	if err != nil {
 		return fmt.Errorf("ftp dial error: %w", err)
 	}
@@ -157,6 +159,73 @@ func (w *Worker) sendViaFTP(job *models.OutboundJob, localPath, fileName string)
 
 	remotePath := filepath.ToSlash(filepath.Join(job.RemoteDir, fileName))
 	return c.Stor(remotePath, localFile)
+}
+
+// TestConnection checks network reachability, authentication, and remote folder access without transferring files.
+func TestConnection(job *models.OutboundJob) error {
+	if job == nil || job.RemoteHost == "" || job.RemotePort < 1 || job.RemotePort > 65535 || job.RemoteUser == "" || job.RemotePassword == "" {
+		return fmt.Errorf("host, valid port, username, and password are required")
+	}
+	if job.RemoteDir == "" {
+		job.RemoteDir = "/"
+	}
+	addr := net.JoinHostPort(job.RemoteHost, fmt.Sprintf("%d", job.RemotePort))
+	switch job.Protocol {
+	case "sftp":
+		config := &ssh.ClientConfig{
+			User:            job.RemoteUser,
+			Auth:            []ssh.AuthMethod{ssh.Password(job.RemotePassword)},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         10 * time.Second,
+		}
+		sshClient, err := ssh.Dial("tcp", addr, config)
+		if err != nil {
+			return fmt.Errorf("SFTP connection or authentication failed: %w", err)
+		}
+		defer sshClient.Close()
+		client, err := sftp.NewClient(sshClient)
+		if err != nil {
+			return fmt.Errorf("SFTP session failed: %w", err)
+		}
+		defer client.Close()
+		info, err := client.Stat(job.RemoteDir)
+		if err != nil {
+			return fmt.Errorf("cannot access remote folder %q: %w", job.RemoteDir, err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("remote path %q is not a directory", job.RemoteDir)
+		}
+		return nil
+	case "ftp", "ftps":
+		c, err := ftp.Dial(addr, ftpDialOptions(job)...)
+		if err != nil {
+			return fmt.Errorf("FTP connection failed: %w", err)
+		}
+		defer c.Quit()
+		if err := c.Login(job.RemoteUser, job.RemotePassword); err != nil {
+			return fmt.Errorf("FTP authentication failed: %w", err)
+		}
+		if err := c.ChangeDir(job.RemoteDir); err != nil {
+			return fmt.Errorf("cannot access remote folder %q: %w", job.RemoteDir, err)
+		}
+		if err := c.NoOp(); err != nil {
+			return fmt.Errorf("FTP session check failed: %w", err)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported protocol: %s", job.Protocol)
+	}
+}
+
+func ftpDialOptions(job *models.OutboundJob) []ftp.DialOption {
+	opts := []ftp.DialOption{ftp.DialWithTimeout(10 * time.Second)}
+	if job.Protocol == "ftps" {
+		opts = append(opts, ftp.DialWithExplicitTLS(&tls.Config{
+			ServerName: job.RemoteHost,
+			MinVersion: tls.VersionTLS12,
+		}))
+	}
+	return opts
 }
 
 func (w *Worker) handlePostAction(job *models.OutboundJob, localPath, fileName string) {
