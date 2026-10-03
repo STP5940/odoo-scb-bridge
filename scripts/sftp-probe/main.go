@@ -1,14 +1,15 @@
 package main
 
 import (
-	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,18 @@ import (
 
 type inboundConfig struct {
 	TargetDir string `json:"target_dir"`
-	TempDir   string `json:"temp_dir"`
+}
+
+type sftpUser struct {
+	Username string `json:"username"`
+	RootDir  string `json:"root_dir"`
+}
+
+type auditLog struct {
+	FileName string `json:"file_name"`
+	FileSize int64  `json:"file_size"`
+	FileHash string `json:"file_hash"`
+	Status   string `json:"status"`
 }
 
 func main() {
@@ -46,17 +58,12 @@ func main() {
 	if err != nil {
 		fail("Cannot read the bridge inbound configuration: %v", err)
 	}
-	relativeTarget, err := filepath.Rel(filepath.Clean(config.TempDir), filepath.Clean(config.TargetDir))
+	userRoot, err := loadUserRootDir(*apiURL, *username)
 	if err != nil {
-		fail("Cannot calculate the inbound path relative to the SFTP upload folder: %v", err)
+		fail("Cannot read the SFTP user's private folder: %v", err)
 	}
-	if filepath.IsAbs(relativeTarget) || strings.HasPrefix(relativeTarget, "..\\..\\..\\..\\..") {
-		fail("Configured inbound folder is outside the expected SFTP data directory")
-	}
-
 	name := "codex_sftp_probe_" + strings.ReplaceAll(uuid.NewString(), "-", "") + ".txt"
 	payload := []byte("Odoo SCB Bridge SFTP upload test\nProbe: " + name + "\n")
-	targetPath := filepath.ToSlash(filepath.Join(relativeTarget, name))
 
 	if err := upload(*host, *port, *username, password, name, payload); err != nil {
 		fail("Upload failed: %v", err)
@@ -69,7 +76,7 @@ func main() {
 		if attempt > 0 {
 			time.Sleep(250 * time.Millisecond)
 		}
-		if err := verifyAndKeep(*host, *port, *username, password, targetPath, payload); err == nil {
+		if err := verifyInboundAudit(*apiURL, *username, name, payload); err == nil {
 			verified = true
 			break
 		} else {
@@ -77,14 +84,14 @@ func main() {
 		}
 	}
 	if !verified {
-		cleanupErr := removeProbe(*host, *port, *username, password, targetPath)
+		cleanupErr := removeProbe(*host, *port, *username, password, name)
 		if cleanupErr != nil {
 			fail("Could not verify the uploaded file (%v); automatic cleanup also failed (%v). Probe: %s", verifyErr, cleanupErr, name)
 		}
 		fail("Could not verify the uploaded file: %v. The probe was removed.", verifyErr)
 	}
 
-	fmt.Printf("PASS: inbound file content verified at %s\n", filepath.Join(config.TargetDir, name))
+	fmt.Printf("PASS: inbound file content verified at %s\n", filepath.Join(config.TargetDir, filepath.FromSlash(userRoot), name))
 	fmt.Println("Note: a scheduled outbound job may move this file to its archive folder after verification.")
 }
 
@@ -110,10 +117,41 @@ func loadInboundConfig(apiURL string) (*inboundConfig, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
 		return nil, err
 	}
-	if config.TargetDir == "" || config.TempDir == "" {
-		return nil, errors.New("target_dir or temp_dir is empty")
+	if config.TargetDir == "" {
+		return nil, errors.New("target_dir is empty")
 	}
 	return &config, nil
+}
+
+func loadUserRootDir(apiURL, username string) (string, error) {
+	parsedURL, err := url.Parse(apiURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid API URL: %w", err)
+	}
+	parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/inbound") + "/users"
+	response, err := (&http.Client{Timeout: 5 * time.Second}).Get(parsedURL.String())
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("users API returned %s", response.Status)
+	}
+	var users []sftpUser
+	if err := json.NewDecoder(response.Body).Decode(&users); err != nil {
+		return "", err
+	}
+	for _, user := range users {
+		if user.Username != username {
+			continue
+		}
+		root := filepath.Clean(filepath.FromSlash(user.RootDir))
+		if root == "." || filepath.IsAbs(root) || root == ".." || strings.HasPrefix(root, ".."+string(filepath.Separator)) {
+			return "", errors.New("user home path is not a safe relative path")
+		}
+		return user.RootDir, nil
+	}
+	return "", fmt.Errorf("SFTP user %q was not found", username)
 }
 
 func sshConfig(username, password string) *ssh.ClientConfig {
@@ -160,32 +198,43 @@ func upload(host string, port int, username, password, name string, payload []by
 	return nil
 }
 
-func verifyAndKeep(host string, port int, username, password, path string, expected []byte) error {
-	conn, client, err := connectSFTP(host, port, username, password)
+func verifyInboundAudit(apiURL, username, filename string, expected []byte) error {
+	parsedURL, err := url.Parse(apiURL)
 	if err != nil {
-		return fmt.Errorf("connect for verification: %w", err)
+		return fmt.Errorf("invalid API URL: %w", err)
 	}
-	file, err := client.Open(path)
+	parsedURL.Path = strings.TrimSuffix(parsedURL.Path, "/inbound") + "/logs"
+	query := parsedURL.Query()
+	query.Set("username", username)
+	query.Set("page", "1")
+	query.Set("page_size", "100")
+	parsedURL.RawQuery = query.Encode()
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	response, err := client.Get(parsedURL.String())
 	if err != nil {
-		closeSFTPSession(conn, client)
-		return fmt.Errorf("inbound file not available yet: %w", err)
+		return fmt.Errorf("read inbound transfer log: %w", err)
 	}
-	actual, readErr := io.ReadAll(file)
-	closeFileErr := file.Close()
-	if readErr != nil {
-		closeSFTPSession(conn, client)
-		return readErr
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("inbound log API returned %s", response.Status)
 	}
-	if closeFileErr != nil {
-		closeSFTPSession(conn, client)
-		return closeFileErr
+	var logs []auditLog
+	if err := json.NewDecoder(response.Body).Decode(&logs); err != nil {
+		return fmt.Errorf("decode inbound transfer log: %w", err)
 	}
-	if !bytes.Equal(actual, expected) {
-		closeSFTPSession(conn, client)
-		return errors.New("inbound file content does not match the uploaded probe")
+	wantHash := sha256.Sum256(expected)
+	wantHashText := hex.EncodeToString(wantHash[:])
+	for _, item := range logs {
+		if item.FileName != filename || item.Status != "SUCCESS" {
+			continue
+		}
+		if item.FileSize != int64(len(expected)) || item.FileHash != wantHashText {
+			return errors.New("inbound file content does not match the uploaded probe")
+		}
+		return nil
 	}
-	closeSFTPSession(conn, client)
-	return nil
+	return errors.New("the inbound server has not recorded this probe yet")
 }
 
 func removeProbe(host string, port int, username, password, path string) error {

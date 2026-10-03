@@ -234,7 +234,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.26</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.45</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -259,7 +259,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.26</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.45</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -460,7 +460,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.26</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.45</span>
       </div>
     </aside>
 
@@ -671,6 +671,15 @@
                 </button>
               </div>
             </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1 text-[11px] text-slate-300">
+              <label class="flex items-center gap-2"><input id="user-perm-list" type="checkbox" checked class="accent-brand-500"> ดูรายการไฟล์</label>
+              <label class="flex items-center gap-2"><input id="user-perm-read" type="checkbox" checked class="accent-brand-500"> ดาวน์โหลด/อ่าน</label>
+              <label class="flex items-center gap-2"><input id="user-perm-write" type="checkbox" checked class="accent-brand-500"> อัปโหลด/เขียน</label>
+              <label class="flex items-center gap-2"><input id="user-perm-mkdir" type="checkbox" checked class="accent-brand-500"> สร้างโฟลเดอร์</label>
+              <label class="flex items-center gap-2"><input id="user-perm-rename" type="checkbox" checked class="accent-brand-500"> เปลี่ยนชื่อ/ย้าย</label>
+              <label class="flex items-center gap-2"><input id="user-perm-delete" type="checkbox" class="accent-brand-500"> ลบไฟล์</label>
+            </div>
+            <p class="text-[10px] text-slate-500">แต่ละบัญชีจะเห็นเฉพาะ home ของตัวเอง และสิทธิ์จะถูกตรวจที่ SFTP server ทุกคำสั่ง</p>
           </div>
 
           <!-- Users Table -->
@@ -680,7 +689,7 @@
                 <tr>
                   <th class="py-2.5 px-3">ID</th>
                   <th class="py-2.5 px-3">Username</th>
-                  <th class="py-2.5 px-3">สิทธิ์ / Root Path</th>
+                  <th class="py-2.5 px-3">Home / Permissions</th>
                   <th class="py-2.5 px-3">สถานะบัญชี</th>
                   <th class="py-2.5 px-3">วันที่สร้าง</th>
                   <th class="py-2.5 px-3 text-right">การจัดการ</th>
@@ -722,7 +731,13 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">ผู้ใช้ต้นทาง (Local SFTP User)</label>
+              <select id="job-source-user" onchange="onOutboundSourceUserChange()" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+                <option value="manual">กำหนดโฟลเดอร์เอง</option>
+              </select>
+            </div>
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1.5">โฟลเดอร์ต้นทางที่เก็บไฟล์ (Source Folder)</label>
               <input type="text" id="job-source" placeholder="C:/data/outbound" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
@@ -732,6 +747,7 @@
               <input type="text" id="job-pattern" value="*.*" placeholder="*.* หรือ *.txt" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
             </div>
           </div>
+          <p class="text-[11px] text-slate-500 -mt-2">เลือกผู้ใช้เพื่อส่งไฟล์จากโฟลเดอร์ส่วนตัวของผู้ใช้นั้น หรือเลือกกำหนดโฟลเดอร์เอง · บัญชีปลายทาง (Remote Username) ตั้งค่าแยกต่างหาก</p>
 
           <div class="grid grid-cols-3 gap-4">
             <div>
@@ -772,6 +788,11 @@
             </div>
           </div>
 
+          <label for="job-enabled" class="inline-flex items-center gap-2.5 rounded-xl border border-white/10 bg-dark-950/40 px-3.5 py-2.5 text-xs font-medium text-slate-200 cursor-pointer">
+            <input id="job-enabled" type="checkbox" checked class="h-4 w-4 accent-brand-500">
+            <span>Active — <span class="text-slate-400">เปิดใช้งานรอบงานตาม Cron</span></span>
+          </label>
+
           <div class="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p id="job-test-result" class="text-xs text-slate-400 min-h-4" role="status" aria-live="polite"></p>
             <div class="flex flex-wrap gap-2">
@@ -797,19 +818,18 @@
             <span class="text-xs text-slate-400">ควบคุมด้วย Go Cron Engine</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full table-fixed text-left text-xs">
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
-                  <th class="py-2.5 px-3">ชื่องาน</th>
-                  <th class="py-2.5 px-3">รอบเวลา Cron</th>
-                  <th class="py-2.5 px-3">โฟลเดอร์ต้นทาง</th>
-                  <th class="py-2.5 px-3">ปลายทาง Host</th>
-                  <th class="py-2.5 px-3">สถานะล่าสุด</th>
-                  <th class="py-2.5 px-3 text-right">การจัดการ</th>
+                  <th class="py-2.5 px-3 w-[17%] whitespace-nowrap">ชื่องาน</th>
+                  <th class="py-2.5 px-3 w-[33%] whitespace-nowrap">รอบเวลา Cron</th>
+                  <th class="py-2.5 px-3 w-[18%] whitespace-nowrap">ปลายทาง Host</th>
+                  <th class="py-2.5 px-3 w-[12%] whitespace-nowrap">สถานะล่าสุด</th>
+                  <th class="py-2.5 px-3 w-[20%] text-right whitespace-nowrap">การจัดการ</th>
                 </tr>
               </thead>
               <tbody id="job-list-table" class="divide-y divide-dark-800/60 font-mono">
-                <tr><td colspan="6" class="p-6 text-center text-slate-500">กำลังโหลดรายการงาน...</td></tr>
+                <tr><td colspan="5" class="p-6 text-center text-slate-500">กำลังโหลดรายการงาน...</td></tr>
               </tbody>
             </table>
           </div>
@@ -833,9 +853,13 @@
                 <option value="INBOUND_FILE">การรับเข้าไฟล์ (INBOUND)</option>
                 <option value="OUTBOUND_FILE">การส่งออกไฟล์ (OUTBOUND)</option>
                 <option value="USER_MGMT">การจัดการผู้ใช้ (USER_MGMT)</option>
+                <option value="SFTP_SECURITY">ความปลอดภัย SFTP</option>
+                <option value="APP_VERSION">การติดตั้ง/เปลี่ยนเวอร์ชัน</option>
                 <option value="PIN_LOCKOUT">ล็อกแอป (PIN_LOCKOUT)</option>
               </select>
             </div>
+            <input id="log-user-filter" list="sftp-log-users" type="text" onkeydown="if(event.key==='Enter') changeLogFilter()" placeholder="กรองตาม Username" aria-label="Filter logs by exact username" class="glass-input rounded-xl px-3 py-2 text-xs text-white w-40">
+            <datalist id="sftp-log-users"></datalist>
             <button onclick="loadLogs()" class="px-3 py-2 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 text-xs border border-white/5 flex items-center space-x-1.5">
               <i class="fa-solid fa-rotate-right"></i>
               <span>รีเฟรช Log</span>
@@ -845,6 +869,15 @@
 
         <!-- Audit Logs Table -->
         <div class="glass-card rounded-2xl p-6 overflow-hidden">
+          <div class="flex items-center gap-2 mb-3">
+            <label for="logs-page-size" class="text-xs text-slate-400">แสดง</label>
+            <select id="logs-page-size" onchange="changeLogsPageSize()" class="glass-input rounded-lg px-2.5 py-2 text-xs text-white" aria-label="จำนวนรายการต่อหน้า">
+              <option value="10" selected>10 รายการ</option>
+              <option value="25">25 รายการ</option>
+              <option value="50">50 รายการ</option>
+              <option value="100">100 รายการ</option>
+            </select>
+          </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
@@ -867,33 +900,22 @@
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
           <p id="logs-pagination-info" class="text-xs text-slate-400" aria-live="polite">กำลังโหลดรายการ...</p>
-          <div class="flex items-center gap-2">
-            <label for="logs-page-size" class="text-xs text-slate-400">แสดง</label>
-            <select id="logs-page-size" onchange="changeLogsPageSize()" class="glass-input rounded-lg px-2.5 py-2 text-xs text-white" aria-label="จำนวนรายการต่อหน้า">
-              <option value="10" selected>10 รายการ</option>
-              <option value="25">25 รายการ</option>
-              <option value="50">50 รายการ</option>
-              <option value="100">100 รายการ</option>
-            </select>
-            <button id="logs-prev-page" type="button" onclick="changeLogsPage(-1)" disabled class="px-3 py-2 rounded-lg bg-dark-800 text-slate-200 text-xs border border-white/5 transition enabled:hover:bg-dark-750 disabled:opacity-40 disabled:cursor-not-allowed">
-              <i class="fa-solid fa-chevron-left mr-1"></i>ก่อนหน้า
-            </button>
-            <button id="logs-next-page" type="button" onclick="changeLogsPage(1)" disabled class="px-3 py-2 rounded-lg bg-dark-800 text-slate-200 text-xs border border-white/5 transition enabled:hover:bg-dark-750 disabled:opacity-40 disabled:cursor-not-allowed">
-              ถัดไป<i class="fa-solid fa-chevron-right ml-1"></i>
-            </button>
+          <div class="flex flex-wrap items-center justify-end gap-3">
+            <nav id="logs-pagination-pages" aria-label="เลือกหน้าบันทึก" class="flex flex-nowrap items-center gap-1 shrink-0"></nav>
           </div>
         </div>
 
       </section>
 
       <!-- ================= TAB 5: SETTINGS ================= -->
-      <section id="tab-settings" class="hidden space-y-6">
-        <div>
-          <h2 class="text-xl font-bold text-white tracking-tight">ตั้งค่า</h2>
-          <p class="text-xs text-slate-400 mt-0.5">จัดการภาษา ธีม และความปลอดภัยของแอป</p>
-        </div>
+      <section id="tab-settings" class="hidden">
+        <div id="settings-home-view" class="space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">ตั้งค่า</h2>
+            <p class="text-xs text-slate-400 mt-0.5">จัดการภาษา ธีม และความปลอดภัยของแอป</p>
+          </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <section class="glass-card rounded-2xl p-6 space-y-5">
             <div class="flex items-center gap-3 border-b border-dark-800 pb-4">
               <span class="w-10 h-10 rounded-xl bg-cyan-500/10 text-accent-cyan flex items-center justify-center"><i class="fa-solid fa-sliders"></i></span>
@@ -952,6 +974,17 @@
             </div>
           </section>
 
+          <button type="button" onclick="openSettingsSubpage('sftp-security')" class="glass-card rounded-2xl p-6 xl:col-span-2 flex items-center justify-between gap-4 text-left hover:border-rose-400/30 transition group">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0"><i class="fa-solid fa-shield-halved"></i></span>
+              <span class="min-w-0">
+                <span class="block font-bold text-white">จัดการความปลอดภัย SFTP</span>
+                <span class="block text-xs text-slate-400 mt-0.5">จัดการ Allow list, Block list และ IP ที่ถูกบล็อกชั่วคราว</span>
+              </span>
+            </div>
+            <span class="shrink-0 inline-flex items-center gap-2 text-xs font-semibold text-slate-300 group-hover:text-white"><span>จัดการ</span><i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+          </button>
+
           <section class="glass-card rounded-2xl p-6 xl:col-span-2">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div class="flex items-center gap-3">
@@ -967,6 +1000,64 @@
               </button>
             </div>
           </section>
+        </div>
+        </div>
+
+        <div id="settings-sftp-security-view" class="hidden space-y-5">
+          <div class="space-y-1">
+            <nav aria-label="เส้นทางการนำทาง" class="flex flex-wrap items-center gap-2 text-xl font-bold tracking-tight">
+              <button type="button" onclick="showSettingsHome()" class="text-slate-400 hover:text-white transition">ตั้งค่า</button>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-600" aria-hidden="true"></i>
+              <span aria-current="page" class="text-white">จัดการความปลอดภัย SFTP</span>
+            </nav>
+            <p class="text-xs text-slate-400 mt-0.5">ผิด 5 ครั้งใน 15 นาที จะบล็อก IP 15 นาที · กฎ IP ถาวรมีผลทันที</p>
+          </div>
+
+          <div class="glass-card rounded-2xl p-6 space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+              <div>
+                <label for="sftp-ip-mode" class="block text-xs font-medium text-slate-300 mb-1.5">การเชื่อมต่อจาก IP</label>
+                <select id="sftp-ip-mode" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+                  <option value="allow_all">อนุญาตทุก IP (ยกเว้น IP ที่บล็อก)</option>
+                  <option value="allow_list">อนุญาตเฉพาะ IP ในรายการ</option>
+                </select>
+              </div>
+              <button onclick="saveSFTPSecuritySettings()" class="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs">บันทึกโหมด IP</button>
+            </div>
+            <p class="text-[11px] text-amber-400">โหมด Allow list จะปฏิเสธทุก IP ที่ไม่ได้เพิ่มเป็น Allow รวมถึง IP ที่ใช้งานอยู่ในขณะนี้</p>
+
+            <div class="p-4 rounded-xl bg-dark-950/50 border border-white/5 space-y-3">
+              <h4 class="text-xs font-semibold text-slate-200">เพิ่มกฎ IP (รองรับ IP หรือ CIDR)</h4>
+              <div class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-2">
+                <input id="sftp-ip-rule-cidr" type="text" class="glass-input rounded-xl p-2.5 text-xs font-mono text-white" placeholder="เช่น 192.168.1.10 หรือ 192.168.1.0/24" aria-label="IP address or CIDR">
+                <select id="sftp-ip-rule-action" class="glass-input rounded-xl p-2.5 text-xs text-white">
+                  <option value="allow">อนุญาตถาวร</option>
+                  <option value="block">บล็อกถาวร</option>
+                </select>
+                <button onclick="addSFTPIPRule()" class="px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-100 border border-white/10 text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่มกฎ</button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <h4 class="text-xs font-semibold text-slate-200">IP ที่กำลังถูกบล็อกชั่วคราว</h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-dark-950/70 text-slate-400"><tr><th class="p-2.5">IP</th><th class="p-2.5">Username ล่าสุด</th><th class="p-2.5">ผิดสะสม</th><th class="p-2.5">เหลือเวลา</th><th class="p-2.5 text-right">จัดการ</th></tr></thead>
+                  <tbody id="sftp-blocked-ip-table" class="divide-y divide-dark-800/60"><tr><td colspan="5" class="p-4 text-center text-slate-500">กำลังโหลด...</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <h4 class="text-xs font-semibold text-slate-200">รายการ Allow / Block ถาวร</h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-dark-950/70 text-slate-400"><tr><th class="p-2.5">IP / CIDR</th><th class="p-2.5">กฎ</th><th class="p-2.5">ชนิด</th><th class="p-2.5 text-right">จัดการ</th></tr></thead>
+                  <tbody id="sftp-ip-rules-table" class="divide-y divide-dark-800/60"><tr><td colspan="4" class="p-4 text-center text-slate-500">กำลังโหลด...</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1003,11 +1094,14 @@
     let languageLookup = new Map();
     let translatingPage = false;
     let cachedUsers = [];
+    let outboundTargetDir = '';
     let editingUser = false;
     let isRunning = true;
     let logsPage = 1;
+    let logsTotalPages = 1;
     let logsRequestId = 0;
     let logsPageSize = 10;
+    let sftpSecurityRefreshPromise = null;
 
     function pinText(th, en) {
       return translateValue(currentLanguage === 'en' ? en : th);
@@ -1030,7 +1124,8 @@
     async function loadApplicationData() {
       if (!appUnlocked) return;
       await loadStatus();
-      if (!isActivated || !isRunning) return;
+      if (!isActivated) return;
+      if (!isRunning) return;
       await Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
     }
 
@@ -1612,7 +1707,10 @@
       const selector = document.getElementById('language-select');
       if (selector) selector.value = currentLanguage;
       translateSubtree(document.body);
-      if (appUnlocked && isRunning && isActivated) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+      if (appUnlocked && isActivated) {
+        if (isSettingsSubpageOpen('sftp-security')) loadSFTPSecurity();
+        if (isRunning) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+      }
     }
 
     function getLocale() {
@@ -1725,6 +1823,13 @@
         targetNav.setAttribute('aria-current', 'page');
       }
 
+      if (tab === 'logs' && appUnlocked && isActivated) {
+        logsPage = 1;
+        loadLogs();
+      }
+      if (tab === 'outbound' && appUnlocked && isActivated) loadOutboundSourceOptions();
+      if (tab === 'settings') showSettingsHome();
+
       // Scroll to top of main container when tab switches
       const scrollArea = document.getElementById('main-scroll-area');
       if (scrollArea) scrollArea.scrollTop = 0;
@@ -1739,8 +1844,31 @@
         showToast('Windows Service หยุดทำงานอยู่ จึงยังโหลดข้อมูลระบบไม่ได้', 'info');
         return;
       }
+      if (isSettingsSubpageOpen('sftp-security')) await loadSFTPSecurity();
       await Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
       showToast('รีเฟรชข้อมูลล่าสุดสำเร็จ', 'info');
+    }
+
+    function isSettingsSubpageOpen(page) {
+      return page === 'sftp-security'
+        && !document.getElementById('tab-settings')?.classList.contains('hidden')
+        && !document.getElementById('settings-sftp-security-view')?.classList.contains('hidden');
+    }
+
+    function showSettingsHome() {
+      document.getElementById('settings-home-view')?.classList.remove('hidden');
+      document.getElementById('settings-sftp-security-view')?.classList.add('hidden');
+      const scrollArea = document.getElementById('main-scroll-area');
+      if (scrollArea) scrollArea.scrollTop = 0;
+    }
+
+    function openSettingsSubpage(page) {
+      if (page !== 'sftp-security') return;
+      document.getElementById('settings-home-view')?.classList.add('hidden');
+      document.getElementById('settings-sftp-security-view')?.classList.remove('hidden');
+      if (appUnlocked && isActivated) loadSFTPSecurity();
+      const scrollArea = document.getElementById('main-scroll-area');
+      if (scrollArea) scrollArea.scrollTop = 0;
     }
 
     // Control the actual Windows Service in Electron. Browser preview retains the API fallback.
@@ -1884,6 +2012,171 @@
       } catch (e) {}
     }
 
+    async function loadOutboundSourceOptions() {
+      const select = document.getElementById('job-source-user');
+      if (!select) return;
+      const previousSelection = select.value || 'manual';
+      try {
+        const [usersResponse, inboundResponse] = await Promise.all([
+          fetch(`${API_BASE}/users`),
+          fetch(`${API_BASE}/inbound`)
+        ]);
+        if (!usersResponse.ok || !inboundResponse.ok) return;
+        cachedUsers = await usersResponse.json() || [];
+        const inbound = await inboundResponse.json();
+        outboundTargetDir = inbound.target_dir || '';
+        select.innerHTML = `<option value="manual">${currentLanguage === 'en' ? 'Choose folder manually' : 'กำหนดโฟลเดอร์เอง'}</option>` +
+          cachedUsers.map(user => `<option value="${Number(user.id)}">${escapeHTML(user.username)}${user.enabled ? '' : (currentLanguage === 'en' ? ' (inactive)' : ' (ปิดใช้งาน)')}</option>`).join('');
+        if ([...select.options].some(option => option.value === previousSelection)) select.value = previousSelection;
+        onOutboundSourceUserChange();
+      } catch (e) {}
+    }
+
+    function outboundUserSourcePath(user) {
+      if (!outboundTargetDir || !user?.root_dir) return '';
+      return joinLocalPath(outboundTargetDir, user.root_dir);
+    }
+
+    function joinLocalPath(basePath, relativePath) {
+      const separator = String(basePath).includes('\\') ? '\\' : '/';
+      const base = String(basePath || '').replace(/[\\/]+$/, '');
+      const relative = String(relativePath || '').replace(/^[\\/]+/, '').replace(/[\\/]/g, separator);
+      return base && relative ? `${base}${separator}${relative}` : base || relative;
+    }
+
+    function onOutboundSourceUserChange() {
+      const select = document.getElementById('job-source-user');
+      const source = document.getElementById('job-source');
+      if (!select || !source) return;
+      const selectedID = Number(select.value);
+      if (select.value !== 'manual' && selectedID > 0) {
+        const user = cachedUsers.find(item => Number(item.id) === selectedID);
+        const path = outboundUserSourcePath(user);
+        if (path) source.value = path;
+        source.readOnly = true;
+        source.title = currentLanguage === 'en' ? 'Source folder for this SFTP account' : 'โฟลเดอร์ส่วนตัวของบัญชี SFTP นี้';
+      } else {
+        source.readOnly = false;
+        source.title = '';
+      }
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function formatBlockDuration(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const rest = seconds % 60;
+      return currentLanguage === 'en'
+        ? (minutes ? `${minutes}m ${rest}s` : `${rest}s`)
+        : (minutes ? `${minutes} นาที ${rest} วินาที` : `${rest} วินาที`);
+    }
+
+    function updateSFTPBlockedCountdowns() {
+      if (!isSettingsSubpageOpen('sftp-security')) return;
+      let expired = false;
+      document.querySelectorAll('[data-sftp-blocked-until]').forEach(element => {
+        const seconds = Math.max(0, Math.ceil((Number(element.dataset.sftpBlockedUntil) - Date.now()) / 1000));
+        element.innerText = formatBlockDuration(seconds);
+        if (seconds === 0) expired = true;
+      });
+      if (expired) loadSFTPSecurity();
+    }
+
+    async function loadSFTPSecurity() {
+      if (!appUnlocked || !isSettingsSubpageOpen('sftp-security')) return;
+      if (sftpSecurityRefreshPromise) return sftpSecurityRefreshPromise;
+      sftpSecurityRefreshPromise = (async () => {
+        try {
+          const response = await fetch(`${API_BASE}/security/sftp`);
+          if (!response.ok) throw new Error('Could not load SFTP security settings');
+          const result = await response.json();
+          if (!appUnlocked) return;
+          document.getElementById('sftp-ip-mode').value = result.settings?.ip_mode || 'allow_all';
+          const ruleTable = document.getElementById('sftp-ip-rules-table');
+          const blockedTable = document.getElementById('sftp-blocked-ip-table');
+          ruleTable.innerHTML = result.rules?.length ? result.rules.map(rule => `
+            <tr>
+              <td class="p-2.5 font-mono">${escapeHTML(rule.cidr)}</td>
+              <td class="p-2.5"><span class="px-2 py-0.5 rounded-full ${rule.action === 'block' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-brand-400'}">${rule.action === 'block' ? (currentLanguage === 'en' ? 'BLOCK' : 'บล็อก') : (currentLanguage === 'en' ? 'ALLOW' : 'อนุญาต')}</span></td>
+              <td class="p-2.5 text-slate-400">${rule.permanent ? (currentLanguage === 'en' ? 'Permanent' : 'ถาวร') : escapeHTML(rule.expires_at || '')}</td>
+              <td class="p-2.5 text-right"><button onclick="deleteSFTPIPRule(${Number(rule.id)})" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300">${currentLanguage === 'en' ? 'Remove' : 'ลบ'}</button></td>
+            </tr>`).join('') : `<tr><td colspan="4" class="p-4 text-center text-slate-500">${currentLanguage === 'en' ? 'No permanent IP rules' : 'ยังไม่มีกฎ IP ถาวร'}</td></tr>`;
+          blockedTable.innerHTML = result.blocked_ips?.length ? result.blocked_ips.map(item => `
+            <tr>
+              <td class="p-2.5 font-mono">${escapeHTML(item.ip)}</td>
+              <td class="p-2.5">${escapeHTML(item.username || '-')}</td>
+              <td class="p-2.5">${Number(item.failed_attempts) || 0}</td>
+              <td class="p-2.5 font-mono text-amber-400"><span data-sftp-blocked-until="${new Date(item.blocked_until).getTime()}"></span></td>
+              <td class="p-2.5 text-right"><button onclick="unblockSFTPIP('${escapeHTML(item.ip)}')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300">${currentLanguage === 'en' ? 'Unblock' : 'ปลดบล็อก'}</button></td>
+            </tr>`).join('') : `<tr><td colspan="5" class="p-4 text-center text-slate-500">${currentLanguage === 'en' ? 'No IPs are temporarily blocked' : 'ไม่มี IP ที่ถูกบล็อกชั่วคราว'}</td></tr>`;
+          updateSFTPBlockedCountdowns();
+        } catch (error) {
+          document.getElementById('sftp-ip-rules-table').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-rose-400">${escapeHTML(error.message)}</td></tr>`;
+          document.getElementById('sftp-blocked-ip-table').innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-400">${escapeHTML(error.message)}</td></tr>`;
+        } finally {
+          sftpSecurityRefreshPromise = null;
+        }
+      })();
+      return sftpSecurityRefreshPromise;
+    }
+
+    async function saveSFTPSecuritySettings() {
+      const ipMode = document.getElementById('sftp-ip-mode').value;
+      if (ipMode === 'allow_list' && !window.confirm(currentLanguage === 'en'
+        ? 'Only IP addresses in the Allow list will be able to connect. Continue?'
+        : 'หลังเปิด Allow list จะมีเฉพาะ IP ที่เพิ่มเป็นอนุญาตเท่านั้นที่เชื่อมต่อได้ ต้องการดำเนินการต่อหรือไม่?')) {
+        await loadSFTPSecurity();
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/security/sftp`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip_mode: ipMode })
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Could not save IP mode');
+        showToast(currentLanguage === 'en' ? 'SFTP IP access mode saved' : 'บันทึกโหมด IP SFTP แล้ว', 'success');
+        await loadSFTPSecurity();
+      } catch (error) { showToast(error.message, 'error'); }
+    }
+
+    async function addSFTPIPRule() {
+      const cidr = document.getElementById('sftp-ip-rule-cidr').value.trim();
+      const action = document.getElementById('sftp-ip-rule-action').value;
+      if (!cidr) {
+        showToast(currentLanguage === 'en' ? 'Enter an IP address or CIDR range' : 'กรุณากรอก IP หรือ CIDR', 'error');
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/security/sftp/rules`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cidr, action })
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Could not add IP rule');
+        document.getElementById('sftp-ip-rule-cidr').value = '';
+        showToast(currentLanguage === 'en' ? 'IP rule added' : 'เพิ่มกฎ IP แล้ว', 'success');
+        await loadSFTPSecurity();
+      } catch (error) { showToast(error.message, 'error'); }
+    }
+
+    async function deleteSFTPIPRule(id) {
+      try {
+        const response = await fetch(`${API_BASE}/security/sftp/rules?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error((await response.json()).error || 'Could not remove IP rule');
+        await loadSFTPSecurity();
+      } catch (error) { showToast(error.message, 'error'); }
+    }
+
+    async function unblockSFTPIP(ip) {
+      try {
+        const response = await fetch(`${API_BASE}/security/sftp/blocked?ip=${encodeURIComponent(ip)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error((await response.json()).error || 'Could not unblock IP');
+        showToast(currentLanguage === 'en' ? 'Temporary IP block cleared' : 'ปลดบล็อก IP ชั่วคราวแล้ว', 'success');
+        await loadSFTPSecurity();
+      } catch (error) { showToast(error.message, 'error'); }
+    }
+
     // Save Inbound Config
     async function saveInboundConfig() {
       const payload = {
@@ -1919,6 +2212,7 @@
         if (res.ok) {
           const users = await res.json() || [];
           cachedUsers = users;
+          document.getElementById('sftp-log-users').innerHTML = users.map(user => `<option value="${escapeHTML(user.username)}"></option>`).join('');
           const table = document.getElementById('user-list-table');
           if (users.length === 0) {
             table.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีผู้ใช้งาน SFTP บันทึกไว้</td></tr>';
@@ -1935,7 +2229,17 @@
                   <span>${u.username}</span>
                 </div>
               </td>
-              <td class="p-3 text-slate-400 text-xs">${u.root_dir || '.'}</td>
+              <td class="p-3 text-slate-400 text-xs">
+                <div class="font-mono text-slate-300">/${u.root_dir || ''}</div>
+                <div class="mt-1 flex flex-wrap gap-1 text-[9px]">
+                  ${u.can_list ? '<span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300">LIST</span>' : ''}
+                  ${u.can_read ? '<span class="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300">READ</span>' : ''}
+                  ${u.can_write ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300">WRITE</span>' : ''}
+                  ${u.can_mkdir ? '<span class="px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300">MKDIR</span>' : ''}
+                  ${u.can_rename ? '<span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">RENAME</span>' : ''}
+                  ${u.can_delete ? '<span class="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300">DELETE</span>' : ''}
+                </div>
+              </td>
               <td class="p-3">
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${u.enabled ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
                   ${u.enabled ? '● ACTIVE' : '○ DISABLED'}
@@ -1968,7 +2272,16 @@
         const res = await fetch(`${API_BASE}/users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, password: p, root_dir: cachedUsers.find(user => user.username === u)?.root_dir || '.', enabled: document.getElementById('user-enabled').value === 'true' })
+          body: JSON.stringify({
+            username: u, password: p, root_dir: cachedUsers.find(user => user.username === u)?.root_dir || '',
+            enabled: document.getElementById('user-enabled').value === 'true',
+            can_list: document.getElementById('user-perm-list').checked,
+            can_read: document.getElementById('user-perm-read').checked,
+            can_write: document.getElementById('user-perm-write').checked,
+            can_delete: document.getElementById('user-perm-delete').checked,
+            can_mkdir: document.getElementById('user-perm-mkdir').checked,
+            can_rename: document.getElementById('user-perm-rename').checked
+          })
         });
         if (res.ok) {
           cancelUserEdit();
@@ -1991,6 +2304,12 @@
       document.getElementById('user-username').value = username;
       document.getElementById('user-username').readOnly = true;
       document.getElementById('user-enabled').value = String(Boolean(user.enabled));
+      document.getElementById('user-perm-list').checked = Boolean(user.can_list);
+      document.getElementById('user-perm-read').checked = Boolean(user.can_read);
+      document.getElementById('user-perm-write').checked = Boolean(user.can_write);
+      document.getElementById('user-perm-delete').checked = Boolean(user.can_delete);
+      document.getElementById('user-perm-mkdir').checked = Boolean(user.can_mkdir);
+      document.getElementById('user-perm-rename').checked = Boolean(user.can_rename);
       document.getElementById('user-password').value = '';
       setUserPasswordVisibility(false);
       document.getElementById('user-password').focus();
@@ -2005,6 +2324,12 @@
       document.getElementById('user-username').value = '';
       document.getElementById('user-username').readOnly = false;
       document.getElementById('user-enabled').value = 'true';
+      document.getElementById('user-perm-list').checked = true;
+      document.getElementById('user-perm-read').checked = true;
+      document.getElementById('user-perm-write').checked = true;
+      document.getElementById('user-perm-delete').checked = false;
+      document.getElementById('user-perm-mkdir').checked = true;
+      document.getElementById('user-perm-rename').checked = true;
       document.getElementById('user-password').value = '';
       document.getElementById('user-password').placeholder = 'Password (รหัสผ่าน)';
       setUserPasswordVisibility(false);
@@ -2068,29 +2393,30 @@
           document.getElementById('stat-jobs-count').innerText = jobs.length;
           const table = document.getElementById('job-list-table');
           if (jobs.length === 0) {
-            table.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-500">ยังไม่มีรอบงานส่งออกไฟล์ (คลิกสร้างงานด้านบน)</td></tr>';
+            table.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-500">ยังไม่มีรอบงานส่งออกไฟล์ (คลิกสร้างงานด้านบน)</td></tr>';
             return;
           }
           table.innerHTML = jobs.map(j => `
             <tr class="hover:bg-dark-850/50 transition">
-              <td class="p-3 font-semibold text-white">
-                <div class="flex items-center space-x-2">
+              <td class="p-3 font-semibold text-white whitespace-nowrap">
+                <div class="flex items-center space-x-2 min-w-0">
                   <div class="w-6 h-6 rounded-md bg-purple-500/10 text-accent-purple flex items-center justify-center text-[10px]">
                     <i class="fa-solid fa-paper-plane"></i>
                   </div>
-                  <span>${j.name}</span>
+                  <span class="truncate" title="${escapeHTML(j.name)}">${escapeHTML(j.name)}</span>
                 </div>
               </td>
-              <td class="p-3 text-accent-cyan font-mono text-xs">${j.cron_expr}</td>
-              <td class="p-3 text-slate-400 text-xs">${j.source_dir}</td>
-              <td class="p-3 text-xs text-slate-300">${j.protocol.toUpperCase()}://${j.remote_host}:${j.remote_port}</td>
-              <td class="p-3">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${j.last_status === 'SUCCESS' ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
-                  ${j.last_status || 'IDLE'}
+              <td class="p-3 text-xs min-w-0">
+                <div class="text-accent-cyan font-mono whitespace-nowrap">${escapeHTML(j.cron_expr)}</div>
+              </td>
+              <td class="p-3 text-xs text-slate-300 whitespace-nowrap">${escapeHTML(j.protocol.toUpperCase())}://${escapeHTML(j.remote_host)}:${Number(j.remote_port)}</td>
+              <td class="p-3 whitespace-nowrap">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${!j.enabled ? 'bg-slate-800 text-slate-400' : j.last_status === 'SUCCESS' ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
+                  ${j.enabled ? (j.last_status || 'IDLE') : (currentLanguage === 'en' ? 'DISABLED' : 'ปิดใช้งาน')}
                 </span>
               </td>
-              <td class="p-3 text-right">
-                <div class="flex justify-end gap-1.5">
+              <td class="p-3 text-right whitespace-nowrap">
+                <div class="flex justify-end gap-1.5 whitespace-nowrap">
                   <button onclick="testSavedOutboundJob(${Number(j.id)}, this)" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs border border-cyan-500/20 transition whitespace-nowrap">
                     <i class="fa-solid fa-plug-circle-check text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Test' : 'ทดสอบ'}
                   </button>
@@ -2110,11 +2436,14 @@
 
     function getOutboundJobPayload() {
       const existingJob = editingOutboundJobId ? outboundJobsById.get(Number(editingOutboundJobId)) : null;
+      const sourceUserID = document.getElementById('job-source-user').value === 'manual' ? 0 : Number(document.getElementById('job-source-user').value);
+      const sourceDir = document.getElementById('job-source').value.trim();
       return {
         id: editingOutboundJobId || 0,
         name: document.getElementById('job-name').value.trim(),
         cron_expr: document.getElementById('job-cron').value.trim(),
-        source_dir: document.getElementById('job-source').value.trim(),
+        source_user_id: sourceUserID,
+        source_dir: sourceDir,
         file_pattern: document.getElementById('job-pattern').value.trim(),
         protocol: document.getElementById('job-proto').value,
         remote_host: document.getElementById('job-host').value.trim(),
@@ -2123,8 +2452,8 @@
         remote_password: document.getElementById('job-pass').value.trim(),
         remote_dir: document.getElementById('job-remote-dir').value.trim(),
         post_action: existingJob?.post_action || "archive",
-        archive_dir: existingJob?.archive_dir || document.getElementById('job-source').value.trim() + "/archive",
-        enabled: existingJob ? existingJob.enabled : true
+        archive_dir: sourceUserID > 0 ? joinLocalPath(sourceDir, 'archive') : existingJob?.archive_dir || joinLocalPath(sourceDir, 'archive'),
+        enabled: document.getElementById('job-enabled').checked
       };
     }
 
@@ -2139,6 +2468,13 @@
         'job-remote-dir': job.remote_dir
       };
       for (const [fieldId, value] of Object.entries(fields)) document.getElementById(fieldId).value = value ?? '';
+      const sourceUserSelect = document.getElementById('job-source-user');
+      sourceUserSelect.value = Number(job.source_user_id) > 0 ? String(job.source_user_id) : 'manual';
+      if (sourceUserSelect.value !== (Number(job.source_user_id) > 0 ? String(job.source_user_id) : 'manual')) {
+        sourceUserSelect.value = 'manual';
+      }
+      onOutboundSourceUserChange();
+      document.getElementById('job-enabled').checked = Boolean(job.enabled);
       document.getElementById('job-form-title').innerText = currentLanguage === 'en' ? 'Edit Scheduled Transfer' : 'แก้ไขรอบงานส่งไฟล์';
       document.getElementById('job-save-icon').className = 'fa-solid fa-floppy-disk';
       document.getElementById('job-save-label').innerText = currentLanguage === 'en' ? 'Update Job' : 'บันทึกการแก้ไข';
@@ -2156,11 +2492,14 @@
     function cancelEditJob() {
       editingOutboundJobId = null;
       for (const id of ['job-name', 'job-source', 'job-host', 'job-user', 'job-pass']) document.getElementById(id).value = '';
+      document.getElementById('job-source-user').value = 'manual';
+      onOutboundSourceUserChange();
       document.getElementById('job-cron').value = '*/5 * * * * *';
       document.getElementById('job-pattern').value = '*.*';
       document.getElementById('job-proto').value = 'sftp';
       document.getElementById('job-port').value = '22';
       document.getElementById('job-remote-dir').value = '/upload';
+      document.getElementById('job-enabled').checked = true;
       document.getElementById('job-pass').type = 'password';
       const toggle = document.getElementById('toggle-job-password');
       toggle.setAttribute('aria-pressed', 'false');
@@ -2281,6 +2620,8 @@
         const filter = document.getElementById('log-filter').value;
         const params = new URLSearchParams({ page: String(logsPage), page_size: String(logsPageSize) });
         if (filter) params.set('event_type', filter);
+        const username = document.getElementById('log-user-filter').value.trim();
+        if (username) params.set('username', username);
         const res = await fetch(`${API_BASE}/logs?${params.toString()}`);
         if (requestId !== logsRequestId) return;
         if (res.ok) {
@@ -2288,6 +2629,7 @@
           if (requestId !== logsRequestId) return;
           const total = Number(res.headers.get('X-Total-Count') || logs.length);
           const totalPages = Math.max(1, Number(res.headers.get('X-Total-Pages') || 1));
+          logsTotalPages = totalPages;
           logsPage = Number(res.headers.get('X-Page') || logsPage);
           document.getElementById('stat-logs-count').innerText = total;
           const table = document.getElementById('logs-table');
@@ -2299,8 +2641,7 @@
             : currentLanguage === 'en'
               ? `Showing ${firstItem.toLocaleString(getLocale())}–${lastItem.toLocaleString(getLocale())} of ${total.toLocaleString(getLocale())} records · Page ${logsPage} of ${totalPages}`
               : `แสดง ${firstItem.toLocaleString(getLocale())}–${lastItem.toLocaleString(getLocale())} จาก ${total.toLocaleString(getLocale())} รายการ · หน้า ${logsPage} จาก ${totalPages}`;
-          document.getElementById('logs-prev-page').disabled = logsPage <= 1;
-          document.getElementById('logs-next-page').disabled = logsPage >= totalPages;
+          renderLogsPagination();
           
           if (logs.length === 0) {
             table.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">ไม่มีข้อมูลบันทึกเหตุการณ์</td></tr>';
@@ -2375,8 +2716,50 @@
     }
 
     function changeLogsPage(delta) {
-      logsPage = Math.max(1, logsPage + delta);
+      logsPage = Math.min(logsTotalPages, Math.max(1, logsPage + delta));
       loadLogs();
+    }
+
+    function goToLogsPage(page) {
+      if (!Number.isInteger(page) || page < 1 || page > logsTotalPages || page === logsPage) return;
+      logsPage = page;
+      loadLogs();
+    }
+
+    function renderLogsPagination() {
+      const nav = document.getElementById('logs-pagination-pages');
+      if (!nav) return;
+      const total = Math.max(1, logsTotalPages);
+      const current = Math.min(total, Math.max(1, logsPage));
+      const buttonClass = 'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border px-0 text-xs font-medium transition';
+      const normalClass = 'border-white/10 bg-dark-800 text-slate-200 hover:bg-dark-750';
+      const activeClass = 'border-brand-500 bg-brand-500 text-white font-bold';
+      const disabledClass = 'border-white/5 bg-dark-900/40 text-slate-600 opacity-50 cursor-not-allowed';
+      const navButton = (icon, label, page, disabled) => `<button type="button" onclick="goToLogsPage(${page})" aria-label="${label}" title="${label}" ${disabled ? 'disabled' : ''} class="${buttonClass} ${disabled ? disabledClass : normalClass}"><i class="fa-solid ${icon}" aria-hidden="true"></i></button>`;
+      const pageButton = page => `<button type="button" onclick="goToLogsPage(${page})" aria-label="${currentLanguage === 'en' ? `Page ${page}` : `หน้า ${page}`}" aria-current="${page === current ? 'page' : 'false'}" class="${buttonClass} ${page === current ? activeClass : normalClass}">${page}</button>`;
+      const ellipsis = '<span class="px-1 text-slate-500 select-none" aria-hidden="true">…</span>';
+
+      let pages = [];
+      if (total <= 5) {
+        pages = Array.from({ length: total }, (_, index) => index + 1);
+      } else if (current <= 3) {
+        pages = [1, 2, 3, ellipsis, total];
+      } else if (current >= total - 2) {
+        pages = [1, ellipsis, total - 2, total - 1, total];
+      } else {
+        pages = [1, ellipsis, current - 1, current, current + 1, ellipsis, total];
+      }
+
+      const labels = currentLanguage === 'en'
+        ? { first: 'First page', previous: 'Previous page', next: 'Next page', last: 'Last page' }
+        : { first: 'หน้าแรก', previous: 'หน้าก่อนหน้า', next: 'หน้าถัดไป', last: 'หน้าสุดท้าย' };
+      nav.innerHTML = [
+        navButton('fa-angles-left', labels.first, 1, current <= 1),
+        navButton('fa-chevron-left', labels.previous, current - 1, current <= 1),
+        ...pages.map(page => typeof page === 'number' ? pageButton(page) : page),
+        navButton('fa-chevron-right', labels.next, current + 1, current >= total),
+        navButton('fa-angles-right', labels.last, total, current >= total)
+      ].join('');
     }
 
     // Live Clock
@@ -2387,6 +2770,7 @@
         clockEl.innerText = now.toLocaleTimeString(getLocale());
       }
     }, 1000);
+    setInterval(() => { if (appUnlocked) updateSFTPBlockedCountdowns(); }, 1000);
 
     // Initial Load & Auto Poll Status
     initializeLanguage();

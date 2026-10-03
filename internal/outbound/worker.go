@@ -55,11 +55,12 @@ func (w *Worker) ExecuteJob(job *models.OutboundJob) error {
 		}
 
 		// Dispatch via configured protocol
+		destinationIP := ""
 		switch job.Protocol {
 		case "sftp":
-			err = w.sendViaSFTP(job, filePath, fileName)
+			destinationIP, err = w.sendViaSFTP(job, filePath, fileName)
 		case "ftp", "ftps":
-			err = w.sendViaFTP(job, filePath, fileName)
+			destinationIP, err = w.sendViaFTP(job, filePath, fileName)
 		default:
 			err = fmt.Errorf("unsupported protocol: %s", job.Protocol)
 		}
@@ -79,6 +80,7 @@ func (w *Worker) ExecuteJob(job *models.OutboundJob) error {
 			EventType: "OUTBOUND_FILE",
 			Protocol:  job.Protocol,
 			Username:  job.RemoteUser,
+			ClientIP:  destinationIP,
 			FileName:  fileName,
 			FileSize:  size,
 			FileHash:  hash,
@@ -97,7 +99,7 @@ func (w *Worker) ExecuteJob(job *models.OutboundJob) error {
 	return nil
 }
 
-func (w *Worker) sendViaSFTP(job *models.OutboundJob, localPath, fileName string) error {
+func (w *Worker) sendViaSFTP(job *models.OutboundJob, localPath, fileName string) (string, error) {
 	config := &ssh.ClientConfig{
 		User: job.RemoteUser,
 		Auth: []ssh.AuthMethod{
@@ -110,55 +112,76 @@ func (w *Worker) sendViaSFTP(job *models.OutboundJob, localPath, fileName string
 	addr := net.JoinHostPort(job.RemoteHost, fmt.Sprintf("%d", job.RemotePort))
 	sshClient, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
-		return fmt.Errorf("ssh dial error: %w", err)
+		return "", fmt.Errorf("ssh dial error: %w", err)
 	}
 	defer sshClient.Close()
+	destinationIP := hostFromAddr(sshClient.RemoteAddr())
 
 	client, err := sftp.NewClient(sshClient)
 	if err != nil {
-		return fmt.Errorf("sftp client error: %w", err)
+		return destinationIP, fmt.Errorf("sftp client error: %w", err)
 	}
 	defer client.Close()
 
 	localFile, err := os.Open(localPath)
 	if err != nil {
-		return err
+		return destinationIP, err
 	}
 	defer localFile.Close()
 
 	remotePath := filepath.ToSlash(filepath.Join(job.RemoteDir, fileName))
 	remoteFile, err := client.Create(remotePath)
 	if err != nil {
-		return fmt.Errorf("remote create error: %w", err)
+		return destinationIP, fmt.Errorf("remote create error: %w", err)
 	}
 	defer remoteFile.Close()
 
 	_, err = io.Copy(remoteFile, localFile)
-	return err
+	return destinationIP, err
 }
 
-func (w *Worker) sendViaFTP(job *models.OutboundJob, localPath, fileName string) error {
+func (w *Worker) sendViaFTP(job *models.OutboundJob, localPath, fileName string) (string, error) {
 	addr := net.JoinHostPort(job.RemoteHost, fmt.Sprintf("%d", job.RemotePort))
 	opts := ftpDialOptions(job)
+	destinationIP := ""
+	dialer := &net.Dialer{Timeout: 10 * time.Second}
+	opts = append(opts, ftp.DialWithDialFunc(func(network, address string) (net.Conn, error) {
+		conn, err := dialer.Dial(network, address)
+		if err == nil && destinationIP == "" {
+			destinationIP = hostFromAddr(conn.RemoteAddr())
+		}
+		return conn, err
+	}))
 	c, err := ftp.Dial(addr, opts...)
 	if err != nil {
-		return fmt.Errorf("ftp dial error: %w", err)
+		return destinationIP, fmt.Errorf("ftp dial error: %w", err)
 	}
 	defer c.Quit()
 
 	err = c.Login(job.RemoteUser, job.RemotePassword)
 	if err != nil {
-		return fmt.Errorf("ftp login error: %w", err)
+		return destinationIP, fmt.Errorf("ftp login error: %w", err)
 	}
 
 	localFile, err := os.Open(localPath)
 	if err != nil {
-		return err
+		return destinationIP, err
 	}
 	defer localFile.Close()
 
 	remotePath := filepath.ToSlash(filepath.Join(job.RemoteDir, fileName))
-	return c.Stor(remotePath, localFile)
+	return destinationIP, c.Stor(remotePath, localFile)
+}
+
+func hostFromAddr(addr net.Addr) string {
+	if addr == nil {
+		return ""
+	}
+	host, _, err := net.SplitHostPort(addr.String())
+	if err == nil {
+		return host
+	}
+	return addr.String()
 }
 
 // TestConnection checks network reachability, authentication, and remote folder access without transferring files.

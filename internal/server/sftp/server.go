@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -58,28 +59,42 @@ func (s *Server) Start() error {
 
 	sshConfig := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-			clientIP, _, _ := net.SplitHostPort(c.RemoteAddr().String())
+			clientIP, _, splitErr := net.SplitHostPort(c.RemoteAddr().String())
+			if zone := strings.LastIndexByte(clientIP, '%'); zone >= 0 {
+				clientIP = clientIP[:zone]
+			}
+			parsedIP := net.ParseIP(clientIP)
+			if splitErr != nil || parsedIP == nil {
+				_ = s.logSFTPLogin(c.User(), clientIP, "FAILED", "Could not determine client IP")
+				return nil, fmt.Errorf("authentication rejected")
+			}
+			clientIP = parsedIP.String()
+			allowed, policyErr := s.checkClientIP(clientIP)
+			if policyErr != nil || !allowed {
+				if policyErr != nil {
+					log.Printf("[SFTP] Authentication rejected for %s because the IP security policy could not be checked", clientIP)
+				}
+				return nil, fmt.Errorf("authentication rejected")
+			}
 			user, err := s.db.GetUserByUsername(c.User())
 			if err != nil || !user.Enabled || user.Password != string(pass) {
-				_ = s.db.LogAudit(models.AuditLog{
-					EventType: "LOGIN",
-					Protocol:  "SFTP",
-					Username:  c.User(),
-					ClientIP:  clientIP,
-					Status:    "FAILED",
-					Details:   "Invalid username or password",
-				})
-				return nil, fmt.Errorf("password rejected for %q", c.User())
+				_ = s.logSFTPLogin(c.User(), clientIP, "FAILED", "Invalid username or password")
+				blocked, newlyBlocked, remaining, recordErr := s.db.RecordSFTPAuthFailure(clientIP, c.User(), time.Now())
+				if recordErr != nil {
+					log.Printf("[SFTP] Failed to update authentication throttling for %s: %v", clientIP, recordErr)
+				}
+				if newlyBlocked {
+					_ = s.db.LogAudit(models.AuditLog{
+						EventType: "SFTP_SECURITY", Protocol: "SFTP", Username: c.User(), ClientIP: clientIP,
+						Status: "BLOCKED", Details: "IP temporarily blocked after 5 failed logins; block expires in 15 minutes",
+					})
+				} else if blocked {
+					log.Printf("[SFTP] Authentication from %s rejected while blocked (%d seconds remain)", clientIP, remaining)
+				}
+				return nil, fmt.Errorf("authentication rejected")
 			}
-
-			_ = s.db.LogAudit(models.AuditLog{
-				EventType: "LOGIN",
-				Protocol:  "SFTP",
-				Username:  c.User(),
-				ClientIP:  clientIP,
-				Status:    "SUCCESS",
-				Details:   "Login accepted",
-			})
+			_ = s.db.ResetSFTPAuthFailures(clientIP)
+			_ = s.logSFTPLogin(c.User(), clientIP, "SUCCESS", "Login accepted")
 			return nil, nil
 		},
 	}
@@ -105,6 +120,62 @@ func (s *Server) Start() error {
 	go s.acceptLoop(sshConfig)
 
 	return nil
+}
+
+func (s *Server) logSFTPLogin(username, clientIP, status, details string) error {
+	return s.db.LogAudit(models.AuditLog{
+		EventType: "LOGIN",
+		Protocol:  "SFTP",
+		Username:  username,
+		ClientIP:  clientIP,
+		Status:    status,
+		Details:   details,
+	})
+}
+
+func (s *Server) checkClientIP(clientIP string) (bool, error) {
+	blockedUntil, err := s.db.GetSFTPIPBlockedUntil(clientIP)
+	if err != nil {
+		return false, err
+	}
+	if blockedUntil.After(time.Now()) {
+		return false, nil
+	}
+	settings, rules, err := s.db.GetSFTPAccessControl()
+	if err != nil {
+		return false, err
+	}
+	allowedByRule := false
+	for _, rule := range rules {
+		if !ipMatchesRule(clientIP, rule.CIDR) {
+			continue
+		}
+		if rule.Action == "block" {
+			return false, nil
+		}
+		if rule.Action == "allow" {
+			allowedByRule = true
+		}
+	}
+	if settings.IPMode == "allow_list" && !allowedByRule {
+		return false, nil
+	}
+	if settings.IPMode != "allow_list" && settings.IPMode != "allow_all" {
+		return false, fmt.Errorf("invalid SFTP IP access mode")
+	}
+	return true, nil
+}
+
+func ipMatchesRule(clientIP, cidr string) bool {
+	ip := net.ParseIP(clientIP)
+	if ip == nil {
+		return false
+	}
+	if ruleIP := net.ParseIP(cidr); ruleIP != nil {
+		return ruleIP.Equal(ip)
+	}
+	_, network, err := net.ParseCIDR(cidr)
+	return err == nil && network.Contains(ip)
 }
 
 func (s *Server) Stop() {
@@ -187,64 +258,56 @@ func (s *Server) handleConn(conn net.Conn, sshConfig *ssh.ServerConfig) {
 			}
 		}(requests)
 
-		// Serve SFTP filesystem in tempDir
+		// Give each authenticated account its own filesystem root and enforce its
+		// configured operations in the request handlers.
 		clientIP, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
-		server, err := sftp.NewServer(
-			channel,
-			sftp.WithDebug(io.Discard),
-			sftp.WithServerWorkingDirectory(s.tempDir),
-		)
+		user, err := s.db.GetUserByUsername(sshConn.User())
 		if err != nil {
 			return
 		}
-
-		if err := server.Serve(); err == io.EOF {
-			server.Close()
+		userRootPath := filepath.Join(s.targetDir, filepath.FromSlash(user.RootDir))
+		if err := os.MkdirAll(userRootPath, 0750); err != nil {
+			log.Printf("[SFTP] Could not create home directory for %q: %v", user.Username, err)
+			return
 		}
+		userRoot, err := os.OpenRoot(userRootPath)
+		if err != nil {
+			log.Printf("[SFTP] Could not open home directory for %q: %v", user.Username, err)
+			return
+		}
+		fs := newUserFilesystem(userRoot, *user)
+		server := sftp.NewRequestServer(channel, fs.handlers(), sftp.WithStartDirectory("/"))
+		serveErr := server.Serve()
+		_ = server.Close()
+		_ = userRoot.Close()
 
-		// Check for any uploaded files in tempDir and move to targetDir
-		s.processUploadedFiles(sshConn.User(), clientIP)
+		if serveErr != nil && serveErr != io.EOF {
+			log.Printf("[SFTP] Session for %q ended: %v", user.Username, serveErr)
+		}
+		// Audit only files changed in this authenticated account's inbound home.
+		s.processUploadedFiles(user.Username, clientIP, userRootPath, fs.modifiedFiles())
 	}
 }
 
-func (s *Server) processUploadedFiles(username, clientIP string) {
-	entries, err := os.ReadDir(s.tempDir)
-	if err != nil {
-		return
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
+func (s *Server) processUploadedFiles(username, clientIP, userRoot string, files []string) {
+	for _, fileName := range files {
+		fileName = filepath.Clean(filepath.FromSlash(fileName))
+		if fileName == "." || filepath.IsAbs(fileName) || fileName == ".." || strings.HasPrefix(fileName, ".."+string(filepath.Separator)) {
 			continue
 		}
-		fileName := entry.Name()
-		tempFilePath := filepath.Join(s.tempDir, fileName)
-		targetFilePath := filepath.Join(s.targetDir, fileName)
-
-		hash, size, err := utils.CalculateFileSHA256(tempFilePath)
+		inboundFilePath := filepath.Join(userRoot, fileName)
+		info, err := os.Lstat(inboundFilePath)
+		if err != nil || !info.Mode().IsRegular() {
+			continue
+		}
+		hash, size, err := utils.CalculateFileSHA256(inboundFilePath)
 		if err != nil {
 			continue
 		}
-
-		err = utils.MoveFile(tempFilePath, targetFilePath)
-		status := "SUCCESS"
-		details := fmt.Sprintf("Stored in %s", targetFilePath)
-		if err != nil {
-			status = "FAILED"
-			details = fmt.Sprintf("Move error: %v", err)
-		}
-
 		_ = s.db.LogAudit(models.AuditLog{
-			EventType: "INBOUND_FILE",
-			Protocol:  "SFTP",
-			Username:  username,
-			ClientIP:  clientIP,
-			FileName:  fileName,
-			FileSize:  size,
-			FileHash:  hash,
-			Status:    status,
-			Details:   details,
-			Timestamp: time.Now(),
+			EventType: "INBOUND_FILE", Protocol: "SFTP", Username: username, ClientIP: clientIP,
+			FileName: filepath.ToSlash(fileName), FileSize: size, FileHash: hash, Status: "SUCCESS",
+			Details: fmt.Sprintf("Received in private inbound folder %s", inboundFilePath), Timestamp: time.Now(),
 		})
 	}
 }

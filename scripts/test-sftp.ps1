@@ -10,18 +10,20 @@ $cancelHandler = [ConsoleCancelEventHandler]{
 $hostName = Read-Host 'SFTP host/IP [127.0.0.1]'
 if ([string]::IsNullOrWhiteSpace($hostName)) { $hostName = '127.0.0.1' }
 
-$portText = Read-Host 'SFTP port [2222]'
-if ([string]::IsNullOrWhiteSpace($portText)) { $portText = '2222' }
 $port = 0
-if (-not [int]::TryParse($portText, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
-    Write-Error 'Enter a valid port number between 1 and 65535.'
-    exit 2
+while ($port -lt 1 -or $port -gt 65535) {
+    $portText = Read-Host 'SFTP port [2222]'
+    if ([string]::IsNullOrWhiteSpace($portText)) { $portText = '2222' }
+    if (-not [int]::TryParse($portText, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
+        Write-Host '[INPUT] Enter a port number between 1 and 65535.' -ForegroundColor Yellow
+        $port = 0
+    }
 }
 
 $username = Read-Host 'SFTP username'
-if ([string]::IsNullOrWhiteSpace($username)) {
-    Write-Error 'Username is required.'
-    exit 2
+while ([string]::IsNullOrWhiteSpace($username)) {
+    Write-Host '[INPUT] Username is required. Please enter your SFTP account name.' -ForegroundColor Yellow
+    $username = Read-Host 'SFTP username'
 }
 
 $password = Read-Host 'SFTP password' -AsSecureString

@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"odoo-scb-bridge/internal/api"
+	"odoo-scb-bridge/internal/appversion"
 	"odoo-scb-bridge/internal/database"
 	"odoo-scb-bridge/internal/license"
 	"odoo-scb-bridge/internal/scheduler"
@@ -42,6 +45,25 @@ func (p *program) run() {
 	db, err := database.Init(dbPath)
 	if err != nil {
 		log.Fatalf("[Service] DB Init error: %v", err)
+	}
+	versionInstallMarker := filepath.Join(baseDir, "data", "version-install-time.txt")
+	var installedAt time.Time
+	markerContents, markerErr := os.ReadFile(versionInstallMarker)
+	if markerErr == nil {
+		installedAt, err = time.ParseInLocation("2006-01-02 15:04:05", string(bytes.TrimSpace(markerContents)), time.Local)
+		if err != nil {
+			log.Printf("[Service] Could not parse installer timestamp: %v", err)
+			installedAt = time.Time{}
+		}
+	} else if !os.IsNotExist(markerErr) {
+		log.Printf("[Service] Could not read installer timestamp: %v", markerErr)
+	}
+	if err := db.RecordAppVersionAt(appversion.Current, installedAt); err != nil {
+		log.Printf("[Service] Failed to record application version: %v", err)
+	} else if markerErr == nil {
+		if err := os.Remove(versionInstallMarker); err != nil {
+			log.Printf("[Service] Could not remove installer timestamp: %v", err)
+		}
 	}
 
 	// Read Inbound config

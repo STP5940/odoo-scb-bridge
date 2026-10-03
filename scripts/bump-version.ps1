@@ -66,7 +66,7 @@ Update-OneMatch 'installer.iss' '(?m)^AppVersion=.*$' ('AppVersion=' + $newVersi
 Update-OneMatch 'internal\ui\index.html' 'Studio v\d+\.\d+(?:\.\d+)?' ('Studio v' + $newVersion)
 Update-OneMatch 'internal\ui\index.html' 'CORE v\d+\.\d+(?:\.\d+)?' ('CORE v' + $newVersion)
 Update-OneMatch 'internal\ui\index.html' '(?<=<span class="font-mono text-\[10px\] text-slate-400">)v\d+\.\d+\.\d+(?=</span>)' ('v' + $newVersion)
-Update-OneMatch 'internal\api\api.go' '(?m)("version"\s*:\s*")[^"]+("\s*,?)' ('${1}' + $newVersion + '${2}')
+Update-OneMatch 'internal\appversion\version.go' '(?m)^const Current = "[^"]+"$' ('const Current = "' + $newVersion + '"')
 
 $levelName = switch ($level) {
     '1' { 'Patch' }

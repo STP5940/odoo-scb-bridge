@@ -71,6 +71,12 @@ func (d *DB) migrate() error {
 		password TEXT NOT NULL,
 		root_dir TEXT NOT NULL,
 		enabled INTEGER DEFAULT 1,
+		can_list INTEGER NOT NULL DEFAULT 1,
+		can_read INTEGER NOT NULL DEFAULT 1,
+		can_write INTEGER NOT NULL DEFAULT 1,
+		can_delete INTEGER NOT NULL DEFAULT 1,
+		can_mkdir INTEGER NOT NULL DEFAULT 1,
+		can_rename INTEGER NOT NULL DEFAULT 1,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
@@ -93,6 +99,7 @@ func (d *DB) migrate() error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
 		cron_expr TEXT NOT NULL,
+		source_user_id INTEGER NOT NULL DEFAULT 0,
 		source_dir TEXT NOT NULL,
 		file_pattern TEXT DEFAULT '*.*',
 		protocol TEXT DEFAULT 'sftp',
@@ -125,8 +132,42 @@ func (d *DB) migrate() error {
 		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
+	CREATE TABLE IF NOT EXISTS app_metadata (
+		key TEXT PRIMARY KEY,
+		value TEXT NOT NULL,
+		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE TABLE IF NOT EXISTS sftp_security_settings (
+		id INTEGER PRIMARY KEY CHECK (id = 1),
+		ip_mode TEXT NOT NULL DEFAULT 'allow_all',
+		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);
+	INSERT OR IGNORE INTO sftp_security_settings (id, ip_mode) VALUES (1, 'allow_all');
+
+	CREATE TABLE IF NOT EXISTS sftp_ip_rules (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		cidr TEXT NOT NULL,
+		action TEXT NOT NULL CHECK (action IN ('allow', 'block')),
+		expires_at DATETIME,
+		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(cidr, action)
+	);
+
+	CREATE TABLE IF NOT EXISTS sftp_ip_failures (
+		ip TEXT PRIMARY KEY,
+		username TEXT NOT NULL DEFAULT '',
+		failed_attempts INTEGER NOT NULL DEFAULT 0,
+		window_started_at DATETIME,
+		blocked_until DATETIME,
+		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);
+
 	CREATE INDEX IF NOT EXISTS idx_audit_logs_event_type ON audit_logs(event_type);
 	CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp);
+	CREATE INDEX IF NOT EXISTS idx_audit_logs_username ON audit_logs(username);
+	CREATE INDEX IF NOT EXISTS idx_sftp_ip_rules_cidr ON sftp_ip_rules(cidr);
+	CREATE INDEX IF NOT EXISTS idx_sftp_ip_failures_blocked_until ON sftp_ip_failures(blocked_until);
 	`
 
 	d.mu.Lock()
@@ -135,6 +176,19 @@ func (d *DB) migrate() error {
 	_, err := d.conn.Exec(schema)
 	if err != nil {
 		return fmt.Errorf("migration error: %w", err)
+	}
+	if err := ensureOutboundSourceUserColumn(d.conn); err != nil {
+		return fmt.Errorf("migrate outbound source user: %w", err)
+	}
+	// Existing accounts retain their previous unrestricted behavior until an
+	// administrator reviews their individual permissions in the UI.
+	for _, column := range []string{"can_list", "can_read", "can_write", "can_delete", "can_mkdir", "can_rename"} {
+		if err := ensureUserPermissionColumn(d.conn, column); err != nil {
+			return fmt.Errorf("migrate user permission %s: %w", column, err)
+		}
+	}
+	if _, err := d.conn.Exec(`UPDATE users SET root_dir='users/' || id`); err != nil {
+		return fmt.Errorf("migrate user home directories: %w", err)
 	}
 
 	// Seed default inbound config if not present
@@ -162,11 +216,114 @@ func (d *DB) migrate() error {
 	return nil
 }
 
+func boolInt(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+func ensureUserPermissionColumn(conn *sql.DB, column string) error {
+	rows, err := conn.Query("PRAGMA table_info(users)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, columnType string
+		var defaultValue interface{}
+		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		if name == column {
+			return rows.Err()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = conn.Exec("ALTER TABLE users ADD COLUMN " + column + " INTEGER NOT NULL DEFAULT 1")
+	return err
+}
+
+func ensureOutboundSourceUserColumn(conn *sql.DB) error {
+	rows, err := conn.Query("PRAGMA table_info(outbound_jobs)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, columnType string
+		var defaultValue interface{}
+		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		if name == "source_user_id" {
+			return rows.Err()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = conn.Exec("ALTER TABLE outbound_jobs ADD COLUMN source_user_id INTEGER NOT NULL DEFAULT 0")
+	return err
+}
+
 // LogAudit inserts a new event record
 func (d *DB) LogAudit(log models.AuditLog) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.internalLogAudit(log)
+}
+
+// RecordAppVersion logs the initial version or a version change once per version.
+func (d *DB) RecordAppVersion(version string) error {
+	return d.RecordAppVersionAt(version, time.Time{})
+}
+
+// RecordAppVersionAt uses installedAt for the audit timestamp when it is available.
+func (d *DB) RecordAppVersionAt(version string, installedAt time.Time) error {
+	if version == "" {
+		return fmt.Errorf("application version is empty")
+	}
+	if installedAt.IsZero() {
+		installedAt = time.Now()
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	tx, err := d.conn.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var previous string
+	err = tx.QueryRow(`SELECT value FROM app_metadata WHERE key='app_version'`).Scan(&previous)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	if err == nil && previous == version {
+		return tx.Commit()
+	}
+
+	details := "Current application version: " + version
+	if previous != "" {
+		details = "Application version changed from " + previous + " to " + version
+	}
+	now := time.Now()
+	if _, err := tx.Exec(`INSERT INTO app_metadata (key, value, updated_at) VALUES ('app_version', ?, ?)
+		ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at`, version, now); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`INSERT INTO audit_logs (event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp)
+		VALUES ('APP_VERSION', 'SYSTEM', 'system', '', '', 0, '', 'SUCCESS', ?, ?)`, details, installedAt); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (d *DB) internalLogAudit(log models.AuditLog) error {
@@ -233,6 +390,197 @@ func (d *DB) CountLogs(eventType string) (int, error) {
 	return count, err
 }
 
+// GetRecentLogsFiltered retrieves audit logs filtered by event type and exact username.
+func (d *DB) GetRecentLogsFiltered(limit int, eventType, username string, offset int) ([]models.AuditLog, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	query := `SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs WHERE 1=1`
+	args := make([]interface{}, 0, 4)
+	if eventType != "" {
+		query += ` AND event_type = ?`
+		args = append(args, eventType)
+	}
+	if username != "" {
+		query += ` AND username = ?`
+		args = append(args, username)
+	}
+	query += ` ORDER BY id DESC LIMIT ? OFFSET ?`
+	args = append(args, limit, offset)
+	rows, err := d.conn.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	logs := make([]models.AuditLog, 0)
+	for rows.Next() {
+		var item models.AuditLog
+		if err := rows.Scan(&item.ID, &item.EventType, &item.Protocol, &item.Username, &item.ClientIP, &item.FileName, &item.FileSize, &item.FileHash, &item.Status, &item.Details, &item.Timestamp); err != nil {
+			return nil, err
+		}
+		logs = append(logs, item)
+	}
+	return logs, rows.Err()
+}
+
+func (d *DB) CountLogsFiltered(eventType, username string) (int, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	query := `SELECT COUNT(*) FROM audit_logs WHERE 1=1`
+	args := make([]interface{}, 0, 2)
+	if eventType != "" {
+		query += ` AND event_type = ?`
+		args = append(args, eventType)
+	}
+	if username != "" {
+		query += ` AND username = ?`
+		args = append(args, username)
+	}
+	var count int
+	err := d.conn.QueryRow(query, args...).Scan(&count)
+	return count, err
+}
+
+func (d *DB) GetSFTPAccessControl() (models.SFTPSecuritySettings, []models.SFTPIPRule, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	settings := models.SFTPSecuritySettings{}
+	if err := d.conn.QueryRow(`SELECT ip_mode FROM sftp_security_settings WHERE id=1`).Scan(&settings.IPMode); err != nil {
+		return settings, nil, err
+	}
+	rows, err := d.conn.Query(`SELECT id, cidr, action, expires_at, created_at FROM sftp_ip_rules WHERE expires_at IS NULL OR expires_at > ? ORDER BY id DESC`, time.Now())
+	if err != nil {
+		return settings, nil, err
+	}
+	defer rows.Close()
+	rules := make([]models.SFTPIPRule, 0)
+	for rows.Next() {
+		var rule models.SFTPIPRule
+		var expires sql.NullTime
+		if err := rows.Scan(&rule.ID, &rule.CIDR, &rule.Action, &expires, &rule.CreatedAt); err != nil {
+			return settings, nil, err
+		}
+		rule.Permanent = !expires.Valid
+		if expires.Valid {
+			t := expires.Time
+			rule.ExpiresAt = &t
+		}
+		rules = append(rules, rule)
+	}
+	return settings, rules, rows.Err()
+}
+
+func (d *DB) SetSFTPIPMode(mode string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	_, err := d.conn.Exec(`UPDATE sftp_security_settings SET ip_mode=?, updated_at=CURRENT_TIMESTAMP WHERE id=1`, mode)
+	return err
+}
+
+func (d *DB) AddSFTPIPRule(cidr, action string, expiresAt *time.Time) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	_, err := d.conn.Exec(`INSERT INTO sftp_ip_rules (cidr, action, expires_at) VALUES (?, ?, ?)`, cidr, action, expiresAt)
+	return err
+}
+
+func (d *DB) DeleteSFTPIPRule(id int64) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	result, err := d.conn.Exec(`DELETE FROM sftp_ip_rules WHERE id=?`, id)
+	if err != nil {
+		return err
+	}
+	count, err := result.RowsAffected()
+	if err == nil && count == 0 {
+		return sql.ErrNoRows
+	}
+	return err
+}
+
+func (d *DB) GetSFTPIPBlockedUntil(ip string) (time.Time, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	var blockedUntil sql.NullTime
+	err := d.conn.QueryRow(`SELECT blocked_until FROM sftp_ip_failures WHERE ip=?`, ip).Scan(&blockedUntil)
+	if err == sql.ErrNoRows || (err == nil && !blockedUntil.Valid) {
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return blockedUntil.Time, err
+}
+
+// RecordSFTPAuthFailure applies a per-IP threshold: five failures in fifteen minutes block the IP for fifteen minutes.
+func (d *DB) RecordSFTPAuthFailure(ip, username string, now time.Time) (bool, bool, int, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	var failures int
+	var windowStarted, blockedUntil sql.NullTime
+	err := d.conn.QueryRow(`SELECT failed_attempts, window_started_at, blocked_until FROM sftp_ip_failures WHERE ip=?`, ip).Scan(&failures, &windowStarted, &blockedUntil)
+	if err != nil && err != sql.ErrNoRows {
+		return false, false, 0, err
+	}
+	if blockedUntil.Valid && blockedUntil.Time.After(now) {
+		return true, false, int(blockedUntil.Time.Sub(now).Seconds() + 0.999), nil
+	}
+	if !windowStarted.Valid || now.Sub(windowStarted.Time) > 15*time.Minute || blockedUntil.Valid {
+		failures = 0
+		windowStarted = sql.NullTime{Time: now, Valid: true}
+	}
+	failures++
+	var nextBlock interface{}
+	blocked := failures >= 5
+	if blocked {
+		until := now.Add(15 * time.Minute)
+		nextBlock = until
+	}
+	_, err = d.conn.Exec(`INSERT INTO sftp_ip_failures (ip, username, failed_attempts, window_started_at, blocked_until, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(ip) DO UPDATE SET username=excluded.username, failed_attempts=excluded.failed_attempts,
+		window_started_at=excluded.window_started_at, blocked_until=excluded.blocked_until, updated_at=excluded.updated_at`,
+		ip, username, failures, windowStarted.Time, nextBlock, now)
+	if err != nil {
+		return false, false, 0, err
+	}
+	if blocked {
+		return true, true, 15 * 60, nil
+	}
+	return false, false, 5 - failures, nil
+}
+
+func (d *DB) ResetSFTPAuthFailures(ip string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	_, err := d.conn.Exec(`DELETE FROM sftp_ip_failures WHERE ip=?`, ip)
+	return err
+}
+
+func (d *DB) ListSFTPBlockedIPs() ([]models.SFTPBlockedIP, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	rows, err := d.conn.Query(`SELECT ip, username, failed_attempts, blocked_until FROM sftp_ip_failures WHERE blocked_until > ? ORDER BY blocked_until`, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := make([]models.SFTPBlockedIP, 0)
+	for rows.Next() {
+		var item models.SFTPBlockedIP
+		if err := rows.Scan(&item.IP, &item.Username, &item.FailedAttempts, &item.BlockedUntil); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (d *DB) UnblockSFTPIP(ip string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	_, err := d.conn.Exec(`DELETE FROM sftp_ip_failures WHERE ip=?`, ip)
+	return err
+}
+
 // GetInboundConfig retrieves the active inbound configuration
 func (d *DB) GetInboundConfig() (*models.InboundConfig, error) {
 	d.mu.RLock()
@@ -272,14 +620,16 @@ func (d *DB) GetUserByUsername(username string) (*models.User, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	row := d.conn.QueryRow("SELECT id, username, password, root_dir, enabled, created_at, updated_at FROM users WHERE username = ?", username)
+	row := d.conn.QueryRow(`SELECT id, username, password, root_dir, enabled, can_list, can_read, can_write, can_delete, can_mkdir, can_rename, created_at, updated_at FROM users WHERE username = ?`, username)
 	var u models.User
-	var enabled int
-	err := row.Scan(&u.ID, &u.Username, &u.Password, &u.RootDir, &enabled, &u.CreatedAt, &u.UpdatedAt)
+	var enabled, canList, canRead, canWrite, canDelete, canMkdir, canRename int
+	err := row.Scan(&u.ID, &u.Username, &u.Password, &u.RootDir, &enabled, &canList, &canRead, &canWrite, &canDelete, &canMkdir, &canRename, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	u.Enabled = enabled == 1
+	u.CanList, u.CanRead, u.CanWrite = canList == 1, canRead == 1, canWrite == 1
+	u.CanDelete, u.CanMkdir, u.CanRename = canDelete == 1, canMkdir == 1, canRename == 1
 	return &u, nil
 }
 
@@ -296,23 +646,34 @@ func (d *DB) SaveUser(u *models.User) error {
 	var err error
 	if u.Password != "" {
 		_, err = d.conn.Exec(`
-			INSERT INTO users (username, password, root_dir, enabled, created_at, updated_at)
-			VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+			INSERT INTO users (username, password, root_dir, enabled, can_list, can_read, can_write, can_delete, can_mkdir, can_rename, created_at, updated_at)
+			VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 			ON CONFLICT(username) DO UPDATE SET
 				password=excluded.password,
-				root_dir=excluded.root_dir,
 				enabled=excluded.enabled,
+				can_list=excluded.can_list, can_read=excluded.can_read, can_write=excluded.can_write,
+				can_delete=excluded.can_delete, can_mkdir=excluded.can_mkdir, can_rename=excluded.can_rename,
 				updated_at=CURRENT_TIMESTAMP
-		`, u.Username, u.Password, u.RootDir, enabled)
+		`, u.Username, u.Password, enabled, boolInt(u.CanList), boolInt(u.CanRead), boolInt(u.CanWrite), boolInt(u.CanDelete), boolInt(u.CanMkdir), boolInt(u.CanRename))
 	} else {
 		_, err = d.conn.Exec(`
-			INSERT INTO users (username, password, root_dir, enabled, created_at, updated_at)
-			VALUES (?, '', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+			INSERT INTO users (username, password, root_dir, enabled, can_list, can_read, can_write, can_delete, can_mkdir, can_rename, created_at, updated_at)
+			VALUES (?, '', '', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 			ON CONFLICT(username) DO UPDATE SET
-				root_dir=excluded.root_dir,
 				enabled=excluded.enabled,
+				can_list=excluded.can_list, can_read=excluded.can_read, can_write=excluded.can_write,
+				can_delete=excluded.can_delete, can_mkdir=excluded.can_mkdir, can_rename=excluded.can_rename,
 				updated_at=CURRENT_TIMESTAMP
-		`, u.Username, u.RootDir, enabled)
+		`, u.Username, enabled, boolInt(u.CanList), boolInt(u.CanRead), boolInt(u.CanWrite), boolInt(u.CanDelete), boolInt(u.CanMkdir), boolInt(u.CanRename))
+	}
+	if err == nil {
+		var id int64
+		err = d.conn.QueryRow("SELECT id FROM users WHERE username=?", u.Username).Scan(&id)
+		if err == nil {
+			u.ID = id
+			u.RootDir = fmt.Sprintf("users/%d", id)
+			_, err = d.conn.Exec("UPDATE users SET root_dir=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", u.RootDir, id)
+		}
 	}
 	if err == nil {
 		_ = d.internalLogAudit(models.AuditLog{
@@ -354,7 +715,7 @@ func (d *DB) ListUsers() ([]models.User, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	rows, err := d.conn.Query("SELECT id, username, root_dir, enabled, created_at, updated_at FROM users")
+	rows, err := d.conn.Query(`SELECT id, username, root_dir, enabled, can_list, can_read, can_write, can_delete, can_mkdir, can_rename, created_at, updated_at FROM users`)
 	if err != nil {
 		return nil, err
 	}
@@ -363,11 +724,13 @@ func (d *DB) ListUsers() ([]models.User, error) {
 	var list []models.User
 	for rows.Next() {
 		var u models.User
-		var enabled int
-		if err := rows.Scan(&u.ID, &u.Username, &u.RootDir, &enabled, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		var enabled, canList, canRead, canWrite, canDelete, canMkdir, canRename int
+		if err := rows.Scan(&u.ID, &u.Username, &u.RootDir, &enabled, &canList, &canRead, &canWrite, &canDelete, &canMkdir, &canRename, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, err
 		}
 		u.Enabled = enabled == 1
+		u.CanList, u.CanRead, u.CanWrite = canList == 1, canRead == 1, canWrite == 1
+		u.CanDelete, u.CanMkdir, u.CanRename = canDelete == 1, canMkdir == 1, canRename == 1
 		list = append(list, u)
 	}
 	return list, nil
@@ -378,7 +741,7 @@ func (d *DB) ListOutboundJobs() ([]models.OutboundJob, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	rows, err := d.conn.Query("SELECT id, name, cron_expr, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled, last_run_at, last_status, last_error, created_at, updated_at FROM outbound_jobs")
+	rows, err := d.conn.Query("SELECT id, name, cron_expr, source_user_id, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled, last_run_at, last_status, last_error, created_at, updated_at FROM outbound_jobs")
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +751,7 @@ func (d *DB) ListOutboundJobs() ([]models.OutboundJob, error) {
 	for rows.Next() {
 		var j models.OutboundJob
 		var enabled int
-		if err := rows.Scan(&j.ID, &j.Name, &j.CronExpr, &j.SourceDir, &j.FilePattern, &j.Protocol, &j.RemoteHost, &j.RemotePort, &j.RemoteUser, &j.RemotePassword, &j.RemoteDir, &j.PostAction, &j.ArchiveDir, &enabled, &j.LastRunAt, &j.LastStatus, &j.LastError, &j.CreatedAt, &j.UpdatedAt); err != nil {
+		if err := rows.Scan(&j.ID, &j.Name, &j.CronExpr, &j.SourceUserID, &j.SourceDir, &j.FilePattern, &j.Protocol, &j.RemoteHost, &j.RemotePort, &j.RemoteUser, &j.RemotePassword, &j.RemoteDir, &j.PostAction, &j.ArchiveDir, &enabled, &j.LastRunAt, &j.LastStatus, &j.LastError, &j.CreatedAt, &j.UpdatedAt); err != nil {
 			return nil, err
 		}
 		j.Enabled = enabled == 1
@@ -409,9 +772,9 @@ func (d *DB) SaveOutboundJob(j *models.OutboundJob) error {
 
 	if j.ID == 0 {
 		res, err := d.conn.Exec(`
-			INSERT INTO outbound_jobs (name, cron_expr, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`, j.Name, j.CronExpr, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled)
+			INSERT INTO outbound_jobs (name, cron_expr, source_user_id, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, j.Name, j.CronExpr, j.SourceUserID, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled)
 		if err != nil {
 			return err
 		}
@@ -422,9 +785,9 @@ func (d *DB) SaveOutboundJob(j *models.OutboundJob) error {
 
 	_, err := d.conn.Exec(`
 		UPDATE outbound_jobs
-		SET name=?, cron_expr=?, source_dir=?, file_pattern=?, protocol=?, remote_host=?, remote_port=?, remote_user=?, remote_password=?, remote_dir=?, post_action=?, archive_dir=?, enabled=?, updated_at=CURRENT_TIMESTAMP
+		SET name=?, cron_expr=?, source_user_id=?, source_dir=?, file_pattern=?, protocol=?, remote_host=?, remote_port=?, remote_user=?, remote_password=?, remote_dir=?, post_action=?, archive_dir=?, enabled=?, updated_at=CURRENT_TIMESTAMP
 		WHERE id=?
-	`, j.Name, j.CronExpr, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled, j.ID)
+	`, j.Name, j.CronExpr, j.SourceUserID, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled, j.ID)
 	return err
 }
 

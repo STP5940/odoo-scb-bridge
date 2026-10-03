@@ -7,7 +7,7 @@
 
 [Setup]
 AppName=Odoo SCB Bridge Service
-AppVersion=0.1.26
+AppVersion=0.1.45
 DefaultDirName={autopf}\OdooSCBBridge
 DefaultGroupName=Odoo SCB Bridge
 OutputDir={#OutputDir}
@@ -60,5 +60,9 @@ begin
     Exec('cmd.exe', '/c net stop OdooSCBBridge', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('taskkill.exe', '/F /IM bridge_service.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('taskkill.exe', '/F /IM ServiceMonitor.exe /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+  if CurStep = ssPostInstall then
+  begin
+    SaveStringToFile(ExpandConstant('{app}\data\version-install-time.txt'), GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':') + #13#10, False);
   end;
 end;
