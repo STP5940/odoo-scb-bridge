@@ -234,7 +234,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.58</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.59</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -259,7 +259,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.58</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.59</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -460,7 +460,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.58</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.59</span>
       </div>
     </aside>
 
@@ -734,7 +734,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1.5">ผู้ใช้ต้นทาง (Local SFTP User)</label>
-              <select id="job-source-user" onchange="onOutboundSourceUserChange()" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+              <select id="job-source-user" onchange="onOutboundSourceUserChange(true)" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
                 <option value="manual">กำหนดโฟลเดอร์เอง</option>
               </select>
             </div>
@@ -2045,7 +2045,7 @@
       return base && relative ? `${base}${separator}${relative}` : base || relative;
     }
 
-    function onOutboundSourceUserChange() {
+    function onOutboundSourceUserChange(clearManualPath = false) {
       const select = document.getElementById('job-source-user');
       const source = document.getElementById('job-source');
       if (!select || !source) return;
@@ -2057,6 +2057,7 @@
         source.readOnly = true;
         source.title = currentLanguage === 'en' ? 'Source folder for this SFTP account' : 'โฟลเดอร์ส่วนตัวของบัญชี SFTP นี้';
       } else {
+        if (clearManualPath) source.value = '';
         source.readOnly = false;
         source.title = '';
       }
@@ -2690,6 +2691,7 @@
           }
 
           table.innerHTML = logs.map(l => {
+            const statusLabel = formatLogStatus(l.status);
             const statusClass = l.status === 'SUCCESS'
               ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20'
               : l.status === 'WARNING'
@@ -2723,7 +2725,7 @@
                 <td class="p-3 font-mono text-[10px] text-slate-500 truncate max-w-xs" title="${l.file_hash || ''}">${l.file_hash ? l.file_hash.substring(0, 16) + '...' : '-'}</td>
                 <td class="p-3">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}">
-                    ${l.status}
+                    ${statusLabel}
                   </span>
                 </td>
               </tr>
@@ -2739,13 +2741,26 @@
               <td class="py-2.5 px-3 text-slate-400">${l.file_size ? l.file_size.toLocaleString() + ' B' : '-'}</td>
               <td class="py-2.5 px-3">
                 <span class="px-2 py-0.5 rounded-full text-[10px] ${l.status === 'SUCCESS' ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
-                  ${l.status}
+                  ${formatLogStatus(l.status)}
                 </span>
               </td>
             </tr>
           `).join('');
         }
       } catch (e) {}
+    }
+
+    function formatLogStatus(status) {
+      const value = String(status || '');
+      if (currentLanguage === 'en') return value;
+      const thaiLabels = {
+        SUCCESS: 'สำเร็จ',
+        WARNING: 'คำเตือน',
+        LOCKED: 'ถูกล็อก',
+        FAILED: 'ล้มเหลว',
+        ERROR: 'ผิดพลาด'
+      };
+      return thaiLabels[value.toUpperCase()] || value;
     }
 
     function changeLogFilter() {
