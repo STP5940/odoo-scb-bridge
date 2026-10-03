@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,8 +15,9 @@ import (
 )
 
 type DB struct {
-	conn *sql.DB
-	mu   sync.RWMutex
+	conn    *sql.DB
+	dataDir string
+	mu      sync.RWMutex
 }
 
 var (
@@ -28,6 +30,10 @@ func Init(dbPath string) (*DB, error) {
 	var err error
 	once.Do(func() {
 		// Ensure parent directory exists
+		dbPath, err = filepath.Abs(dbPath)
+		if err != nil {
+			return
+		}
 		dir := filepath.Dir(dbPath)
 		if err = os.MkdirAll(dir, 0755); err != nil {
 			return
@@ -43,7 +49,7 @@ func Init(dbPath string) (*DB, error) {
 
 		conn.SetMaxOpenConns(1) // SQLite works best with 1 open connection for writes
 
-		d := &DB{conn: conn}
+		d := &DB{conn: conn, dataDir: dir}
 		if err = d.migrate(); err != nil {
 			return
 		}
@@ -195,9 +201,8 @@ func (d *DB) migrate() error {
 	var count int
 	err = d.conn.QueryRow("SELECT COUNT(*) FROM inbound_configs").Scan(&count)
 	if err == nil && count == 0 {
-		baseDir, _ := os.Getwd()
-		targetDir := filepath.Join(baseDir, "data", "inbound")
-		tempDir := filepath.Join(baseDir, "data", "temp")
+		targetDir := filepath.Join(d.dataDir, "inbound")
+		tempDir := filepath.Join(d.dataDir, "temp")
 		os.MkdirAll(targetDir, 0755)
 		os.MkdirAll(tempDir, 0755)
 
@@ -213,7 +218,93 @@ func (d *DB) migrate() error {
 		`)
 	}
 
+	return d.repairWorkingDirectoryInboundPaths()
+}
+
+// repairWorkingDirectoryInboundPaths fixes defaults created by older versions
+// while running as a Windows service, whose working directory is System32.
+// Customized paths are preserved unless they exactly match that old default.
+func (d *DB) repairWorkingDirectoryInboundPaths() error {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	legacyTarget := filepath.Join(workingDir, "data", "inbound")
+	legacyTemp := filepath.Join(workingDir, "data", "temp")
+	correctTarget := filepath.Join(d.dataDir, "inbound")
+	correctTemp := filepath.Join(d.dataDir, "temp")
+
+	var id int64
+	var targetDir, tempDir string
+	err = d.conn.QueryRow("SELECT id, target_dir, temp_dir FROM inbound_configs LIMIT 1").Scan(&id, &targetDir, &tempDir)
+	if err != nil {
+		return err
+	}
+	changed := false
+	if sameFilesystemPath(targetDir, legacyTarget) && !sameFilesystemPath(targetDir, correctTarget) {
+		targetDir = correctTarget
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return fmt.Errorf("create inbound target folder: %w", err)
+		}
+		changed = true
+	}
+	if sameFilesystemPath(tempDir, legacyTemp) && !sameFilesystemPath(tempDir, correctTemp) {
+		tempDir = correctTemp
+		if err := os.MkdirAll(tempDir, 0755); err != nil {
+			return fmt.Errorf("create inbound temp folder: %w", err)
+		}
+		changed = true
+	}
+	if !changed {
+		return d.ensureUserHomeDirectories(targetDir)
+	}
+	if _, err = d.conn.Exec("UPDATE inbound_configs SET target_dir=?, temp_dir=? WHERE id=?", targetDir, tempDir, id); err != nil {
+		return err
+	}
+	return d.ensureUserHomeDirectories(targetDir)
+}
+
+func (d *DB) ensureUserHomeDirectories(targetDir string) error {
+	rows, err := d.conn.Query("SELECT root_dir FROM users")
+	if err != nil {
+		return err
+	}
+	var directories []string
+	for rows.Next() {
+		var rootDir string
+		if err := rows.Scan(&rootDir); err != nil {
+			rows.Close()
+			return err
+		}
+		relative := filepath.Clean(filepath.FromSlash(rootDir))
+		if relative == "." || filepath.IsAbs(relative) || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			rows.Close()
+			return fmt.Errorf("invalid SFTP user home path %q", rootDir)
+		}
+		directories = append(directories, filepath.Join(targetDir, relative))
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	for _, directory := range directories {
+		if err := os.MkdirAll(directory, 0750); err != nil {
+			return fmt.Errorf("create SFTP user home folder: %w", err)
+		}
+	}
 	return nil
+}
+
+func sameFilesystemPath(first, second string) bool {
+	first = filepath.Clean(first)
+	second = filepath.Clean(second)
+	if os.PathSeparator == '\\' {
+		return strings.EqualFold(first, second)
+	}
+	return first == second
 }
 
 func boolInt(value bool) int {

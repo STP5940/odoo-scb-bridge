@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, safeStorage, shell } = require('electron');
 const { execFile } = require('child_process');
 const os = require('os');
 const { promisify } = require('util');
@@ -150,6 +150,20 @@ ipcMain.handle('pin-status', () => {
     skipped: !configured && fs.existsSync(pinSetupSkippedPath()),
     lockoutSeconds: Math.max(0, Math.ceil((pinLockedUntil - Date.now()) / 1000))
   };
+});
+ipcMain.handle('open-folder', async (_event, folderPath) => {
+  if (typeof folderPath !== 'string' || !folderPath.trim()) throw new Error('Folder path is required');
+  // Relative data paths are rooted beside the installed service/app binaries,
+  // never at the Windows service working directory (often System32).
+  const installDir = path.dirname(app.getPath('exe'));
+  const resolvedPath = path.isAbsolute(folderPath)
+    ? path.normalize(folderPath)
+    : path.resolve(installDir, folderPath);
+  const stats = await fs.promises.stat(resolvedPath);
+  if (!stats.isDirectory()) throw new Error('Path is not a folder');
+  const error = await shell.openPath(resolvedPath);
+  if (error) throw new Error(error);
+  return { ok: true };
 });
 ipcMain.handle('pin-setup', (_event, pin) => {
   if (readPinRecord()) throw new Error('PIN is already configured');

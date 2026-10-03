@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getServiceStatus: () => ipcRenderer.invoke('service-status'),
   getMachineInfo: () => ipcRenderer.invoke('machine-info'),
   getPinStatus: () => ipcRenderer.invoke('pin-status'),
+  openFolder: folderPath => ipcRenderer.invoke('open-folder', folderPath),
   setupPin: pin => ipcRenderer.invoke('pin-setup', pin),
   skipPinSetup: () => ipcRenderer.invoke('pin-skip-setup'),
   verifyPin: pin => ipcRenderer.invoke('pin-verify', pin),

@@ -234,7 +234,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.45</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.58</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -259,7 +259,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.45</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.58</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -460,7 +460,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.45</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.58</span>
       </div>
     </aside>
 
@@ -821,11 +821,11 @@
             <table class="w-full table-fixed text-left text-xs">
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
-                  <th class="py-2.5 px-3 w-[17%] whitespace-nowrap">ชื่องาน</th>
-                  <th class="py-2.5 px-3 w-[33%] whitespace-nowrap">รอบเวลา Cron</th>
-                  <th class="py-2.5 px-3 w-[18%] whitespace-nowrap">ปลายทาง Host</th>
+                  <th class="py-2.5 px-3 w-[27%] whitespace-nowrap">ชื่องาน</th>
+                  <th class="py-2.5 px-3 w-[14%] whitespace-nowrap">รอบเวลา Cron</th>
+                  <th class="py-2.5 px-3 w-[17%] whitespace-nowrap">ปลายทาง Host</th>
                   <th class="py-2.5 px-3 w-[12%] whitespace-nowrap">สถานะล่าสุด</th>
-                  <th class="py-2.5 px-3 w-[20%] text-right whitespace-nowrap">การจัดการ</th>
+                  <th class="py-2.5 px-3 w-[30%] text-right whitespace-nowrap">การจัดการ</th>
                 </tr>
               </thead>
               <tbody id="job-list-table" class="divide-y divide-dark-800/60 font-mono">
@@ -2003,6 +2003,7 @@
         const res = await fetch(`${API_BASE}/inbound`);
         if (res.ok) {
           const cfg = await res.json();
+          outboundTargetDir = cfg.target_dir || '';
           document.getElementById('stat-sftp-port').innerText = cfg.sftp_port;
           document.getElementById('stat-target-dir').innerText = `ปลายทาง: ${cfg.target_dir}`;
           document.getElementById('inbound-sftp-port').value = cfg.sftp_port;
@@ -2208,7 +2209,11 @@
     // Load SFTP Users
     async function loadUsers() {
       try {
-        const res = await fetch(`${API_BASE}/users`);
+        const [res, inboundRes] = await Promise.all([
+          fetch(`${API_BASE}/users`),
+          fetch(`${API_BASE}/inbound`)
+        ]);
+        if (inboundRes.ok) outboundTargetDir = (await inboundRes.json()).target_dir || '';
         if (res.ok) {
           const users = await res.json() || [];
           cachedUsers = users;
@@ -2247,6 +2252,9 @@
               </td>
               <td class="p-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString(getLocale())}</td>
               <td class="p-3 text-right space-x-2">
+                <button onclick="openUserFolder(${Number(u.id)})" title="${currentLanguage === 'en' ? 'Open user folder' : 'เปิดโฟลเดอร์ของผู้ใช้'}" class="px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs border border-white/10 transition whitespace-nowrap">
+                  <i class="fa-solid fa-folder-open text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Folder' : 'โฟลเดอร์'}
+                </button>
                 <button onclick="editUser('${u.username}')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white text-xs border border-white/5 transition">
                   <i class="fa-solid fa-pen text-[10px] mr-1"></i>แก้ไข
                 </button>
@@ -2417,6 +2425,9 @@
               </td>
               <td class="p-3 text-right whitespace-nowrap">
                 <div class="flex justify-end gap-1.5 whitespace-nowrap">
+                  <button onclick="openOutboundFolder(${Number(j.id)})" title="${currentLanguage === 'en' ? 'Open source folder' : 'เปิดโฟลเดอร์ต้นทาง'}" class="px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs border border-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-folder-open text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Folder' : 'โฟลเดอร์'}
+                  </button>
                   <button onclick="testSavedOutboundJob(${Number(j.id)}, this)" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs border border-cyan-500/20 transition whitespace-nowrap">
                     <i class="fa-solid fa-plug-circle-check text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Test' : 'ทดสอบ'}
                   </button>
@@ -2529,6 +2540,35 @@
       } finally {
         button.disabled = false;
         button.innerHTML = original;
+      }
+    }
+
+    async function openOutboundFolder(id) {
+      const job = outboundJobsById.get(Number(id));
+      if (!job) return;
+      await openLocalFolder(job.source_dir);
+    }
+
+    async function openUserFolder(id) {
+      const user = cachedUsers.find(item => Number(item.id) === Number(id));
+      if (!user) return;
+      const folder = outboundUserSourcePath(user);
+      if (!folder) {
+        showToast(currentLanguage === 'en' ? 'User folder path is not configured' : 'ยังไม่ได้กำหนดโฟลเดอร์ของผู้ใช้', 'error');
+        return;
+      }
+      await openLocalFolder(folder);
+    }
+
+    async function openLocalFolder(folderPath) {
+      if (!window.electronAPI?.openFolder) {
+        showToast(currentLanguage === 'en' ? 'Opening folders is available in the desktop app' : 'เปิดโฟลเดอร์ได้จากแอปบนเดสก์ท็อปเท่านั้น', 'error');
+        return;
+      }
+      try {
+        await window.electronAPI.openFolder(folderPath);
+      } catch (error) {
+        showToast((currentLanguage === 'en' ? 'Could not open folder: ' : 'เปิดโฟลเดอร์ไม่สำเร็จ: ') + (error.message || ''), 'error');
       }
     }
 
@@ -2650,7 +2690,11 @@
           }
 
           table.innerHTML = logs.map(l => {
-            const isSuccess = l.status === 'SUCCESS';
+            const statusClass = l.status === 'SUCCESS'
+              ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20'
+              : l.status === 'WARNING'
+                ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
             let badgeClass = 'text-brand-400 bg-emerald-500/10 border-emerald-500/20';
             if (l.event_type === 'LOGIN') badgeClass = 'text-accent-blue bg-blue-500/10 border-blue-500/20';
             else if (l.event_type === 'USER_MGMT') badgeClass = 'text-accent-purple bg-purple-500/10 border-purple-500/20';
@@ -2673,12 +2717,12 @@
                     ${l.event_type}
                   </span>
                 </td>
-                <td class="p-3 font-semibold text-slate-300">${l.protocol}</td>
-                <td class="p-3 text-slate-300">${l.username || '-'} <span class="text-slate-500">(${l.client_ip || '-'})</span></td>
+                <td class="p-3 font-semibold text-slate-300">${String(l.protocol || '').toUpperCase()}</td>
+                <td class="p-3 text-slate-300">${escapeHTML(l.username || '-')}${l.client_ip ? ` <span class="text-slate-500">(${escapeHTML(l.client_ip)})</span>` : ''}</td>
                 <td class="p-3 text-slate-300">${details}</td>
                 <td class="p-3 font-mono text-[10px] text-slate-500 truncate max-w-xs" title="${l.file_hash || ''}">${l.file_hash ? l.file_hash.substring(0, 16) + '...' : '-'}</td>
                 <td class="p-3">
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${isSuccess ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}">
                     ${l.status}
                   </span>
                 </td>
@@ -2690,7 +2734,7 @@
             <tr class="hover:bg-dark-850/50 transition">
               <td class="py-2.5 px-3 text-slate-400">${new Date(l.timestamp).toLocaleTimeString(getLocale())}</td>
               <td class="py-2.5 px-3 font-semibold text-white">${l.event_type}</td>
-              <td class="py-2.5 px-3 text-slate-300">${l.protocol}</td>
+              <td class="py-2.5 px-3 text-slate-300">${String(l.protocol || '').toUpperCase()}</td>
               <td class="py-2.5 px-3 text-slate-200">${l.file_name || '-'}</td>
               <td class="py-2.5 px-3 text-slate-400">${l.file_size ? l.file_size.toLocaleString() + ' B' : '-'}</td>
               <td class="py-2.5 px-3">
@@ -2731,28 +2775,28 @@
       if (!nav) return;
       const total = Math.max(1, logsTotalPages);
       const current = Math.min(total, Math.max(1, logsPage));
-      const buttonClass = 'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border px-0 text-xs font-medium transition';
-      const normalClass = 'border-white/10 bg-dark-800 text-slate-200 hover:bg-dark-750';
-      const activeClass = 'border-brand-500 bg-brand-500 text-white font-bold';
-      const disabledClass = 'border-white/5 bg-dark-900/40 text-slate-600 opacity-50 cursor-not-allowed';
+      const buttonClass = 'inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-transparent px-2 text-sm font-medium transition';
+      const normalClass = 'bg-transparent text-slate-200 hover:bg-dark-800';
+      const activeClass = 'bg-dark-700 text-white';
+      const disabledClass = 'text-slate-600 cursor-not-allowed';
       const navButton = (icon, label, page, disabled) => `<button type="button" onclick="goToLogsPage(${page})" aria-label="${label}" title="${label}" ${disabled ? 'disabled' : ''} class="${buttonClass} ${disabled ? disabledClass : normalClass}"><i class="fa-solid ${icon}" aria-hidden="true"></i></button>`;
       const pageButton = page => `<button type="button" onclick="goToLogsPage(${page})" aria-label="${currentLanguage === 'en' ? `Page ${page}` : `หน้า ${page}`}" aria-current="${page === current ? 'page' : 'false'}" class="${buttonClass} ${page === current ? activeClass : normalClass}">${page}</button>`;
-      const ellipsis = '<span class="px-1 text-slate-500 select-none" aria-hidden="true">…</span>';
+      const dots = '<span class="inline-flex h-10 min-w-10 items-center justify-center px-2 text-slate-400 select-none" aria-hidden="true">…</span>';
 
-      let pages = [];
-      if (total <= 5) {
-        pages = Array.from({ length: total }, (_, index) => index + 1);
-      } else if (current <= 3) {
-        pages = [1, 2, 3, ellipsis, total];
-      } else if (current >= total - 2) {
-        pages = [1, ellipsis, total - 2, total - 1, total];
+      // Match MUI's compact pattern with one boundary page and one sibling page.
+      let pages;
+      if (total <= 7) {
+        pages = Array.from({ length: total }, (_, i) => i + 1);
+      } else if (current <= 4) {
+        pages = [...Array.from({ length: 5 }, (_, i) => i + 1), dots, total];
+      } else if (current >= total - 3) {
+        pages = [1, dots, ...Array.from({ length: 5 }, (_, i) => total - 4 + i)];
       } else {
-        pages = [1, ellipsis, current - 1, current, current + 1, ellipsis, total];
+        pages = [1, dots, current - 1, current, current + 1, dots, total];
       }
-
       const labels = currentLanguage === 'en'
         ? { first: 'First page', previous: 'Previous page', next: 'Next page', last: 'Last page' }
-        : { first: 'หน้าแรก', previous: 'หน้าก่อนหน้า', next: 'หน้าถัดไป', last: 'หน้าสุดท้าย' };
+        : { first: 'หน้าแรกสุด', previous: 'หน้าก่อนหน้า', next: 'หน้าถัดไป', last: 'หน้าสุดท้าย' };
       nav.innerHTML = [
         navButton('fa-angles-left', labels.first, 1, current <= 1),
         navButton('fa-chevron-left', labels.previous, current - 1, current <= 1),
