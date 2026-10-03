@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"odoo-scb-bridge/internal/database"
 	"odoo-scb-bridge/internal/license"
@@ -67,6 +68,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/service/start", cors(s.requireLicense(s.handleServiceStart)))
 	mux.HandleFunc("/api/service/stop", cors(s.requireLicense(s.handleServiceStop)))
 	mux.HandleFunc("/api/logs", cors(s.requireLicense(s.handleLogs)))
+	mux.HandleFunc("/api/security/pin-lockout", cors(s.handlePinLockout))
 	mux.HandleFunc("/api/inbound", cors(s.requireLicense(s.handleInboundConfig)))
 	mux.HandleFunc("/api/users", cors(s.requireLicense(s.handleUsers)))
 	mux.HandleFunc("/api/outbound/jobs", cors(s.requireLicense(s.handleOutboundJobs)))
@@ -118,7 +120,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"sftp_running": sftpRunning,
 		"activated":    s.license != nil && s.license.Activated(),
 		"machine_id":   s.machineID(),
-		"version":      "0.1.19",
+		"version":      "0.1.26",
 	})
 }
 
@@ -314,6 +316,43 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Page-Size", strconv.Itoa(pageSize))
 	w.Header().Set("X-Total-Pages", strconv.Itoa(totalPages))
 	jsonResponse(w, http.StatusOK, logs)
+}
+
+func (s *Server) handlePinLockout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var event struct {
+		Timestamp     time.Time `json:"timestamp"`
+		Attempts      int       `json:"attempts"`
+		LockoutSecond int       `json:"lockout_seconds"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&event); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid security event"})
+		return
+	}
+	if event.Attempts < 1 || event.Attempts > 100 || event.LockoutSecond < 1 || event.LockoutSecond > 3600 {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid security event"})
+		return
+	}
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now()
+	}
+	details := fmt.Sprintf("Application PIN locked after %d failed attempts for %d seconds", event.Attempts, event.LockoutSecond)
+	if err := s.db.LogAudit(models.AuditLog{
+		EventType: "PIN_LOCKOUT",
+		Protocol:  "APP",
+		Username:  "application",
+		ClientIP:  "127.0.0.1",
+		Status:    "LOCKED",
+		Details:   details,
+		Timestamp: event.Timestamp,
+	}); err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "could not store security event"})
+		return
+	}
+	jsonResponse(w, http.StatusCreated, map[string]string{"status": "recorded"})
 }
 
 func (s *Server) handleInboundConfig(w http.ResponseWriter, r *http.Request) {

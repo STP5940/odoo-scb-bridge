@@ -507,6 +507,7 @@ window.APP_LANGUAGE_PAIRS = [
     "การจัดการผู้ใช้ (USER_MGMT)",
     "User Management"
   ],
+  ["ล็อกแอป (PIN_LOCKOUT)", "App Lockouts (PIN_LOCKOUT)"],
   [
     "รีเฟรช Log",
     "Refresh Logs"

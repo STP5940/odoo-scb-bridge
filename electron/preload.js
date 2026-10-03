@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   verifyPin: pin => ipcRenderer.invoke('pin-verify', pin),
   changePin: (currentPin, nextPin) => ipcRenderer.invoke('pin-change', currentPin, nextPin),
   disablePin: currentPin => ipcRenderer.invoke('pin-disable', currentPin),
+  flushPinAuditLogs: () => ipcRenderer.invoke('pin-audit-flush'),
   controlService: action => ipcRenderer.invoke('service-control', action)
 });

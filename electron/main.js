@@ -5,12 +5,16 @@ const { promisify } = require('util');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const http = require('http');
 
 const execFileAsync = promisify(execFile);
 const serviceName = 'OdooSCBBridge';
 let mainWindow;
 let pinFailures = 0;
 let pinLockedUntil = 0;
+let pinAuditEvents = [];
+let pinSecurityStateLoaded = false;
+let pinAuditFlushPromise = null;
 
 function pinRecordPath() {
   return path.join(app.getPath('userData'), 'app-pin.dat');
@@ -18,6 +22,68 @@ function pinRecordPath() {
 
 function pinSetupSkippedPath() {
   return path.join(app.getPath('userData'), 'pin-setup-skipped');
+}
+
+function pinSecurityStatePath() {
+  return path.join(app.getPath('userData'), 'pin-security.dat');
+}
+
+function loadPinSecurityState() {
+  if (pinSecurityStateLoaded) return;
+  const file = pinSecurityStatePath();
+  if (fs.existsSync(file)) {
+    if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure PIN storage is unavailable');
+    const encrypted = fs.readFileSync(file, 'utf8');
+    const state = JSON.parse(safeStorage.decryptString(Buffer.from(encrypted, 'base64')));
+    if (!Number.isInteger(state.failures) || state.failures < 0 || state.failures > 4 || !Number.isFinite(state.lockedUntil) || !Array.isArray(state.pendingLockoutAudits)) {
+      throw new Error('Stored PIN security state is invalid');
+    }
+    pinFailures = state.failures;
+    pinLockedUntil = state.lockedUntil;
+    pinAuditEvents = state.pendingLockoutAudits.filter(event => event && typeof event.timestamp === 'string');
+  }
+  pinSecurityStateLoaded = true;
+}
+
+function savePinSecurityState() {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure PIN storage is unavailable');
+  const file = pinSecurityStatePath();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const temporaryFile = file + '.tmp';
+  const state = { failures: pinFailures, lockedUntil: pinLockedUntil, pendingLockoutAudits: pinAuditEvents };
+  fs.writeFileSync(temporaryFile, safeStorage.encryptString(JSON.stringify(state)).toString('base64'), { mode: 0o600 });
+  fs.renameSync(temporaryFile, file);
+}
+
+function sendPinLockoutAudit(event) {
+  return new Promise((resolve, reject) => {
+    const body = Buffer.from(JSON.stringify(event));
+    const request = http.request({
+      hostname: '127.0.0.1', port: 9527, path: '/api/security/pin-lockout', method: 'POST',
+      timeout: 3000, headers: { 'Content-Type': 'application/json', 'Content-Length': body.length }
+    }, response => {
+      response.resume();
+      response.on('end', () => response.statusCode >= 200 && response.statusCode < 300
+        ? resolve() : reject(new Error(`PIN audit API returned ${response.statusCode}`)));
+    });
+    request.on('timeout', () => request.destroy(new Error('PIN audit request timed out')));
+    request.on('error', reject);
+    request.end(body);
+  });
+}
+
+function flushPinLockoutAudits() {
+  if (pinAuditFlushPromise) return pinAuditFlushPromise;
+  pinAuditFlushPromise = (async () => {
+    loadPinSecurityState();
+    while (pinAuditEvents.length) {
+      const event = pinAuditEvents[0];
+      await sendPinLockoutAudit(event);
+      if (pinAuditEvents[0] === event) pinAuditEvents.shift();
+      savePinSecurityState();
+    }
+  })().catch(() => {}).finally(() => { pinAuditFlushPromise = null; });
+  return pinAuditFlushPromise;
 }
 
 function readPinRecord() {
@@ -48,6 +114,7 @@ function savePin(pin) {
 }
 
 function verifyPin(pin) {
+  loadPinSecurityState();
   if (Date.now() < pinLockedUntil) {
     const seconds = Math.ceil((pinLockedUntil - Date.now()) / 1000);
     return { ok: false, locked: true, seconds };
@@ -59,20 +126,30 @@ function verifyPin(pin) {
   if (expected.length === actual.length && crypto.timingSafeEqual(expected, actual)) {
     pinFailures = 0;
     pinLockedUntil = 0;
+    savePinSecurityState();
     return { ok: true };
   }
   pinFailures++;
   if (pinFailures >= 5) {
     pinFailures = 0;
     pinLockedUntil = Date.now() + 30_000;
+    pinAuditEvents.push({ timestamp: new Date().toISOString(), attempts: 5, lockout_seconds: 30 });
+    savePinSecurityState();
+    flushPinLockoutAudits();
     return { ok: false, locked: true, seconds: 30 };
   }
+  savePinSecurityState();
   return { ok: false, remaining: 5 - pinFailures };
 }
 
 ipcMain.handle('pin-status', () => {
+  loadPinSecurityState();
   const configured = Boolean(readPinRecord());
-  return { configured, skipped: !configured && fs.existsSync(pinSetupSkippedPath()) };
+  return {
+    configured,
+    skipped: !configured && fs.existsSync(pinSetupSkippedPath()),
+    lockoutSeconds: Math.max(0, Math.ceil((pinLockedUntil - Date.now()) / 1000))
+  };
 });
 ipcMain.handle('pin-setup', (_event, pin) => {
   if (readPinRecord()) throw new Error('PIN is already configured');
@@ -102,6 +179,7 @@ ipcMain.handle('pin-disable', (_event, currentPin) => {
   fs.writeFileSync(pinSetupSkippedPath(), 'skipped');
   return { ok: true };
 });
+ipcMain.handle('pin-audit-flush', () => flushPinLockoutAudits());
 
 async function queryServiceState() {
   const { stdout } = await execFileAsync('sc.exe', ['query', serviceName], { windowsHide: true });

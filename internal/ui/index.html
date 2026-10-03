@@ -186,10 +186,23 @@
       gap: 0.8rem;
       pointer-events: none;
     }
-    .pin-dot { width: 0.55rem; height: 0.55rem; border-radius: 9999px; background: #424a58; transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+    .pin-dot { width: 0.75rem; height: 0.75rem; flex: 0 0 0.75rem; border-radius: 9999px; background: #424a58; transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
     .pin-dot.filled { background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.42); transform: scale(1.08); }
+    .pin-keypad-button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .pin-message { text-align: center; }
     .pin-message:empty { display: none; }
-    .pin-message:not(:empty) { margin-top: 0.5rem; }
+    .pin-message:not(:empty) { margin-top: 0.5rem; margin-bottom: 1rem; }
+    #pin-submit:not(:disabled) { color: #ffffff !important; }
+    #pin-submit:disabled {
+      opacity: 1;
+      background-color: #14532d;
+      color: #dcfce7 !important;
+      cursor: not-allowed;
+    }
+    html[data-theme="light"] #pin-submit:disabled {
+      background-color: #d1fae5;
+      color: #166534 !important;
+    }
     .startup-spinner {
       width: 2rem;
       height: 2rem;
@@ -221,7 +234,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.19</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.26</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
@@ -246,7 +259,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.19</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.26</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -360,7 +373,6 @@
         </div>
       </div>
       <p id="pin-message" class="pin-message text-xs text-rose-400" role="status" aria-live="polite"></p>
-      <p id="pin-keypad-label" class="text-center text-xs text-slate-500 mb-4">กดตัวเลขเพื่อกรอก PIN</p>
       <div class="mx-auto grid w-full max-w-[360px] grid-cols-3 justify-items-center gap-x-4 gap-y-3 mb-4" aria-label="PIN keypad">
         <button type="button" onclick="appendPinDigit('1')" aria-label="1" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">1</button>
         <button type="button" onclick="appendPinDigit('2')" aria-label="2" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">2</button>
@@ -379,7 +391,7 @@
         <button id="pin-delete-button" type="button" onclick="deletePinDigit()" aria-label="ลบตัวเลขล่าสุด" title="ลบตัวเลขล่าสุด" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-delete-left"></i></button>
       </div>
       <div class="flex gap-2">
-        <button id="pin-submit" onclick="submitPinScreen()" class="flex-1 px-4 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-700">Unlock</button>
+        <button id="pin-submit" onclick="submitPinScreen()" class="flex-1 px-4 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition disabled:cursor-not-allowed disabled:hover:bg-green-700">Unlock</button>
         <button id="pin-skip-button" onclick="skipPinSetup()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">ข้ามไปก่อน</button>
         <button id="pin-change-button" onclick="showPinScreen('change')" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">Change PIN</button>
         <button id="pin-cancel-change" onclick="cancelPinOperation()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">Cancel</button>
@@ -448,7 +460,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.19</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.26</span>
       </div>
     </aside>
 
@@ -821,6 +833,7 @@
                 <option value="INBOUND_FILE">การรับเข้าไฟล์ (INBOUND)</option>
                 <option value="OUTBOUND_FILE">การส่งออกไฟล์ (OUTBOUND)</option>
                 <option value="USER_MGMT">การจัดการผู้ใช้ (USER_MGMT)</option>
+                <option value="PIN_LOCKOUT">ล็อกแอป (PIN_LOCKOUT)</option>
               </select>
             </div>
             <button onclick="loadLogs()" class="px-3 py-2 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 text-xs border border-white/5 flex items-center space-x-1.5">
@@ -979,9 +992,12 @@
     let activationStateResolved = false;
     let activationRequestLoaded = false;
     let activationRequestLoading = false;
-    const startupCoverStartedAt = Date.now();
+    let startupCoverStartedAt = Date.now();
+    let appUnlocked = false;
     let pinConfigured = false;
     let pinSetupSkipped = false;
+    let pinLockoutUntil = 0;
+    let pinLockoutTimer = null;
     let pinScreenMode = 'unlock';
     let activePinField = 'pin-unlock';
     let languageLookup = new Map();
@@ -1001,7 +1017,21 @@
       const minimumVisibleMs = 1000;
       const remainingMs = minimumVisibleMs - (Date.now() - startupCoverStartedAt);
       if (remainingMs > 0) await new Promise(resolve => setTimeout(resolve, remainingMs));
-      document.getElementById('app-startup-cover')?.remove();
+      const cover = document.getElementById('app-startup-cover');
+      if (cover) cover.style.display = 'none';
+    }
+
+    function showStartupCover() {
+      startupCoverStartedAt = Date.now();
+      const cover = document.getElementById('app-startup-cover');
+      if (cover) cover.style.display = 'flex';
+    }
+
+    async function loadApplicationData() {
+      if (!appUnlocked) return;
+      await loadStatus();
+      if (!isActivated || !isRunning) return;
+      await Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
     }
 
     function showPinScreen(mode) {
@@ -1044,7 +1074,6 @@
       document.getElementById('pin-new-label').innerText = pinText('PIN 6 หลัก', '6-digit PIN');
       document.getElementById('pin-confirm-label').innerText = pinText('ยืนยัน PIN', 'Confirm PIN');
       document.getElementById('pin-unlock-label').innerText = 'PIN';
-      document.getElementById('pin-keypad-label').innerText = pinText('กดตัวเลขเพื่อกรอก PIN', 'Tap a number to enter your PIN');
       changeButton.innerText = pinText('เปลี่ยน PIN', 'Change PIN');
       cancelButton.innerText = pinText('ยกเลิก', 'Cancel');
       skipButton.innerText = pinText('ยกเลิก', 'Cancel');
@@ -1053,6 +1082,7 @@
       document.getElementById('pin-message').innerText = '';
       screen.classList.remove('hidden');
       updatePinFieldFocus();
+      updatePinLockout();
       updatePinSubmitState();
       setTimeout(() => document.getElementById(activePinField)?.focus(), 0);
     }
@@ -1100,13 +1130,45 @@
       const isSetup = pinScreenMode === 'setup';
       const isChange = pinScreenMode === 'change';
       const isDisable = pinScreenMode === 'disable';
+      const isLockedOut = Date.now() < pinLockoutUntil;
       const pinPairValid = /^\d{6}$/.test(value('pin-new')) && /^\d{6}$/.test(value('pin-confirm')) && value('pin-new') === value('pin-confirm');
       if (isSetup) submit.innerText = activePinField === 'pin-confirm' ? pinText('ตั้ง PIN', 'Set PIN') : pinText('ถัดไป', 'Next');
       const valid = isSetup
         ? activePinField === 'pin-confirm' ? pinPairValid : /^\d{6}$/.test(value('pin-new'))
         : isChange ? /^\d{6}$/.test(value('pin-current')) && pinPairValid
           : isDisable ? /^\d{6}$/.test(value('pin-current')) : /^\d{6}$/.test(value('pin-unlock'));
-      submit.disabled = !valid;
+      submit.disabled = !valid || isLockedOut;
+    }
+
+    function updatePinLockout() {
+      const remainingMs = pinLockoutUntil - Date.now();
+      const locked = remainingMs > 0;
+      const message = document.getElementById('pin-message');
+      if (locked) {
+        const seconds = Math.ceil(remainingMs / 1000);
+        message.innerText = pinText(`ลองอีกครั้งใน ${seconds} วินาที`, `Try again in ${seconds} seconds.`);
+        document.getElementById('pin-screen').querySelectorAll('button, input').forEach(control => { control.disabled = true; });
+        updatePinSubmitState();
+        return;
+      }
+
+      pinLockoutUntil = 0;
+      if (pinLockoutTimer !== null) {
+        clearInterval(pinLockoutTimer);
+        pinLockoutTimer = null;
+      }
+      if (/^(ลองอีกครั้งใน|Try again in) /.test(message.innerText)) message.innerText = '';
+      document.getElementById('pin-screen').querySelectorAll('button, input').forEach(control => { control.disabled = false; });
+      updatePinSubmitState();
+    }
+
+    function startPinLockout(seconds) {
+      const duration = Math.max(0, Number(seconds) || 0);
+      if (!duration) return;
+      pinLockoutUntil = Date.now() + duration * 1000;
+      if (pinLockoutTimer !== null) clearInterval(pinLockoutTimer);
+      updatePinLockout();
+      pinLockoutTimer = setInterval(updatePinLockout, 250);
     }
 
     function backToPinEntry() {
@@ -1123,7 +1185,7 @@
     }
 
     function appendPinDigit(digit) {
-      if (!/^\d$/.test(digit)) return;
+      if (Date.now() < pinLockoutUntil || !/^\d$/.test(digit)) return;
       const field = document.getElementById(activePinField);
       if (!field || field.value.length >= 6) return;
       field.value += digit;
@@ -1131,6 +1193,7 @@
     }
 
     function deletePinDigit() {
+      if (Date.now() < pinLockoutUntil) return;
       const field = document.getElementById(activePinField);
       if (!field) return;
       field.value = field.value.slice(0, -1);
@@ -1164,10 +1227,13 @@
         updatePinSettingControl();
         if (!pinConfigured && pinSetupSkipped) {
           document.getElementById('pin-screen').classList.add('hidden');
+          appUnlocked = true;
+          await loadApplicationData();
           await finishStartupCover();
           return;
         }
         showPinScreen(pinConfigured ? 'unlock' : 'setup');
+        if (pinConfigured && status.lockoutSeconds > 0) startPinLockout(status.lockoutSeconds);
         await finishStartupCover();
       } catch (error) {
         showPinScreen('setup');
@@ -1219,7 +1285,7 @@
       try {
         await window.electronAPI.skipPinSetup();
         pinSetupSkipped = true;
-        unlockApp();
+        await unlockApp();
         updatePinButton();
         showToast(pinText('ยกเลิกการตั้ง PIN แล้ว', 'PIN setup cancelled'), 'info');
       } catch (error) {
@@ -1232,6 +1298,7 @@
         showPinScreen('setup');
         return;
       }
+      appUnlocked = false;
       ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => { document.getElementById(id).value = ''; });
       showPinScreen('unlock');
     }
@@ -1270,7 +1337,7 @@
           pinSetupSkipped = false;
           updatePinButton();
           updatePinSettingControl();
-          unlockApp();
+          await unlockApp();
           showToast(pinText('ตั้ง PIN สำเร็จ', 'PIN set successfully'), 'success');
           return;
         }
@@ -1283,17 +1350,17 @@
         }
         if (result.ok) {
           if (isChange) {
-            unlockApp();
+            await unlockApp();
             showToast(pinText('เปลี่ยน PIN สำเร็จ', 'PIN changed successfully'), 'success');
           } else if (isDisable) {
             pinConfigured = false;
             pinSetupSkipped = true;
             updatePinButton();
             updatePinSettingControl();
-            unlockApp();
+            await unlockApp();
             showToast(pinText('ปิดการใช้ PIN แล้ว', 'PIN protection disabled'), 'success');
           } else {
-            unlockApp();
+            await unlockApp();
           }
           return;
         }
@@ -1304,11 +1371,13 @@
           document.getElementById('pin-unlock').value = '';
           setActivePinField('pin-unlock');
         }
-        message.innerText = result.locked
-          ? translateValue('ลองใหม่ได้ใน ' + result.seconds + ' วินาที')
-          : (isChange || isDisable)
+        if (result.locked) {
+          startPinLockout(result.seconds);
+        } else {
+          message.innerText = (isChange || isDisable)
             ? pinText('PIN ปัจจุบันไม่ถูกต้อง', 'Current PIN is incorrect.')
             : translateValue('PIN ไม่ถูกต้อง เหลืออีก ' + result.remaining + ' ครั้ง');
+        }
       } catch (error) {
         message.innerText = error.message || pinText('บันทึก PIN ไม่สำเร็จ', 'Could not save the PIN.');
       } finally {
@@ -1316,15 +1385,27 @@
       }
     }
 
-    function unlockApp() {
+    async function unlockApp() {
       document.getElementById('pin-screen').classList.add('hidden');
       ['pin-current', 'pin-new', 'pin-confirm', 'pin-unlock'].forEach(id => { document.getElementById(id).value = ''; });
+      if (appUnlocked) return;
+      appUnlocked = true;
+      showStartupCover();
+      try {
+        await loadApplicationData();
+      } finally {
+        await finishStartupCover();
+      }
     }
 
     document.addEventListener('keydown', event => {
       if (document.getElementById('pin-screen').classList.contains('hidden')) return;
       const digit = /^\d$/.test(event.key) ? event.key
         : /^(?:Numpad|Digit)\d$/.test(event.code) ? event.code.slice(-1) : null;
+      if (Date.now() < pinLockoutUntil) {
+        if (digit !== null || event.key === 'Backspace' || event.key === 'Enter') event.preventDefault();
+        return;
+      }
       if (digit !== null) {
         event.preventDefault();
         appendPinDigit(digit);
@@ -1531,7 +1612,7 @@
       const selector = document.getElementById('language-select');
       if (selector) selector.value = currentLanguage;
       translateSubtree(document.body);
-      if (isRunning && isActivated) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
+      if (appUnlocked && isRunning && isActivated) Promise.all([loadInbound(), loadUsers(), loadJobs(), loadLogs()]);
     }
 
     function getLocale() {
@@ -1651,6 +1732,7 @@
 
     // Refresh all data
     async function refreshData() {
+      if (!appUnlocked) return;
       await loadStatus();
       if (!isActivated) return;
       if (!isRunning) {
@@ -1703,6 +1785,7 @@
           isRunning = bridge.activated === true && bridge.running === true && data.running === true;
           updateActivationUI(bridge.activated === true);
           await loadSftpListenerStatus(data.running);
+          await window.electronAPI?.flushPinAuditLogs?.();
           return;
         }
         const res = await fetch(`${API_BASE}/status`);
@@ -1730,6 +1813,7 @@
           isRunning = bridge.activated === true && (bridge.running === true || bridge.status === 'RUNNING');
           updateActivationUI(bridge.activated === true);
           setSftpListenerStatus(bridge.sftp_running === true);
+          await window.electronAPI?.flushPinAuditLogs?.();
         } catch (_) {
           if (activationStateResolved) updateActivationUI(isActivated);
         }
@@ -2230,6 +2314,15 @@
             if (l.event_type === 'LOGIN') badgeClass = 'text-accent-blue bg-blue-500/10 border-blue-500/20';
             else if (l.event_type === 'USER_MGMT') badgeClass = 'text-accent-purple bg-purple-500/10 border-purple-500/20';
             else if (l.event_type === 'OUTBOUND_FILE') badgeClass = 'text-accent-cyan bg-cyan-500/10 border-cyan-500/20';
+            else if (l.event_type === 'PIN_LOCKOUT') badgeClass = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+
+            let details = l.file_name || l.details;
+            if (l.event_type === 'PIN_LOCKOUT') {
+              const values = l.details.match(/(\d+).*?(\d+)\s+seconds?/i);
+              if (values) details = currentLanguage === 'en'
+                ? `App locked after ${values[1]} failed PIN attempts for ${values[2]} seconds`
+                : `ล็อกแอปหลังกรอก PIN ผิด ${values[1]} ครั้ง เป็นเวลา ${values[2]} วินาที`;
+            }
 
             return `
               <tr class="hover:bg-dark-850/50 transition">
@@ -2241,7 +2334,7 @@
                 </td>
                 <td class="p-3 font-semibold text-slate-300">${l.protocol}</td>
                 <td class="p-3 text-slate-300">${l.username || '-'} <span class="text-slate-500">(${l.client_ip || '-'})</span></td>
-                <td class="p-3 text-slate-300">${l.file_name || l.details}</td>
+                <td class="p-3 text-slate-300">${details}</td>
                 <td class="p-3 font-mono text-[10px] text-slate-500 truncate max-w-xs" title="${l.file_hash || ''}">${l.file_hash ? l.file_hash.substring(0, 16) + '...' : '-'}</td>
                 <td class="p-3">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${isSuccess ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
@@ -2300,8 +2393,7 @@
     initializeTheme();
     initializePinLock();
     switchTab('dashboard');
-    refreshData();
-    setInterval(loadStatus, 5000);
+    setInterval(() => { if (appUnlocked) loadStatus(); }, 5000);
   </script>
 </body>
 </html>
