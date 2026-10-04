@@ -750,6 +750,106 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "ยืนยันการลบรอบงาน",
     "Confirm deleting job"
+  ],
+  [
+    "ดูรายการไฟล์",
+    "List files"
+  ],
+  [
+    "ดาวน์โหลด/อ่าน",
+    "Download / Read"
+  ],
+  [
+    "อัปโหลด/เขียน",
+    "Upload / Write"
+  ],
+  [
+    "สร้างโฟลเดอร์",
+    "Create folder"
+  ],
+  [
+    "เปลี่ยนชื่อ/ย้าย",
+    "Rename / Move"
+  ],
+  [
+    "ลบไฟล์",
+    "Delete files"
+  ],
+  [
+    "แต่ละบัญชีจะเห็นเฉพาะ home ของตัวเอง และสิทธิ์จะถูกตรวจที่ SFTP server ทุกคำสั่ง",
+    "Each account only accesses its own home folder, and permissions are enforced by the SFTP server on every command."
+  ],
+  [
+    "ผู้ใช้ต้นทาง (Local SFTP User)",
+    "Source User (Local SFTP User)"
+  ],
+  [
+    "กำหนดโฟลเดอร์เอง",
+    "Choose folder manually"
+  ],
+  [
+    "เลือกผู้ใช้เพื่อส่งไฟล์จากโฟลเดอร์ส่วนตัวของผู้ใช้นั้น หรือเลือกกำหนดโฟลเดอร์เอง · บัญชีปลายทาง (Remote Username) ตั้งค่าแยกต่างหาก",
+    "Select a user to transfer files from their personal folder, or choose a folder manually. Remote Username is configured separately."
+  ],
+  [
+    "เปิดใช้งานรอบงานตาม Cron",
+    "Enable scheduled job via Cron"
+  ],
+  [
+    "การติดตั้ง/เปลี่ยนเวอร์ชัน",
+    "Installation / Version update"
+  ],
+  [
+    "ประวัติการส่งไฟล์",
+    "Transfer history"
+  ],
+  [
+    "กลับไปหน้าส่งออก",
+    "Back to outbound jobs"
+  ],
+  [
+    "รีเฟรช",
+    "Refresh"
+  ],
+  [
+    "เลือกงานเพื่อดูประวัติ",
+    "Select a job to view history"
+  ],
+  [
+    "ไทย",
+    "Thai"
+  ],
+  [
+    "จัดการความปลอดภัย SFTP",
+    "SFTP Security"
+  ],
+  [
+    "จัดการ Allow list, Block list และ IP ที่ถูกบล็อกชั่วคราว",
+    "Manage allow list, block list, and temporarily blocked IPs"
+  ],
+  [
+    "จัดการ",
+    "Manage"
+  ],
+  [
+    "ตั้งค่าการเข้าถึงและจัดการกฎ IP",
+    "Configure access mode and manage IP rules"
+  ],
+  [
+    "กลับไปหน้าตั้งค่า",
+    "Back to Settings"
+  ],
+  [
+    "ชนิด",
+    "Type"
+  ],
+  [
+    "เลือกหน้าประวัติการส่งไฟล์",
+    "Select transfer history page"
+  ],
+  [
+    "เช่น 192.168.1.10 หรือ 192.168.1.0/24",
+    "e.g. 192.168.1.10 or 192.168.1.0/24"
   ]
 ];
 // Parameterized UI messages live here with the static translations for easier maintenance.
