@@ -228,6 +228,10 @@ window.APP_LANGUAGE_PAIRS = [
     "Stores login and file transfer records"
   ],
   [
+    "บันทึกเหตุการณ์และความปลอดภัยล่าสุด (Recent Audit Logs)",
+    "Recent Audit Logs"
+  ],
+  [
     "กิจกรรมการถ่ายโอนไฟล์ล่าสุด (Recent File Transfers)",
     "Recent File Transfers"
   ],
