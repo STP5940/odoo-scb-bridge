@@ -61,6 +61,7 @@ type OutboundJob struct {
 // AuditLog represents historical events: logins, file transfers, job executions
 type AuditLog struct {
 	ID        int64     `json:"id"`
+	JobID     int64     `json:"job_id,omitempty"`
 	EventType string    `json:"event_type"` // "LOGIN", "INBOUND_FILE", "OUTBOUND_FILE", "JOB_RUN", "APP_VERSION"
 	Protocol  string    `json:"protocol"`   // "SFTP", "FTPS", "FTP", "SYSTEM"
 	Username  string    `json:"username"`

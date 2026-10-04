@@ -135,7 +135,8 @@ func (d *DB) migrate() error {
 		file_hash TEXT DEFAULT '',
 		status TEXT NOT NULL,
 		details TEXT DEFAULT '',
-		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+		job_id INTEGER NOT NULL DEFAULT 0
 	);
 
 	CREATE TABLE IF NOT EXISTS app_metadata (
@@ -185,6 +186,12 @@ func (d *DB) migrate() error {
 	}
 	if err := ensureOutboundSourceUserColumn(d.conn); err != nil {
 		return fmt.Errorf("migrate outbound source user: %w", err)
+	}
+	if err := ensureAuditLogJobIDColumn(d.conn); err != nil {
+		return fmt.Errorf("migrate audit log job id: %w", err)
+	}
+	if err := backfillOutboundLogJobIDs(d.conn); err != nil {
+		return fmt.Errorf("associate existing outbound logs with jobs: %w", err)
 	}
 	// Existing accounts retain their previous unrestricted behavior until an
 	// administrator reviews their individual permissions in the UI.
@@ -362,6 +369,74 @@ func ensureOutboundSourceUserColumn(conn *sql.DB) error {
 	return err
 }
 
+func ensureAuditLogJobIDColumn(conn *sql.DB) error {
+	rows, err := conn.Query("PRAGMA table_info(audit_logs)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, columnType string
+		var defaultValue interface{}
+		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		if name == "job_id" {
+			return rows.Err()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = conn.Exec("ALTER TABLE audit_logs ADD COLUMN job_id INTEGER NOT NULL DEFAULT 0")
+	return err
+}
+
+func backfillOutboundLogJobIDs(conn *sql.DB) error {
+	rows, err := conn.Query(`SELECT id, protocol, remote_user, remote_host, remote_port, remote_dir FROM outbound_jobs`)
+	if err != nil {
+		return err
+	}
+	type outboundLogKey struct {
+		protocol, username, host, remoteDir string
+		port                                int
+	}
+	type outboundLogJob struct {
+		id  int64
+		key outboundLogKey
+	}
+	var jobs []outboundLogJob
+	counts := make(map[outboundLogKey]int)
+	for rows.Next() {
+		var job outboundLogJob
+		if err := rows.Scan(&job.id, &job.key.protocol, &job.key.username, &job.key.host, &job.key.port, &job.key.remoteDir); err != nil {
+			rows.Close()
+			return err
+		}
+		job.key.protocol = strings.ToLower(job.key.protocol)
+		jobs = append(jobs, job)
+		counts[job.key]++
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	for _, job := range jobs {
+		if counts[job.key] != 1 {
+			continue
+		}
+		prefix := fmt.Sprintf("Pushed to %s:%d/%s", job.key.host, job.key.port, job.key.remoteDir)
+		if _, err := conn.Exec(`UPDATE audit_logs SET job_id=? WHERE job_id=0 AND event_type='OUTBOUND_FILE' AND LOWER(protocol)=LOWER(?) AND username=? AND substr(details, 1, length(?))=?`, job.id, job.key.protocol, job.key.username, prefix, prefix); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // LogAudit inserts a new event record
 func (d *DB) LogAudit(log models.AuditLog) error {
 	d.mu.Lock()
@@ -419,15 +494,15 @@ func (d *DB) RecordAppVersionAt(version string, installedAt time.Time) error {
 
 func (d *DB) internalLogAudit(log models.AuditLog) error {
 	query := `
-		INSERT INTO audit_logs (event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO audit_logs (event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp, job_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	ts := log.Timestamp
 	if ts.IsZero() {
 		ts = time.Now()
 	}
 
-	_, err := d.conn.Exec(query, log.EventType, log.Protocol, log.Username, log.ClientIP, log.FileName, log.FileSize, log.FileHash, log.Status, log.Details, ts)
+	_, err := d.conn.Exec(query, log.EventType, log.Protocol, log.Username, log.ClientIP, log.FileName, log.FileSize, log.FileHash, log.Status, log.Details, ts, log.JobID)
 	return err
 }
 
@@ -445,9 +520,9 @@ func (d *DB) GetRecentLogs(limit int, eventType string, offsets ...int) ([]model
 	var err error
 
 	if eventType != "" {
-		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs WHERE event_type = ? ORDER BY id DESC LIMIT ? OFFSET ?", eventType, limit, offset)
+		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp, job_id FROM audit_logs WHERE event_type = ? ORDER BY id DESC LIMIT ? OFFSET ?", eventType, limit, offset)
 	} else {
-		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs ORDER BY id DESC LIMIT ? OFFSET ?", limit, offset)
+		rows, err = d.conn.Query("SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp, job_id FROM audit_logs ORDER BY id DESC LIMIT ? OFFSET ?", limit, offset)
 	}
 
 	if err != nil {
@@ -458,7 +533,7 @@ func (d *DB) GetRecentLogs(limit int, eventType string, offsets ...int) ([]model
 	logs := make([]models.AuditLog, 0)
 	for rows.Next() {
 		var l models.AuditLog
-		if err := rows.Scan(&l.ID, &l.EventType, &l.Protocol, &l.Username, &l.ClientIP, &l.FileName, &l.FileSize, &l.FileHash, &l.Status, &l.Details, &l.Timestamp); err != nil {
+		if err := rows.Scan(&l.ID, &l.EventType, &l.Protocol, &l.Username, &l.ClientIP, &l.FileName, &l.FileSize, &l.FileHash, &l.Status, &l.Details, &l.Timestamp, &l.JobID); err != nil {
 			return nil, err
 		}
 		logs = append(logs, l)
@@ -485,7 +560,7 @@ func (d *DB) CountLogs(eventType string) (int, error) {
 func (d *DB) GetRecentLogsFiltered(limit int, eventType, username string, offset int) ([]models.AuditLog, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	query := `SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp FROM audit_logs WHERE 1=1`
+	query := `SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp, job_id FROM audit_logs WHERE 1=1`
 	args := make([]interface{}, 0, 4)
 	if eventType != "" {
 		query += ` AND event_type = ?`
@@ -505,7 +580,7 @@ func (d *DB) GetRecentLogsFiltered(limit int, eventType, username string, offset
 	logs := make([]models.AuditLog, 0)
 	for rows.Next() {
 		var item models.AuditLog
-		if err := rows.Scan(&item.ID, &item.EventType, &item.Protocol, &item.Username, &item.ClientIP, &item.FileName, &item.FileSize, &item.FileHash, &item.Status, &item.Details, &item.Timestamp); err != nil {
+		if err := rows.Scan(&item.ID, &item.EventType, &item.Protocol, &item.Username, &item.ClientIP, &item.FileName, &item.FileSize, &item.FileHash, &item.Status, &item.Details, &item.Timestamp, &item.JobID); err != nil {
 			return nil, err
 		}
 		logs = append(logs, item)
@@ -517,7 +592,7 @@ func (d *DB) CountLogsFiltered(eventType, username string) (int, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	query := `SELECT COUNT(*) FROM audit_logs WHERE 1=1`
-	args := make([]interface{}, 0, 2)
+	args := make([]interface{}, 0, 3)
 	if eventType != "" {
 		query += ` AND event_type = ?`
 		args = append(args, eventType)
@@ -528,6 +603,34 @@ func (d *DB) CountLogsFiltered(eventType, username string) (int, error) {
 	}
 	var count int
 	err := d.conn.QueryRow(query, args...).Scan(&count)
+	return count, err
+}
+
+// GetOutboundJobLogs returns transfer logs linked to one outbound job only.
+func (d *DB) GetOutboundJobLogs(jobID int64, limit, offset int) ([]models.AuditLog, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	rows, err := d.conn.Query(`SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp, job_id FROM audit_logs WHERE job_id = ? AND event_type = 'OUTBOUND_FILE' ORDER BY id DESC LIMIT ? OFFSET ?`, jobID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	logs := make([]models.AuditLog, 0)
+	for rows.Next() {
+		var item models.AuditLog
+		if err := rows.Scan(&item.ID, &item.EventType, &item.Protocol, &item.Username, &item.ClientIP, &item.FileName, &item.FileSize, &item.FileHash, &item.Status, &item.Details, &item.Timestamp, &item.JobID); err != nil {
+			return nil, err
+		}
+		logs = append(logs, item)
+	}
+	return logs, rows.Err()
+}
+
+func (d *DB) CountOutboundJobLogs(jobID int64) (int, error) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	var count int
+	err := d.conn.QueryRow(`SELECT COUNT(*) FROM audit_logs WHERE job_id = ? AND event_type = 'OUTBOUND_FILE'`, jobID).Scan(&count)
 	return count, err
 }
 

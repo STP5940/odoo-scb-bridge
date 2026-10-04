@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="th" class="dark">
 <head>
+  <script>
+    // Apply the saved theme before the first paint so the startup cover does not flash dark.
+    try {
+      const savedTheme = localStorage.getItem('odoo-scb-bridge-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    } catch (_) {}
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Odoo SCB Bridge - Management Studio</title>
@@ -81,11 +90,18 @@
     html[data-theme="light"] [class*="bg-dark-800"] { background-color: #eef2f7 !important; }
     html[data-theme="light"] [class*="bg-dark-750"] { background-color: #e4eaf1 !important; }
     html[data-theme="light"] [class*="bg-dark-700"] { background-color: #d8e0ea !important; }
+    html[data-theme="light"] [class*="bg-slate-800"] { background-color: #e8edf4 !important; }
     html[data-theme="light"] [class*="text-white"],
     html[data-theme="light"] [class~="text-slate-200"] { color: #172033 !important; }
     html[data-theme="light"] [class~="text-slate-300"] { color: #344054 !important; }
     html[data-theme="light"] [class~="text-slate-400"] { color: #475467 !important; }
     html[data-theme="light"] [class~="text-slate-500"] { color: #667085 !important; }
+    html[data-theme="light"] [class~="text-blue-300"] { color: #1d4ed8 !important; }
+    html[data-theme="light"] [class~="text-cyan-300"] { color: #0e7490 !important; }
+    html[data-theme="light"] [class~="text-emerald-300"] { color: #15803d !important; }
+    html[data-theme="light"] [class~="text-violet-300"] { color: #6d28d9 !important; }
+    html[data-theme="light"] [class~="text-amber-300"] { color: #a16207 !important; }
+    html[data-theme="light"] [class~="text-rose-300"] { color: #be123c !important; }
     html[data-theme="light"] [class~="text-brand-400"],
     html[data-theme="light"] [class~="text-emerald-400"] { color: #15803d !important; }
     html[data-theme="light"] [class~="text-rose-400"] { color: #be123c !important; }
@@ -96,6 +112,42 @@
     html[data-theme="light"] [class*="border-white"] { border-color: #dce3eb !important; }
     html[data-theme="light"] .nav-active { background-color: #e9f8ef !important; color: #15803d !important; border-color: #86d5a5 !important; }
     html[data-theme="light"] .nav-active i { color: #15803d !important; }
+    html[data-theme="light"] .sidebar-btn:not(.nav-active) {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      color: #344054 !important;
+      box-shadow: none !important;
+    }
+    html[data-theme="light"] .sidebar-btn:not(.nav-active):hover { background-color: #f1f5f9 !important; }
+    /* Shared button component colors: use semantic variants instead of per-page color utilities. */
+    .app-btn { border: 1px solid transparent; border-radius: 0.75rem; font-weight: 600; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+    .app-btn:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+    .app-btn:disabled { opacity: 1; cursor: not-allowed; box-shadow: none !important; }
+    .app-btn-primary { background-color: #15803d !important; border-color: #15803d !important; color: #ffffff !important; }
+    .app-btn-primary:hover:not(:disabled) { background-color: #166534 !important; border-color: #166534 !important; color: #ffffff !important; }
+    .app-btn-primary:disabled { background-color: #14532d !important; border-color: #166534 !important; color: #dcfce7 !important; }
+    .app-btn-secondary { background-color: #272e3b !important; border-color: #3b4453 !important; color: #e2e8f0 !important; }
+    .app-btn-secondary:hover:not(:disabled) { background-color: #343d4c !important; border-color: #4b5565 !important; color: #ffffff !important; }
+    .app-btn-info { background-color: #083344 !important; border-color: rgba(34, 211, 238, 0.3) !important; color: #67e8f9 !important; }
+    .app-btn-info:hover:not(:disabled) { background-color: #164e63 !important; color: #a5f3fc !important; }
+    .app-btn-danger { background-color: rgba(136, 19, 55, 0.2) !important; border-color: rgba(244, 63, 94, 0.35) !important; color: #fb7185 !important; }
+    .app-btn-danger:hover:not(:disabled) { background-color: rgba(159, 18, 57, 0.35) !important; border-color: rgba(251, 113, 133, 0.55) !important; color: #fda4af !important; }
+    .app-btn-quiet { background-color: transparent !important; border-color: transparent !important; color: #94a3b8 !important; }
+    .app-btn-quiet:hover:not(:disabled) { background-color: rgba(148, 163, 184, 0.12) !important; color: #e2e8f0 !important; }
+    html[data-theme="light"] .app-btn-primary { background-color: #15803d !important; border-color: #15803d !important; color: #ffffff !important; }
+    html[data-theme="light"] .app-btn-primary:hover:not(:disabled) { background-color: #166534 !important; border-color: #166534 !important; color: #ffffff !important; }
+    html[data-theme="light"] .app-btn-primary:disabled { background-color: #d1fae5 !important; border-color: #86efac !important; color: #14532d !important; }
+    html[data-theme="light"] .app-btn-secondary { background-color: #e8edf4 !important; border-color: #cbd5e1 !important; color: #263244 !important; }
+    html[data-theme="light"] .app-btn-secondary:hover:not(:disabled) { background-color: #dce5ef !important; border-color: #b8c4d3 !important; color: #172033 !important; }
+    html[data-theme="light"] .app-btn-info { background-color: #cffafe !important; border-color: #67e8f9 !important; color: #155e75 !important; }
+    html[data-theme="light"] .app-btn-info:hover:not(:disabled) { background-color: #a5f3fc !important; color: #164e63 !important; }
+    html[data-theme="light"] .app-btn-danger { background-color: #ffe4e6 !important; border-color: #fda4af !important; color: #be123c !important; }
+    html[data-theme="light"] .app-btn-danger:hover:not(:disabled) { background-color: #fecdd3 !important; border-color: #fb7185 !important; color: #9f1239 !important; }
+    html[data-theme="light"] .app-btn-quiet { background-color: transparent !important; border-color: transparent !important; color: #667085 !important; }
+    html[data-theme="light"] .app-btn-quiet:hover:not(:disabled) { background-color: #eef2f7 !important; color: #263244 !important; }
+    #pin-submit.app-btn-primary { color: #ffffff !important; -webkit-text-fill-color: #ffffff; font-weight: 800; }
+    #pin-submit.app-btn-primary:disabled { color: #dcfce7 !important; -webkit-text-fill-color: #dcfce7; }
+    html[data-theme="light"] #pin-submit.app-btn-primary:disabled { color: #14532d !important; -webkit-text-fill-color: #14532d; }
     html[data-theme="light"] .glass-card { background: rgba(255, 255, 255, 0.94); border-color: #e1e7ef; }
     html[data-theme="light"] .glass-card:hover { border-color: #cbd5e1; }
     html[data-theme="light"] .glass-input { background: #ffffff; border-color: #d0d7e2; color: #172033; }
@@ -192,17 +244,6 @@
     .pin-message { text-align: center; }
     .pin-message:empty { display: none; }
     .pin-message:not(:empty) { margin-top: 0.5rem; margin-bottom: 1rem; }
-    #pin-submit:not(:disabled) { color: #ffffff !important; }
-    #pin-submit:disabled {
-      opacity: 1;
-      background-color: #14532d;
-      color: #dcfce7 !important;
-      cursor: not-allowed;
-    }
-    html[data-theme="light"] #pin-submit:disabled {
-      background-color: #d1fae5;
-      color: #166534 !important;
-    }
     .startup-spinner {
       width: 2rem;
       height: 2rem;
@@ -210,6 +251,20 @@
       border-top-color: #4ade80;
       border-radius: 50%;
       animation: startup-spin 0.8s linear infinite;
+    }
+    .startup-cover {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #101317;
+    }
+    html[data-theme="light"] .startup-cover { background: #f3f6fa; }
+    html[data-theme="light"] .startup-cover .startup-spinner {
+      border-color: rgba(21, 128, 61, 0.18);
+      border-top-color: #15803d;
     }
     @keyframes startup-spin { to { transform: rotate(360deg); } }
     
@@ -234,16 +289,16 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.59</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.73</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
-      <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
+      <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="app-btn app-btn-quiet w-8 h-7 rounded flex items-center justify-center">
         <i class="fa-solid fa-minus text-[10px]"></i>
       </button>
-      <button onclick="window.electronAPI ? window.electronAPI.maximize() : null" title="ขยายเต็มจอ" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-dark-800 hover:text-white transition">
+      <button onclick="window.electronAPI ? window.electronAPI.maximize() : null" title="ขยายเต็มจอ" class="app-btn app-btn-quiet w-8 h-7 rounded flex items-center justify-center">
         <i class="fa-regular fa-square text-[10px]"></i>
       </button>
-      <button onclick="window.electronAPI ? window.electronAPI.close() : window.close()" title="ปิดโปรแกรม" class="w-8 h-7 rounded flex items-center justify-center text-slate-400 hover:bg-rose-500 hover:text-white transition">
+      <button onclick="window.electronAPI ? window.electronAPI.close() : window.close()" title="ปิดโปรแกรม" class="app-btn app-btn-danger w-8 h-7 rounded flex items-center justify-center">
         <i class="fa-solid fa-xmark text-[12px]"></i>
       </button>
     </div>
@@ -259,7 +314,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.59</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.73</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -278,23 +333,23 @@
       </div>
 
       <!-- Power Toggle Button (Stop / Start Service) -->
-      <button id="btn-toggle-service" onclick="toggleService()" disabled title="Activate the product to start the service" class="px-3.5 py-1.5 rounded-xl bg-dark-800 text-slate-500 border border-white/5 text-xs font-semibold transition flex items-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed">
+      <button id="btn-toggle-service" onclick="toggleService()" disabled title="Activate the product to start the service" class="app-btn app-btn-secondary px-3.5 py-1.5 rounded-xl text-xs flex items-center space-x-2">
         <i class="fa-solid fa-lock text-[11px]"></i>
         <span>Activation Required</span>
       </button>
 
-      <button id="btn-lock-app-header" onclick="lockApp()" class="hidden w-9 h-8 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 items-center justify-center text-xs transition" title="Lock application" aria-label="Lock application" type="button">
+      <button id="btn-lock-app-header" onclick="lockApp()" class="app-btn app-btn-secondary hidden w-9 h-8 rounded-lg items-center justify-center text-xs" title="Lock application" aria-label="Lock application" type="button">
         <i id="lock-app-header-icon" class="fa-solid fa-lock" aria-hidden="true"></i>
       </button>
 
       <!-- Sync / Refresh Button -->
-      <button onclick="refreshData()" title="รีเฟรชข้อมูลล่าสุด" class="w-8 h-8 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 flex items-center justify-center text-xs transition active:scale-95">
+      <button onclick="refreshData()" title="รีเฟรชข้อมูลล่าสุด" class="app-btn app-btn-secondary w-8 h-8 rounded-xl flex items-center justify-center text-xs active:scale-95">
         <i class="fa-solid fa-arrows-rotate"></i>
       </button>
     </div>
   </header>
 
-  <section id="app-startup-cover" class="text-slate-400" style="position:fixed;inset:0;z-index:2147483647;background:#101317;display:flex;align-items:center;justify-content:center" aria-label="กำลังเตรียมแอป">
+  <section id="app-startup-cover" class="startup-cover text-slate-400" aria-label="กำลังเตรียมแอป">
     <div class="flex flex-col items-center gap-3 text-slate-400">
       <span class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" focusable="false"><path d="M13.2 2.5 4.6 13.1a1 1 0 0 0 .78 1.64h5.3l-.9 6.76a.5.5 0 0 0 .88.38l8.73-10.72a1 1 0 0 0-.78-1.63h-5.32l.75-6.55a.5.5 0 0 0-.85-.47Z"/></svg>
@@ -321,15 +376,15 @@
       <label for="activation-request-code" class="block text-sm font-semibold text-slate-300 mb-2">Activation Request Code</label>
       <textarea id="activation-request-code" readonly rows="3" class="glass-input w-full rounded-xl p-3 text-xs font-mono text-slate-200 resize-y" placeholder="Waiting for the local service..."></textarea>
       <div class="flex justify-end mt-2 mb-6">
-        <button onclick="copyActivationRequest()" class="px-3 py-2 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/5 text-xs"><i class="fa-regular fa-copy mr-1"></i>Copy Request Code</button>
+          <button onclick="copyActivationRequest()" class="app-btn app-btn-secondary px-3 py-2 rounded-lg text-xs"><i class="fa-regular fa-copy mr-1"></i>Copy Request Code</button>
       </div>
       <label for="activation-license-code" class="block text-sm font-semibold text-slate-300 mb-2">License Key</label>
       <textarea id="activation-license-code" rows="3" class="glass-input w-full rounded-xl p-3 text-xs font-mono text-slate-200 resize-y" placeholder="Paste the license key here"></textarea>
       <div class="flex items-center justify-between gap-3 mt-4">
         <p id="activation-message" class="text-xs text-rose-400" role="status" aria-live="polite"></p>
         <div class="flex gap-2 shrink-0">
-          <button onclick="loadActivationRequest()" class="px-3 py-2 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/5 text-xs"><i class="fa-solid fa-rotate mr-1"></i>Retry</button>
-          <button id="activation-submit" onclick="activateProduct()" class="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-dark-950 font-semibold text-xs"><i class="fa-solid fa-unlock-keyhole mr-1"></i>Activate</button>
+          <button onclick="loadActivationRequest()" class="app-btn app-btn-secondary px-3 py-2 rounded-lg text-xs"><i class="fa-solid fa-rotate mr-1"></i>Retry</button>
+          <button id="activation-submit" onclick="activateProduct()" class="app-btn app-btn-primary px-4 py-2 rounded-lg font-semibold text-xs"><i class="fa-solid fa-unlock-keyhole mr-1"></i>Activate</button>
         </div>
       </div>
     </div>
@@ -391,10 +446,10 @@
         <button id="pin-delete-button" type="button" onclick="deletePinDigit()" aria-label="ลบตัวเลขล่าสุด" title="ลบตัวเลขล่าสุด" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-delete-left"></i></button>
       </div>
       <div class="flex gap-2">
-        <button id="pin-submit" onclick="submitPinScreen()" class="flex-1 px-4 py-3 rounded-xl bg-green-700 hover:bg-green-800 text-white font-bold text-sm transition disabled:cursor-not-allowed disabled:hover:bg-green-700">Unlock</button>
-        <button id="pin-skip-button" onclick="skipPinSetup()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">ข้ามไปก่อน</button>
-        <button id="pin-change-button" onclick="showPinScreen('change')" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">Change PIN</button>
-        <button id="pin-cancel-change" onclick="cancelPinOperation()" class="hidden px-4 py-3 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-sm transition">Cancel</button>
+        <button id="pin-submit" onclick="submitPinScreen()" class="app-btn app-btn-primary flex-1 px-4 py-3 rounded-xl font-bold text-sm">Unlock</button>
+        <button id="pin-skip-button" onclick="skipPinSetup()" class="app-btn app-btn-secondary hidden px-4 py-3 rounded-xl font-semibold text-sm">ข้ามไปก่อน</button>
+        <button id="pin-change-button" onclick="showPinScreen('change')" class="app-btn app-btn-secondary hidden px-4 py-3 rounded-xl font-semibold text-sm">Change PIN</button>
+        <button id="pin-cancel-change" onclick="cancelPinOperation()" class="app-btn app-btn-secondary hidden px-4 py-3 rounded-xl font-semibold text-sm">Cancel</button>
       </div>
     </div>
   </section>
@@ -460,7 +515,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.59</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.73</span>
       </div>
     </aside>
 
@@ -616,7 +671,7 @@
             <input type="text" id="inbound-temp-dir" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white" placeholder="C:/.../data/temp">
           </div>
 
-          <button onclick="saveInboundConfig()" class="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-brand-500/20 active:scale-95">
+          <button onclick="saveInboundConfig()" class="app-btn app-btn-primary px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 shadow-lg shadow-brand-500/20 active:scale-95">
             <i class="fa-solid fa-floppy-disk"></i>
             <span>บันทึกการตั้งค่าขาเข้า</span>
           </button>
@@ -662,11 +717,11 @@
                 </select>
               </div>
               <div class="flex items-center space-x-2">
-                <button onclick="addUser()" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-md shadow-brand-500/20">
+                <button onclick="addUser()" class="app-btn app-btn-primary flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-brand-500/20">
                   <i class="fa-solid fa-check"></i>
                   <span id="btn-user-submit-text">บันทึกผู้ใช้</span>
                 </button>
-                <button id="btn-cancel-user-edit" onclick="cancelUserEdit()" class="hidden px-3 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 text-xs">
+                <button id="btn-cancel-user-edit" onclick="cancelUserEdit()" class="app-btn app-btn-secondary hidden px-3 py-2.5 rounded-xl text-xs">
                   ยกเลิก
                 </button>
               </div>
@@ -796,15 +851,15 @@
           <div class="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <p id="job-test-result" class="text-xs text-slate-400 min-h-4" role="status" aria-live="polite"></p>
             <div class="flex flex-wrap gap-2">
-              <button id="job-test-button" onclick="testOutboundConnection()" class="px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 font-semibold text-xs transition flex items-center space-x-2 active:scale-95">
+              <button id="job-test-button" onclick="testOutboundConnection()" class="app-btn app-btn-info px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center space-x-2 active:scale-95">
                 <i class="fa-solid fa-plug-circle-check"></i>
                 <span>Test Connection</span>
               </button>
-              <button onclick="saveOutboundJob()" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition flex items-center space-x-2 shadow-lg shadow-purple-600/20 active:scale-95">
+              <button onclick="saveOutboundJob()" class="app-btn app-btn-primary px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 shadow-lg shadow-brand-500/20 active:scale-95">
                 <i id="job-save-icon" class="fa-solid fa-plus"></i>
                 <span id="job-save-label">บันทึกงานส่งออก (Save Job)</span>
               </button>
-              <button id="job-cancel-edit" onclick="cancelEditJob()" class="hidden px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 border border-white/10 font-semibold text-xs transition">
+              <button id="job-cancel-edit" onclick="cancelEditJob()" class="app-btn app-btn-secondary hidden px-4 py-2.5 rounded-xl font-semibold text-xs">
                 <span>Cancel</span>
               </button>
             </div>
@@ -860,7 +915,7 @@
             </div>
             <input id="log-user-filter" list="sftp-log-users" type="text" onkeydown="if(event.key==='Enter') changeLogFilter()" placeholder="กรองตาม Username" aria-label="Filter logs by exact username" class="glass-input rounded-xl px-3 py-2 text-xs text-white w-40">
             <datalist id="sftp-log-users"></datalist>
-            <button onclick="loadLogs()" class="px-3 py-2 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 text-xs border border-white/5 flex items-center space-x-1.5">
+            <button onclick="loadLogs()" class="app-btn app-btn-secondary px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5">
               <i class="fa-solid fa-rotate-right"></i>
               <span>รีเฟรช Log</span>
             </button>
@@ -879,7 +934,8 @@
             </select>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[1050px] table-fixed text-left text-xs">
+              <colgroup><col style="width:14%"><col style="width:12%"><col style="width:8%"><col style="width:14%"><col style="width:34%"><col style="width:10%"><col style="width:8%"></colgroup>
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
                   <th class="py-2.5 px-3">วัน/เวลา</th>
@@ -907,6 +963,41 @@
 
       </section>
 
+      <!-- Dedicated outbound job history; independent from the global Audit Logs view. -->
+      <section id="tab-job-logs" class="hidden space-y-6">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 id="job-logs-title" class="text-xl font-bold text-white tracking-tight">ประวัติการส่งไฟล์</h2>
+            <p id="job-logs-subtitle" class="text-xs text-slate-400 mt-0.5"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="switchTab('outbound')" class="app-btn app-btn-secondary px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-arrow-left mr-1.5"></i><span id="job-logs-back-label">กลับไปหน้าส่งออก</span></button>
+            <button type="button" onclick="loadOutboundJobLogs()" class="app-btn app-btn-secondary px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-rotate-right mr-1.5"></i><span id="job-logs-refresh-label">รีเฟรช</span></button>
+          </div>
+        </div>
+        <div class="glass-card rounded-2xl p-6 overflow-hidden">
+          <div class="flex items-center gap-2 mb-3">
+            <label for="job-logs-page-size" class="text-xs text-slate-400" id="job-logs-show-label">แสดง</label>
+            <select id="job-logs-page-size" onchange="changeOutboundJobLogsPageSize()" class="glass-input rounded-lg px-2.5 py-2 text-xs text-white" aria-label="จำนวนรายการต่อหน้า">
+              <option value="10" selected>10 รายการ</option><option value="25">25 รายการ</option><option value="50">50 รายการ</option><option value="100">100 รายการ</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[980px] table-fixed text-left text-xs">
+              <colgroup><col style="width:18%"><col style="width:9%"><col style="width:20%"><col style="width:34%"><col style="width:11%"><col style="width:8%"></colgroup>
+              <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800"><tr>
+                <th class="py-2.5 px-3">วัน/เวลา</th><th class="py-2.5 px-3">โปรโตคอล</th><th class="py-2.5 px-3">ผู้ใช้ / IP</th><th class="py-2.5 px-3">ไฟล์ / รายละเอียด</th><th class="py-2.5 px-3">SHA-256 Hash</th><th class="py-2.5 px-3">สถานะ</th>
+              </tr></thead>
+              <tbody id="job-logs-table" class="divide-y divide-dark-800/60 font-mono text-[11px]"><tr><td colspan="6" class="p-6 text-center text-slate-500">เลือกงานเพื่อดูประวัติ</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+          <p id="job-logs-pagination-info" class="text-xs text-slate-400" aria-live="polite"></p>
+          <nav id="job-logs-pagination-pages" class="flex flex-nowrap items-center gap-1 shrink-0" aria-label="เลือกหน้าประวัติการส่งไฟล์"></nav>
+        </div>
+      </section>
+
       <!-- ================= TAB 5: SETTINGS ================= -->
       <section id="tab-settings" class="hidden">
         <div id="settings-home-view" class="space-y-6">
@@ -915,7 +1006,7 @@
             <p class="text-xs text-slate-400 mt-0.5">จัดการภาษา ธีม และความปลอดภัยของแอป</p>
           </div>
 
-          <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <section class="glass-card rounded-2xl p-6 space-y-5">
             <div class="flex items-center gap-3 border-b border-dark-800 pb-4">
               <span class="w-10 h-10 rounded-xl bg-cyan-500/10 text-accent-cyan flex items-center justify-center"><i class="fa-solid fa-sliders"></i></span>
@@ -936,7 +1027,7 @@
                 <h4 class="text-sm font-semibold text-slate-200">ธีม (Theme)</h4>
                 <p class="text-xs text-slate-500 mt-1">สลับระหว่างธีมมืดและธีมสว่าง</p>
               </div>
-              <button id="theme-toggle" onclick="toggleTheme()" title="Switch to light theme" aria-label="Switch to light theme" class="shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white border border-white/5 text-xs transition" type="button">
+              <button id="theme-toggle" onclick="toggleTheme()" title="Switch to light theme" aria-label="Switch to light theme" class="app-btn app-btn-secondary shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs" type="button">
                 <i id="theme-icon" class="fa-solid fa-sun" aria-hidden="true"></i>
                 <span id="theme-label">Switch to light theme</span>
               </button>
@@ -959,15 +1050,15 @@
               <span id="pin-setting-status" class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-500 bg-dark-800">Off</span>
             </div>
             <div class="flex flex-wrap gap-3">
-              <button id="btn-toggle-pin" onclick="togglePinEnabled()" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 text-xs font-semibold transition" type="button">
+              <button id="btn-toggle-pin" onclick="togglePinEnabled()" class="app-btn app-btn-secondary flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs" type="button">
                 <i id="pin-toggle-icon" class="fa-solid fa-shield-halved" aria-hidden="true"></i>
                 <span id="pin-toggle-label">Enable PIN</span>
               </button>
-              <button id="btn-lock-app" onclick="lockApp()" title="Lock application" aria-label="Lock application" class="hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 text-xs font-semibold transition" type="button">
+              <button id="btn-lock-app" onclick="lockApp()" title="Lock application" aria-label="Lock application" class="app-btn app-btn-secondary hidden flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs" type="button">
                 <i id="lock-app-icon" class="fa-solid fa-lock" aria-hidden="true"></i>
                 <span id="lock-app-label">Lock application</span>
               </button>
-              <button id="btn-change-pin" onclick="showPinScreen('change')" class="hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-200 border border-white/10 text-xs font-semibold transition" type="button">
+              <button id="btn-change-pin" onclick="showPinScreen('change')" class="app-btn app-btn-secondary hidden flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs" type="button">
                 <i class="fa-solid fa-key" aria-hidden="true"></i>
                 <span>เปลี่ยน PIN</span>
               </button>
@@ -994,7 +1085,7 @@
                   <p class="text-xs text-slate-400 mt-0.5">จัดการการลงทะเบียน License บนอุปกรณ์นี้</p>
                 </div>
               </div>
-              <button id="btn-revoke-license" onclick="deactivateProductLicense()" class="hidden px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs font-semibold transition items-center gap-2 text-left" type="button">
+              <button id="btn-revoke-license" onclick="deactivateProductLicense()" class="app-btn app-btn-danger hidden px-4 py-2.5 rounded-xl text-xs items-center gap-2 text-left" type="button">
                 <i class="fa-solid fa-key"></i>
                 <span>Deactivate License</span>
               </button>
@@ -1003,17 +1094,20 @@
         </div>
         </div>
 
-        <div id="settings-sftp-security-view" class="hidden space-y-5">
-          <div class="space-y-1">
-            <nav aria-label="เส้นทางการนำทาง" class="flex flex-wrap items-center gap-2 text-xl font-bold tracking-tight">
-              <button type="button" onclick="showSettingsHome()" class="text-slate-400 hover:text-white transition">ตั้งค่า</button>
-              <i class="fa-solid fa-chevron-right text-xs text-slate-600" aria-hidden="true"></i>
-              <span aria-current="page" class="text-white">จัดการความปลอดภัย SFTP</span>
-            </nav>
-            <p class="text-xs text-slate-400 mt-0.5">ผิด 5 ครั้งใน 15 นาที จะบล็อก IP 15 นาที · กฎ IP ถาวรมีผลทันที</p>
+        <div id="settings-sftp-security-view" class="hidden space-y-6">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-white tracking-tight">จัดการความปลอดภัย SFTP</h2>
+              <p class="text-xs text-slate-400 mt-0.5">ตั้งค่าการเข้าถึงและจัดการกฎ IP</p>
+            </div>
+            <button type="button" onclick="showSettingsHome()" class="app-btn app-btn-secondary shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+              <span>กลับไปหน้าตั้งค่า</span>
+            </button>
           </div>
 
-          <div class="glass-card rounded-2xl p-6 space-y-5">
+          <div class="glass-card rounded-2xl p-6 space-y-6">
+            <p class="text-xs text-slate-400 mt-0.5">ผิด 5 ครั้งใน 15 นาที จะบล็อก IP 15 นาที · กฎ IP ถาวรมีผลทันที</p>
             <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
               <div>
                 <label for="sftp-ip-mode" class="block text-xs font-medium text-slate-300 mb-1.5">การเชื่อมต่อจาก IP</label>
@@ -1022,7 +1116,7 @@
                   <option value="allow_list">อนุญาตเฉพาะ IP ในรายการ</option>
                 </select>
               </div>
-              <button onclick="saveSFTPSecuritySettings()" class="px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-dark-950 font-bold text-xs">บันทึกโหมด IP</button>
+              <button onclick="saveSFTPSecuritySettings()" class="app-btn app-btn-primary px-4 py-2.5 rounded-xl font-bold text-xs">บันทึกโหมด IP</button>
             </div>
             <p class="text-[11px] text-amber-400">โหมด Allow list จะปฏิเสธทุก IP ที่ไม่ได้เพิ่มเป็น Allow รวมถึง IP ที่ใช้งานอยู่ในขณะนี้</p>
 
@@ -1034,7 +1128,7 @@
                   <option value="allow">อนุญาตถาวร</option>
                   <option value="block">บล็อกถาวร</option>
                 </select>
-                <button onclick="addSFTPIPRule()" class="px-4 py-2.5 rounded-xl bg-dark-800 hover:bg-dark-750 text-slate-100 border border-white/10 text-xs font-semibold"><i class="fa-solid fa-plus mr-1"></i>เพิ่มกฎ</button>
+                <button onclick="addSFTPIPRule()" class="app-btn app-btn-secondary px-4 py-2.5 rounded-xl text-xs"><i class="fa-solid fa-plus mr-1"></i>เพิ่มกฎ</button>
               </div>
             </div>
 
@@ -1101,6 +1195,12 @@
     let logsTotalPages = 1;
     let logsRequestId = 0;
     let logsPageSize = 10;
+    let selectedOutboundJobID = 0;
+    let selectedOutboundJobName = '';
+    let jobLogsPage = 1;
+    let jobLogsTotalPages = 1;
+    let jobLogsPageSize = 10;
+    let jobLogsRequestId = 0;
     let sftpSecurityRefreshPromise = null;
 
     function pinText(th, en) {
@@ -1802,7 +1902,7 @@
 
     // Consolidated Sidebar Navigation Switcher
     function switchTab(tab) {
-      const tabs = ['dashboard', 'inbound', 'outbound', 'logs', 'settings'];
+      const tabs = ['dashboard', 'inbound', 'outbound', 'logs', 'job-logs', 'settings'];
       if (!tabs.includes(tab)) return;
       tabs.forEach(t => {
         const sec = document.getElementById(`tab-${t}`);
@@ -1822,11 +1922,19 @@
         targetNav.classList.add('nav-active');
         targetNav.setAttribute('aria-current', 'page');
       }
+      if (tab === 'job-logs') {
+        const outboundNav = document.getElementById('nav-outbound');
+        if (outboundNav) {
+          outboundNav.classList.add('nav-active');
+          outboundNav.setAttribute('aria-current', 'page');
+        }
+      }
 
       if (tab === 'logs' && appUnlocked && isActivated) {
         logsPage = 1;
         loadLogs();
       }
+      if (tab === 'job-logs' && appUnlocked && isActivated) loadOutboundJobLogs();
       if (tab === 'outbound' && appUnlocked && isActivated) loadOutboundSourceOptions();
       if (tab === 'settings') showSettingsHome();
 
@@ -1928,7 +2036,7 @@
           <span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
           <span class="text-xs font-medium text-rose-400">Service Offline</span>
         `;
-        btn.className = "px-3.5 py-1.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95";
+        btn.className = "app-btn app-btn-primary px-3.5 py-1.5 rounded-xl text-xs flex items-center space-x-2 active:scale-95";
         btn.innerHTML = '<i class="fa-solid fa-play text-[11px]"></i><span>Start Service</span>';
         isRunning = false;
         setSftpListenerStatus(false);
@@ -1985,13 +2093,13 @@
       if (running) {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-brand-400";
         pill.innerHTML = `<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="text-xs font-semibold text-emerald-400">${currentLanguage === 'en' ? 'Service Active' : 'บริการกำลังทำงาน'}</span>`;
-        btn.className = "px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
+        btn.className = "app-btn app-btn-danger px-3.5 py-1.5 rounded-xl text-xs flex items-center space-x-2 active:scale-95";
         btn.innerHTML = `<i class="fa-solid fa-power-off text-[11px]"></i><span>${currentLanguage === 'en' ? 'Stop Service' : 'หยุดบริการ'}</span>`;
         btn.disabled = false;
       } else {
         pill.className = "flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400";
         pill.innerHTML = `<span class="inline-flex rounded-full h-2 w-2 bg-rose-500"></span><span class="text-xs font-semibold text-rose-400">${currentLanguage === 'en' ? 'Service Stopped' : 'บริการหยุดทำงาน'}</span>`;
-        btn.className = "px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-brand-400 border border-emerald-500/20 text-xs font-semibold transition flex items-center space-x-2 active:scale-95 shadow-sm";
+        btn.className = "app-btn app-btn-primary px-3.5 py-1.5 rounded-xl text-xs flex items-center space-x-2 active:scale-95";
         btn.innerHTML = `<i class="fa-solid fa-play text-[11px]"></i><span>${currentLanguage === 'en' ? 'Start Service' : 'เริ่มบริการ'}</span>`;
         btn.disabled = !isActivated;
       }
@@ -2105,7 +2213,7 @@
               <td class="p-2.5 font-mono">${escapeHTML(rule.cidr)}</td>
               <td class="p-2.5"><span class="px-2 py-0.5 rounded-full ${rule.action === 'block' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-brand-400'}">${rule.action === 'block' ? (currentLanguage === 'en' ? 'BLOCK' : 'บล็อก') : (currentLanguage === 'en' ? 'ALLOW' : 'อนุญาต')}</span></td>
               <td class="p-2.5 text-slate-400">${rule.permanent ? (currentLanguage === 'en' ? 'Permanent' : 'ถาวร') : escapeHTML(rule.expires_at || '')}</td>
-              <td class="p-2.5 text-right"><button onclick="deleteSFTPIPRule(${Number(rule.id)})" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300">${currentLanguage === 'en' ? 'Remove' : 'ลบ'}</button></td>
+              <td class="p-2.5 text-right"><button onclick="deleteSFTPIPRule(${Number(rule.id)})" class="app-btn app-btn-danger px-2.5 py-1 rounded-lg text-xs">${currentLanguage === 'en' ? 'Remove' : 'ลบ'}</button></td>
             </tr>`).join('') : `<tr><td colspan="4" class="p-4 text-center text-slate-500">${currentLanguage === 'en' ? 'No permanent IP rules' : 'ยังไม่มีกฎ IP ถาวร'}</td></tr>`;
           blockedTable.innerHTML = result.blocked_ips?.length ? result.blocked_ips.map(item => `
             <tr>
@@ -2113,7 +2221,7 @@
               <td class="p-2.5">${escapeHTML(item.username || '-')}</td>
               <td class="p-2.5">${Number(item.failed_attempts) || 0}</td>
               <td class="p-2.5 font-mono text-amber-400"><span data-sftp-blocked-until="${new Date(item.blocked_until).getTime()}"></span></td>
-              <td class="p-2.5 text-right"><button onclick="unblockSFTPIP('${escapeHTML(item.ip)}')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300">${currentLanguage === 'en' ? 'Unblock' : 'ปลดบล็อก'}</button></td>
+              <td class="p-2.5 text-right"><button onclick="unblockSFTPIP('${escapeHTML(item.ip)}')" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs">${currentLanguage === 'en' ? 'Unblock' : 'ปลดบล็อก'}</button></td>
             </tr>`).join('') : `<tr><td colspan="5" class="p-4 text-center text-slate-500">${currentLanguage === 'en' ? 'No IPs are temporarily blocked' : 'ไม่มี IP ที่ถูกบล็อกชั่วคราว'}</td></tr>`;
           updateSFTPBlockedCountdowns();
         } catch (error) {
@@ -2253,13 +2361,13 @@
               </td>
               <td class="p-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString(getLocale())}</td>
               <td class="p-3 text-right space-x-2">
-                <button onclick="openUserFolder(${Number(u.id)})" title="${currentLanguage === 'en' ? 'Open user folder' : 'เปิดโฟลเดอร์ของผู้ใช้'}" class="px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs border border-white/10 transition whitespace-nowrap">
+                <button onclick="openUserFolder(${Number(u.id)})" title="${currentLanguage === 'en' ? 'Open user folder' : 'เปิดโฟลเดอร์ของผู้ใช้'}" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                   <i class="fa-solid fa-folder-open text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Folder' : 'โฟลเดอร์'}
                 </button>
-                <button onclick="editUser('${u.username}')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-dark-750 text-slate-300 hover:text-white text-xs border border-white/5 transition">
+                <button onclick="editUser('${u.username}')" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs">
                   <i class="fa-solid fa-pen text-[10px] mr-1"></i>แก้ไข
                 </button>
-                <button onclick="deleteUser(${u.id}, '${u.username}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs border border-rose-500/20 transition">
+                <button onclick="deleteUser(${u.id}, '${u.username}')" class="app-btn app-btn-danger px-2.5 py-1 rounded-lg text-xs">
                   <i class="fa-solid fa-trash text-[10px] mr-1"></i>ลบ
                 </button>
               </td>
@@ -2412,7 +2520,7 @@
                   <div class="w-6 h-6 rounded-md bg-purple-500/10 text-accent-purple flex items-center justify-center text-[10px]">
                     <i class="fa-solid fa-paper-plane"></i>
                   </div>
-                  <span class="truncate" title="${escapeHTML(j.name)}">${escapeHTML(j.name)}</span>
+                  <button type="button" onclick="showOutboundJobLogs(${Number(j.id)})" aria-label="${currentLanguage === 'en' ? 'View transfer logs for ' : 'ดู Log การส่งไฟล์ของ '}${escapeHTML(j.name)}" title="${currentLanguage === 'en' ? 'View this job’s transfer logs' : 'คลิกเพื่อดู Log การส่งไฟล์ของงานนี้'}" class="truncate text-left hover:text-accent-cyan hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-cyan-400">${escapeHTML(j.name)}</button>
                 </div>
               </td>
               <td class="p-3 text-xs min-w-0">
@@ -2426,16 +2534,16 @@
               </td>
               <td class="p-3 text-right whitespace-nowrap">
                 <div class="flex justify-end gap-1.5 whitespace-nowrap">
-                  <button onclick="openOutboundFolder(${Number(j.id)})" title="${currentLanguage === 'en' ? 'Open source folder' : 'เปิดโฟลเดอร์ต้นทาง'}" class="px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs border border-white/10 transition whitespace-nowrap">
+                  <button onclick="openOutboundFolder(${Number(j.id)})" title="${currentLanguage === 'en' ? 'Open source folder' : 'เปิดโฟลเดอร์ต้นทาง'}" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                     <i class="fa-solid fa-folder-open text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Folder' : 'โฟลเดอร์'}
                   </button>
-                  <button onclick="testSavedOutboundJob(${Number(j.id)}, this)" class="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs border border-cyan-500/20 transition whitespace-nowrap">
+                  <button onclick="testSavedOutboundJob(${Number(j.id)}, this)" class="app-btn app-btn-info px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                     <i class="fa-solid fa-plug-circle-check text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Test' : 'ทดสอบ'}
                   </button>
-                  <button onclick="editOutboundJob(${Number(j.id)})" class="px-2.5 py-1 rounded-lg bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs border border-white/10 transition whitespace-nowrap">
+                  <button onclick="editOutboundJob(${Number(j.id)})" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                     <i class="fa-solid fa-pen text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Edit' : 'แก้ไข'}
                   </button>
-                  <button onclick="deleteJob(${Number(j.id)})" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs border border-rose-500/20 transition whitespace-nowrap">
+                  <button onclick="deleteJob(${Number(j.id)})" class="app-btn app-btn-danger px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                     <i class="fa-solid fa-trash text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Delete' : 'ลบ'}
                   </button>
                 </div>
@@ -2713,18 +2821,18 @@
 
             return `
               <tr class="hover:bg-dark-850/50 transition">
-                <td class="p-3 text-slate-400 font-mono">${new Date(l.timestamp).toLocaleString(getLocale())}</td>
-                <td class="p-3">
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border ${badgeClass}">
-                    ${l.event_type}
+                <td class="p-3 text-slate-400 font-mono"><span class="block truncate whitespace-nowrap" title="${escapeHTML(new Date(l.timestamp).toLocaleString(getLocale()))}">${escapeHTML(new Date(l.timestamp).toLocaleString(getLocale()))}</span></td>
+                <td class="p-3 overflow-hidden">
+                  <span class="inline-block max-w-full truncate whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono border ${badgeClass}" title="${escapeHTML(l.event_type)}">
+                    ${escapeHTML(l.event_type)}
                   </span>
                 </td>
-                <td class="p-3 font-semibold text-slate-300">${String(l.protocol || '').toUpperCase()}</td>
-                <td class="p-3 text-slate-300">${escapeHTML(l.username || '-')}${l.client_ip ? ` <span class="text-slate-500">(${escapeHTML(l.client_ip)})</span>` : ''}</td>
-                <td class="p-3 text-slate-300">${details}</td>
-                <td class="p-3 font-mono text-[10px] text-slate-500 truncate max-w-xs" title="${l.file_hash || ''}">${l.file_hash ? l.file_hash.substring(0, 16) + '...' : '-'}</td>
+                <td class="p-3 font-semibold text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(String(l.protocol || '').toUpperCase())}">${escapeHTML(String(l.protocol || '').toUpperCase())}</span></td>
+                <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(`${l.username || '-'}${l.client_ip ? ` (${l.client_ip})` : ''}`)}">${escapeHTML(l.username || '-')}${l.client_ip ? ` <span class="text-slate-500">(${escapeHTML(l.client_ip)})</span>` : ''}</span></td>
+                <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(details || '-')}">${escapeHTML(details || '-')}</span></td>
+                <td class="p-3 font-mono text-[10px] text-slate-500"><span class="block truncate whitespace-nowrap" title="${escapeHTML(l.file_hash || '-')}">${l.file_hash ? escapeHTML(l.file_hash) : '-'}</span></td>
                 <td class="p-3">
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}">
+                  <span class="inline-block max-w-full truncate whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}" title="${escapeHTML(statusLabel)}">
                     ${statusLabel}
                   </span>
                 </td>
@@ -2768,6 +2876,84 @@
       loadLogs();
     }
 
+    function showOutboundJobLogs(id) {
+      const job = outboundJobsById.get(Number(id));
+      if (!job) return;
+      selectedOutboundJobID = Number(job.id);
+      selectedOutboundJobName = job.name || '';
+      jobLogsPage = 1;
+      document.getElementById('job-logs-title').textContent = currentLanguage === 'en' ? 'Transfer history' : 'ประวัติการส่งไฟล์';
+      document.getElementById('job-logs-subtitle').textContent = selectedOutboundJobName;
+      document.getElementById('job-logs-back-label').textContent = currentLanguage === 'en' ? 'Back to outbound jobs' : 'กลับไปหน้าส่งออก';
+      document.getElementById('job-logs-refresh-label').textContent = currentLanguage === 'en' ? 'Refresh' : 'รีเฟรช';
+      document.getElementById('job-logs-show-label').textContent = currentLanguage === 'en' ? 'Show' : 'แสดง';
+      switchTab('job-logs');
+    }
+
+    async function loadOutboundJobLogs() {
+      const jobID = selectedOutboundJobID;
+      if (!jobID) return;
+      const requestId = ++jobLogsRequestId;
+      const table = document.getElementById('job-logs-table');
+      try {
+        const params = new URLSearchParams({ page: String(jobLogsPage), page_size: String(jobLogsPageSize) });
+        const res = await fetch(`${API_BASE}/outbound/jobs/${jobID}/logs?${params.toString()}`);
+        if (requestId !== jobLogsRequestId || jobID !== selectedOutboundJobID) return;
+        if (!res.ok) throw new Error('Could not load outbound job logs');
+        const logs = await res.json() || [];
+        const total = Number(res.headers.get('X-Total-Count') || logs.length);
+        jobLogsTotalPages = Math.max(1, Number(res.headers.get('X-Total-Pages') || 1));
+        jobLogsPage = Number(res.headers.get('X-Page') || jobLogsPage);
+        const first = total ? (jobLogsPage - 1) * jobLogsPageSize + 1 : 0;
+        const last = Math.min(jobLogsPage * jobLogsPageSize, total);
+        document.getElementById('job-logs-pagination-info').textContent = total === 0
+          ? (currentLanguage === 'en' ? 'No transfer history' : 'ยังไม่มีประวัติการส่งไฟล์')
+          : currentLanguage === 'en'
+            ? `Showing ${first}–${last} of ${total} records`
+            : `แสดง ${first}–${last} จาก ${total} รายการ`;
+        renderPagination('job-logs-pagination-pages', jobLogsPage, jobLogsTotalPages, 'goToOutboundJobLogsPage');
+        if (!logs.length) {
+          table.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">${currentLanguage === 'en' ? 'No transfer history for this job' : 'ไม่มีประวัติการส่งไฟล์ของงานนี้'}</td></tr>`;
+          return;
+        }
+        table.innerHTML = logs.map(log => {
+          const statusClass = log.status === 'SUCCESS'
+            ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20'
+            : log.status === 'WARNING'
+              ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+          const details = escapeHTML(log.file_name || log.details || '');
+          const timestamp = new Date(log.timestamp).toLocaleString(getLocale());
+          const protocol = String(log.protocol || '').toUpperCase();
+          const userAndIP = `${log.username || ''}${log.client_ip ? ` (${log.client_ip})` : ''}`;
+          const hash = log.file_hash || '-';
+          const statusLabel = formatLogStatus(log.status);
+          return `<tr class="hover:bg-dark-850/50 transition">
+            <td class="p-3 text-slate-400"><span class="block truncate whitespace-nowrap" title="${escapeHTML(timestamp)}">${escapeHTML(timestamp)}</span></td>
+            <td class="p-3 font-semibold text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(protocol)}">${escapeHTML(protocol)}</span></td>
+            <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(userAndIP)}">${escapeHTML(log.username || '')}${log.client_ip ? ` <span class="text-slate-500">(${escapeHTML(log.client_ip)})</span>` : ''}</span></td>
+            <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(log.file_name || log.details || '')}">${details}</span></td>
+            <td class="p-3 font-mono text-[10px] text-slate-500"><span class="block truncate whitespace-nowrap" title="${escapeHTML(hash)}">${escapeHTML(hash)}</span></td>
+            <td class="p-3"><span class="inline-block max-w-full truncate whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}" title="${escapeHTML(statusLabel)}">${statusLabel}</span></td>
+          </tr>`;
+        }).join('');
+      } catch (error) {
+        if (requestId === jobLogsRequestId) table.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400">${currentLanguage === 'en' ? 'Unable to load this job’s transfer history' : 'โหลดประวัติการส่งไฟล์ของงานนี้ไม่สำเร็จ'}</td></tr>`;
+      }
+    }
+
+    function changeOutboundJobLogsPageSize() {
+      jobLogsPageSize = Number(document.getElementById('job-logs-page-size').value) || 10;
+      jobLogsPage = 1;
+      loadOutboundJobLogs();
+    }
+
+    function goToOutboundJobLogsPage(page) {
+      if (!Number.isInteger(page) || page < 1 || page > jobLogsTotalPages || page === jobLogsPage) return;
+      jobLogsPage = page;
+      loadOutboundJobLogs();
+    }
+
     function changeLogsPageSize() {
       logsPageSize = Number(document.getElementById('logs-page-size').value) || 10;
       logsPage = 1;
@@ -2786,16 +2972,20 @@
     }
 
     function renderLogsPagination() {
-      const nav = document.getElementById('logs-pagination-pages');
+      renderPagination('logs-pagination-pages', logsPage, logsTotalPages, 'goToLogsPage');
+    }
+
+    function renderPagination(navId, currentPage, totalPages, pageHandler) {
+      const nav = document.getElementById(navId);
       if (!nav) return;
-      const total = Math.max(1, logsTotalPages);
-      const current = Math.min(total, Math.max(1, logsPage));
+      const total = Math.max(1, totalPages);
+      const current = Math.min(total, Math.max(1, currentPage));
       const buttonClass = 'inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-transparent px-2 text-sm font-medium transition';
       const normalClass = 'bg-transparent text-slate-200 hover:bg-dark-800';
       const activeClass = 'bg-dark-700 text-white';
       const disabledClass = 'text-slate-600 cursor-not-allowed';
-      const navButton = (icon, label, page, disabled) => `<button type="button" onclick="goToLogsPage(${page})" aria-label="${label}" title="${label}" ${disabled ? 'disabled' : ''} class="${buttonClass} ${disabled ? disabledClass : normalClass}"><i class="fa-solid ${icon}" aria-hidden="true"></i></button>`;
-      const pageButton = page => `<button type="button" onclick="goToLogsPage(${page})" aria-label="${currentLanguage === 'en' ? `Page ${page}` : `หน้า ${page}`}" aria-current="${page === current ? 'page' : 'false'}" class="${buttonClass} ${page === current ? activeClass : normalClass}">${page}</button>`;
+      const navButton = (icon, label, page, disabled) => `<button type="button" onclick="${pageHandler}(${page})" aria-label="${label}" title="${label}" ${disabled ? 'disabled' : ''} class="${buttonClass} ${disabled ? disabledClass : normalClass}"><i class="fa-solid ${icon}" aria-hidden="true"></i></button>`;
+      const pageButton = page => `<button type="button" onclick="${pageHandler}(${page})" aria-label="${currentLanguage === 'en' ? `Page ${page}` : `หน้า ${page}`}" aria-current="${page === current ? 'page' : 'false'}" class="${buttonClass} ${page === current ? activeClass : normalClass}">${page}</button>`;
       const dots = '<span class="inline-flex h-10 min-w-10 items-center justify-center px-2 text-slate-400 select-none" aria-hidden="true">…</span>';
 
       // Match MUI's compact pattern with one boundary page and one sibling page.

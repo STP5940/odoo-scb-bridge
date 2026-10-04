@@ -78,6 +78,7 @@ func (w *Worker) ExecuteJob(job *models.OutboundJob) error {
 
 		_ = w.db.LogAudit(models.AuditLog{
 			EventType: "OUTBOUND_FILE",
+			JobID:     job.ID,
 			Protocol:  job.Protocol,
 			Username:  job.RemoteUser,
 			ClientIP:  destinationIP,

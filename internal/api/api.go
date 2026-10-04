@@ -78,6 +78,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/inbound", cors(s.requireLicense(s.handleInboundConfig)))
 	mux.HandleFunc("/api/users", cors(s.requireLicense(s.handleUsers)))
 	mux.HandleFunc("/api/outbound/jobs", cors(s.requireLicense(s.handleOutboundJobs)))
+	mux.HandleFunc("/api/outbound/jobs/", cors(s.requireLicense(s.handleOutboundJobLogs)))
 	mux.HandleFunc("/api/outbound/test-connection", cors(s.requireLicense(s.handleOutboundTestConnection)))
 	mux.HandleFunc("/locales.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
@@ -299,7 +300,6 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	eventType := query.Get("event_type")
 	username := strings.TrimSpace(query.Get("username"))
-
 	total, err := s.db.CountLogsFiltered(eventType, username)
 	if err != nil {
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -314,6 +314,58 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	offset := (page - 1) * pageSize
 	logs, err := s.db.GetRecentLogsFiltered(pageSize, eventType, username, offset)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("X-Total-Count", strconv.Itoa(total))
+	w.Header().Set("X-Page", strconv.Itoa(page))
+	w.Header().Set("X-Page-Size", strconv.Itoa(pageSize))
+	w.Header().Set("X-Total-Pages", strconv.Itoa(totalPages))
+	jsonResponse(w, http.StatusOK, logs)
+}
+
+// handleOutboundJobLogs serves a dedicated log history for a single outbound job.
+func (s *Server) handleOutboundJobLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	path := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/outbound/jobs/"), "/")
+	parts := strings.Split(path, "/")
+	if len(parts) != 2 || parts[1] != "logs" {
+		http.NotFound(w, r)
+		return
+	}
+	jobID, err := strconv.ParseInt(parts[0], 10, 64)
+	if err != nil || jobID <= 0 {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid outbound job id"})
+		return
+	}
+	pageSize := 10
+	if size, err := strconv.Atoi(r.URL.Query().Get("page_size")); err == nil && size > 0 {
+		pageSize = size
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+	page := 1
+	if requestedPage, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && requestedPage > 0 {
+		page = requestedPage
+	}
+	total, err := s.db.CountOutboundJobLogs(jobID)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	totalPages := (total + pageSize - 1) / pageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+	logs, err := s.db.GetOutboundJobLogs(jobID, pageSize, (page-1)*pageSize)
 	if err != nil {
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
