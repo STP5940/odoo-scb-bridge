@@ -46,53 +46,77 @@ func main() {
 	if *username == "" {
 		fail("SFTP username is required")
 	}
-	if !isLoopback(*host) {
-		fail("This test helper skips host-key verification and only supports a local SFTP server")
-	}
 	password := os.Getenv("SFTP_PROBE_PASSWORD")
 	if password == "" {
 		fail("Password was not provided by the secure prompt")
 	}
 
-	config, err := loadInboundConfig(*apiURL)
-	if err != nil {
-		fail("Cannot read the bridge inbound configuration: %v", err)
-	}
-	userRoot, err := loadUserRootDir(*apiURL, *username)
-	if err != nil {
-		fail("Cannot read the SFTP user's private folder: %v", err)
-	}
 	name := "codex_sftp_probe_" + strings.ReplaceAll(uuid.NewString(), "-", "") + ".txt"
 	payload := []byte("Odoo SCB Bridge SFTP upload test\nProbe: " + name + "\n")
 
+	if isLoopback(*host) {
+		config, err := loadInboundConfig(*apiURL)
+		if err != nil {
+			fail("Cannot read the bridge inbound configuration: %v", err)
+		}
+		userRoot, err := loadUserRootDir(*apiURL, *username)
+		if err != nil {
+			fail("Cannot read the SFTP user's private folder: %v", err)
+		}
+
+		if err := upload(*host, *port, *username, password, name, payload); err != nil {
+			fail("Upload failed: %v", err)
+		}
+		fmt.Printf("Uploaded probe: %s\n", name)
+
+		verified := false
+		var verifyErr error
+		for attempt := 0; attempt < 12; attempt++ {
+			if attempt > 0 {
+				time.Sleep(250 * time.Millisecond)
+			}
+			if err := verifyInboundAudit(*apiURL, *username, name, payload); err == nil {
+				verified = true
+				break
+			} else {
+				verifyErr = err
+			}
+		}
+		if !verified {
+			cleanupErr := removeProbe(*host, *port, *username, password, name)
+			if cleanupErr != nil {
+				fail("Could not verify the uploaded file (%v); automatic cleanup also failed (%v). Probe: %s", verifyErr, cleanupErr, name)
+			}
+			fail("Could not verify the uploaded file: %v. The probe was removed.", verifyErr)
+		}
+
+		fmt.Printf("PASS: inbound file content verified at %s\n", filepath.Join(config.TargetDir, filepath.FromSlash(userRoot), name))
+		fmt.Println("Note: a scheduled outbound job may move this file to its archive folder after verification.")
+		return
+	}
+
+	// Remote SFTP server upload test
 	if err := upload(*host, *port, *username, password, name, payload); err != nil {
-		fail("Upload failed: %v", err)
+		fail("Remote upload failed: %v", err)
 	}
 	fmt.Printf("Uploaded probe: %s\n", name)
 
-	verified := false
-	var verifyErr error
-	for attempt := 0; attempt < 12; attempt++ {
-		if attempt > 0 {
-			time.Sleep(250 * time.Millisecond)
-		}
-		if err := verifyInboundAudit(*apiURL, *username, name, payload); err == nil {
-			verified = true
-			break
-		} else {
-			verifyErr = err
-		}
+	conn, client, err := connectSFTP(*host, *port, *username, password)
+	if err != nil {
+		fail("Could not reconnect to verify remote file: %v", err)
 	}
-	if !verified {
-		cleanupErr := removeProbe(*host, *port, *username, password, name)
-		if cleanupErr != nil {
-			fail("Could not verify the uploaded file (%v); automatic cleanup also failed (%v). Probe: %s", verifyErr, cleanupErr, name)
-		}
-		fail("Could not verify the uploaded file: %v. The probe was removed.", verifyErr)
+	defer closeSFTPSession(conn, client)
+
+	info, err := client.Stat(name)
+	if err != nil {
+		fail("Could not verify the uploaded file on remote SFTP server: %v", err)
+	}
+	if info.Size() != int64(len(payload)) {
+		fail("Uploaded file size mismatch: got %d, expected %d", info.Size(), len(payload))
 	}
 
-	fmt.Printf("PASS: inbound file content verified at %s\n", filepath.Join(config.TargetDir, filepath.FromSlash(userRoot), name))
-	fmt.Println("Note: a scheduled outbound job may move this file to its archive folder after verification.")
+	fmt.Printf("PASS: remote SFTP upload and file verification completed successfully at %s:%d\n", *host, *port)
+	fmt.Printf("Note: uploaded probe %s is kept on the remote server for verification.\n", name)
 }
 
 func isLoopback(host string) bool {

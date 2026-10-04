@@ -212,8 +212,17 @@ func TestConnection(job *models.OutboundJob) error {
 			return fmt.Errorf("SFTP session failed: %w", err)
 		}
 		defer client.Close()
-		info, err := client.Stat(job.RemoteDir)
+		targetDir := job.RemoteDir
+		if targetDir == "" {
+			targetDir = "."
+		}
+		info, err := client.Stat(targetDir)
 		if err != nil {
+			if targetDir == "/" || targetDir == "." {
+				if _, getwdErr := client.Getwd(); getwdErr == nil {
+					return nil
+				}
+			}
 			return fmt.Errorf("cannot access remote folder %q: %w", job.RemoteDir, err)
 		}
 		if !info.IsDir() {

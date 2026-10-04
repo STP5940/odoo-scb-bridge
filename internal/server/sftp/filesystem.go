@@ -56,7 +56,11 @@ func (fs *userFilesystem) relativePath(raw string) (string, error) {
 		}
 	}
 	cleaned := path.Clean("/" + raw)
-	return filepath.FromSlash(strings.TrimPrefix(cleaned, "/")), nil
+	rel := strings.TrimPrefix(cleaned, "/")
+	if rel == "" {
+		rel = "."
+	}
+	return filepath.FromSlash(rel), nil
 }
 
 func (fs *userFilesystem) Fileread(req *pkgsftp.Request) (io.ReaderAt, error) {

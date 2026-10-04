@@ -29,18 +29,23 @@ var (
 func Init(dbPath string) (*DB, error) {
 	var err error
 	once.Do(func() {
-		// Ensure parent directory exists
-		dbPath, err = filepath.Abs(dbPath)
-		if err != nil {
-			return
+		var dsn string
+		var dir string
+		if dbPath == ":memory:" || strings.HasPrefix(dbPath, "file:") {
+			dsn = fmt.Sprintf("%s?_pragma=busy_timeout(5000)", dbPath)
+			dir = "."
+		} else {
+			// Ensure parent directory exists
+			dbPath, err = filepath.Abs(dbPath)
+			if err != nil {
+				return
+			}
+			dir = filepath.Dir(dbPath)
+			if err = os.MkdirAll(dir, 0755); err != nil {
+				return
+			}
+			dsn = fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)", dbPath)
 		}
-		dir := filepath.Dir(dbPath)
-		if err = os.MkdirAll(dir, 0755); err != nil {
-			return
-		}
-
-		// Connect to SQLite with WAL mode enabled for concurrent read/write
-		dsn := fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)", dbPath)
 		var conn *sql.DB
 		conn, err = sql.Open("sqlite", dsn)
 		if err != nil {
