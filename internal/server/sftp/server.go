@@ -84,9 +84,16 @@ func (s *Server) Start() error {
 					log.Printf("[SFTP] Failed to update authentication throttling for %s: %v", clientIP, recordErr)
 				}
 				if newlyBlocked {
+					durationDesc := fmt.Sprintf("%d minutes", remaining/60)
+					if remaining >= 86400 {
+						durationDesc = fmt.Sprintf("%d days", remaining/86400)
+					} else if remaining >= 3600 {
+						durationDesc = fmt.Sprintf("%d hours", remaining/3600)
+					}
+					settings, _, _ := s.db.GetSFTPAccessControl()
 					_ = s.db.LogAudit(models.AuditLog{
 						EventType: "SFTP_SECURITY", Protocol: "SFTP", Username: c.User(), ClientIP: clientIP,
-						Status: "BLOCKED", Details: "IP temporarily blocked after 5 failed logins; block expires in 15 minutes",
+						Status: "BLOCKED", Details: fmt.Sprintf("IP temporarily blocked after %d failed logins; block expires in %s", settings.MaxFailedAttempts, durationDesc),
 					})
 				} else if blocked {
 					log.Printf("[SFTP] Authentication from %s rejected while blocked (%d seconds remain)", clientIP, remaining)

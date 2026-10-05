@@ -850,6 +850,78 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "เช่น 192.168.1.10 หรือ 192.168.1.0/24",
     "e.g. 192.168.1.10 or 192.168.1.0/24"
+  ],
+  [
+    "ผิดเกินจำนวนครั้งที่กำหนดใน 15 นาที จะบล็อก IP ตามระยะเวลาที่กำหนด (ใส่ 0 เพื่อปิดการบล็อก) · กฎ IP ถาวรมีผลทันที",
+    "Failed logins exceeding limit in 15 minutes block the IP for the configured duration (0 disables lockout). Permanent IP rules apply immediately."
+  ],
+  [
+    "จำนวนครั้งที่ผิด",
+    "Max attempts"
+  ],
+  [
+    "จำนวนครั้งที่ล็อกอินผิดก่อนบล็อก (0 = ปิดการบล็อก)",
+    "Failed login attempts before lockout (0 = disabled)"
+  ],
+  [
+    "ระยะเวลาบล็อก IP",
+    "IP lockout duration"
+  ],
+  [
+    "จำนวนครั้งที่ผิดต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป",
+    "Failed login attempts must be 0 or greater"
+  ],
+  [
+    "บันทึกการตั้งค่า",
+    "Save Settings"
+  ],
+  [
+    "บันทึกการตั้งค่าความปลอดภัย SFTP แล้ว",
+    "SFTP security settings saved"
+  ],
+  [
+    "15 นาที",
+    "15 minutes"
+  ],
+  [
+    "30 นาที",
+    "30 minutes"
+  ],
+  [
+    "60 นาที (1 ชั่วโมง)",
+    "60 minutes (1 hour)"
+  ],
+  [
+    "2 ชั่วโมง",
+    "2 hours"
+  ],
+  [
+    "6 ชั่วโมง",
+    "6 hours"
+  ],
+  [
+    "12 ชั่วโมง",
+    "12 hours"
+  ],
+  [
+    "24 ชั่วโมง (1 วัน)",
+    "24 hours (1 day)"
+  ],
+  [
+    "3 วัน",
+    "3 days"
+  ],
+  [
+    "7 วัน (1 สัปดาห์)",
+    "7 days (1 week)"
+  ],
+  [
+    "15 วัน",
+    "15 days"
+  ],
+  [
+    "30 วัน (1 เดือน)",
+    "30 days (1 month)"
   ]
 ];
 // Parameterized UI messages live here with the static translations for easier maintenance.

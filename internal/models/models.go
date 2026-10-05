@@ -75,7 +75,9 @@ type AuditLog struct {
 }
 
 type SFTPSecuritySettings struct {
-	IPMode string `json:"ip_mode"`
+	IPMode            string `json:"ip_mode"`
+	LockoutMinutes    int    `json:"lockout_minutes"`
+	MaxFailedAttempts int    `json:"max_failed_attempts"`
 }
 
 type SFTPIPRule struct {

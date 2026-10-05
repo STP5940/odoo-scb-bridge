@@ -153,6 +153,8 @@ func (d *DB) migrate() error {
 	CREATE TABLE IF NOT EXISTS sftp_security_settings (
 		id INTEGER PRIMARY KEY CHECK (id = 1),
 		ip_mode TEXT NOT NULL DEFAULT 'allow_all',
+		lockout_minutes INTEGER NOT NULL DEFAULT 60,
+		max_failed_attempts INTEGER NOT NULL DEFAULT 5,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	);
 	INSERT OR IGNORE INTO sftp_security_settings (id, ip_mode) VALUES (1, 'allow_all');
@@ -204,6 +206,12 @@ func (d *DB) migrate() error {
 		if err := ensureUserPermissionColumn(d.conn, column); err != nil {
 			return fmt.Errorf("migrate user permission %s: %w", column, err)
 		}
+	}
+	if err := ensureSFTPSecurityLockoutColumn(d.conn); err != nil {
+		return fmt.Errorf("migrate sftp security lockout duration: %w", err)
+	}
+	if err := ensureSFTPSecurityMaxAttemptsColumn(d.conn); err != nil {
+		return fmt.Errorf("migrate sftp security max attempts: %w", err)
 	}
 	if _, err := d.conn.Exec(`UPDATE users SET root_dir='users/' || id`); err != nil {
 		return fmt.Errorf("migrate user home directories: %w", err)
@@ -347,6 +355,54 @@ func ensureUserPermissionColumn(conn *sql.DB, column string) error {
 		return err
 	}
 	_, err = conn.Exec("ALTER TABLE users ADD COLUMN " + column + " INTEGER NOT NULL DEFAULT 1")
+	return err
+}
+
+func ensureSFTPSecurityLockoutColumn(conn *sql.DB) error {
+	rows, err := conn.Query("PRAGMA table_info(sftp_security_settings)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, columnType string
+		var defaultValue interface{}
+		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		if name == "lockout_minutes" {
+			return rows.Err()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = conn.Exec("ALTER TABLE sftp_security_settings ADD COLUMN lockout_minutes INTEGER NOT NULL DEFAULT 60")
+	return err
+}
+
+func ensureSFTPSecurityMaxAttemptsColumn(conn *sql.DB) error {
+	rows, err := conn.Query("PRAGMA table_info(sftp_security_settings)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, columnType string
+		var defaultValue interface{}
+		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		if name == "max_failed_attempts" {
+			return rows.Err()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	_, err = conn.Exec("ALTER TABLE sftp_security_settings ADD COLUMN max_failed_attempts INTEGER NOT NULL DEFAULT 5")
 	return err
 }
 
@@ -642,9 +698,15 @@ func (d *DB) CountOutboundJobLogs(jobID int64) (int, error) {
 func (d *DB) GetSFTPAccessControl() (models.SFTPSecuritySettings, []models.SFTPIPRule, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	settings := models.SFTPSecuritySettings{}
-	if err := d.conn.QueryRow(`SELECT ip_mode FROM sftp_security_settings WHERE id=1`).Scan(&settings.IPMode); err != nil {
+	settings := models.SFTPSecuritySettings{LockoutMinutes: 60, MaxFailedAttempts: 5}
+	if err := d.conn.QueryRow(`SELECT ip_mode, lockout_minutes, max_failed_attempts FROM sftp_security_settings WHERE id=1`).Scan(&settings.IPMode, &settings.LockoutMinutes, &settings.MaxFailedAttempts); err != nil {
 		return settings, nil, err
+	}
+	if settings.LockoutMinutes <= 0 {
+		settings.LockoutMinutes = 60
+	}
+	if settings.MaxFailedAttempts < 0 {
+		settings.MaxFailedAttempts = 5
 	}
 	rows, err := d.conn.Query(`SELECT id, cidr, action, expires_at, created_at FROM sftp_ip_rules WHERE expires_at IS NULL OR expires_at > ? ORDER BY id DESC`, time.Now())
 	if err != nil {
@@ -672,6 +734,19 @@ func (d *DB) SetSFTPIPMode(mode string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	_, err := d.conn.Exec(`UPDATE sftp_security_settings SET ip_mode=?, updated_at=CURRENT_TIMESTAMP WHERE id=1`, mode)
+	return err
+}
+
+func (d *DB) SetSFTPSecuritySettings(mode string, lockoutMinutes, maxFailedAttempts int) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if lockoutMinutes <= 0 {
+		lockoutMinutes = 60
+	}
+	if maxFailedAttempts < 0 {
+		maxFailedAttempts = 5
+	}
+	_, err := d.conn.Exec(`UPDATE sftp_security_settings SET ip_mode=?, lockout_minutes=?, max_failed_attempts=?, updated_at=CURRENT_TIMESTAMP WHERE id=1`, mode, lockoutMinutes, maxFailedAttempts)
 	return err
 }
 
@@ -710,7 +785,7 @@ func (d *DB) GetSFTPIPBlockedUntil(ip string) (time.Time, error) {
 	return blockedUntil.Time, err
 }
 
-// RecordSFTPAuthFailure applies a per-IP threshold: five failures in fifteen minutes block the IP for fifteen minutes.
+// RecordSFTPAuthFailure applies a per-IP threshold: failed attempts in fifteen minutes block the IP for the configured duration.
 func (d *DB) RecordSFTPAuthFailure(ip, username string, now time.Time) (bool, bool, int, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -728,10 +803,36 @@ func (d *DB) RecordSFTPAuthFailure(ip, username string, now time.Time) (bool, bo
 		windowStarted = sql.NullTime{Time: now, Valid: true}
 	}
 	failures++
+
+	var lockoutMinutes, maxAttempts int
+	if err := d.conn.QueryRow(`SELECT lockout_minutes, max_failed_attempts FROM sftp_security_settings WHERE id=1`).Scan(&lockoutMinutes, &maxAttempts); err != nil {
+		lockoutMinutes = 60
+		maxAttempts = 5
+	}
+	if lockoutMinutes <= 0 {
+		lockoutMinutes = 60
+	}
+	if maxAttempts < 0 {
+		maxAttempts = 5
+	}
+
+	if maxAttempts == 0 {
+		_, err = d.conn.Exec(`INSERT INTO sftp_ip_failures (ip, username, failed_attempts, window_started_at, blocked_until, updated_at)
+			VALUES (?, ?, ?, ?, NULL, ?) ON CONFLICT(ip) DO UPDATE SET username=excluded.username, failed_attempts=excluded.failed_attempts,
+			window_started_at=excluded.window_started_at, blocked_until=NULL, updated_at=excluded.updated_at`,
+			ip, username, failures, windowStarted.Time, now)
+		if err != nil {
+			return false, false, 0, err
+		}
+		return false, false, 0, nil
+	}
+
+	lockoutDuration := time.Duration(lockoutMinutes) * time.Minute
+
 	var nextBlock interface{}
-	blocked := failures >= 5
+	blocked := failures >= maxAttempts
 	if blocked {
-		until := now.Add(15 * time.Minute)
+		until := now.Add(lockoutDuration)
 		nextBlock = until
 	}
 	_, err = d.conn.Exec(`INSERT INTO sftp_ip_failures (ip, username, failed_attempts, window_started_at, blocked_until, updated_at)
@@ -742,9 +843,13 @@ func (d *DB) RecordSFTPAuthFailure(ip, username string, now time.Time) (bool, bo
 		return false, false, 0, err
 	}
 	if blocked {
-		return true, true, 15 * 60, nil
+		return true, true, int(lockoutDuration.Seconds()), nil
 	}
-	return false, false, 5 - failures, nil
+	remaining := maxAttempts - failures
+	if remaining < 0 {
+		remaining = 0
+	}
+	return false, false, remaining, nil
 }
 
 func (d *DB) ResetSFTPAuthFailures(ip string) error {

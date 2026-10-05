@@ -289,7 +289,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.75</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.77</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="app-btn app-btn-quiet w-8 h-7 rounded flex items-center justify-center">
@@ -314,7 +314,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.75</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.77</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -515,7 +515,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.75</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.77</span>
       </div>
     </aside>
 
@@ -919,7 +919,7 @@
             <datalist id="sftp-log-users"></datalist>
             <button onclick="loadLogs()" class="app-btn app-btn-secondary px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5">
               <i class="fa-solid fa-rotate-right"></i>
-              <span>รีเฟรช Log</span>
+              <span>รีเฟรช</span>
             </button>
           </div>
         </div>
@@ -1109,8 +1109,8 @@
           </div>
 
           <div class="glass-card rounded-2xl p-6 space-y-6">
-            <p class="text-xs text-slate-400 mt-0.5">ผิด 5 ครั้งใน 15 นาที จะบล็อก IP 15 นาที · กฎ IP ถาวรมีผลทันที</p>
-            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+            <p class="text-xs text-slate-400 mt-0.5">ผิดเกินจำนวนครั้งที่กำหนดใน 15 นาที จะบล็อก IP ตามระยะเวลาที่กำหนด (ใส่ 0 เพื่อปิดการบล็อก) · กฎ IP ถาวรมีผลทันที</p>
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_130px_1fr_auto] gap-3 items-end">
               <div>
                 <label for="sftp-ip-mode" class="block text-xs font-medium text-slate-300 mb-1.5">การเชื่อมต่อจาก IP</label>
                 <select id="sftp-ip-mode" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
@@ -1118,7 +1118,27 @@
                   <option value="allow_list">อนุญาตเฉพาะ IP ในรายการ</option>
                 </select>
               </div>
-              <button onclick="saveSFTPSecuritySettings()" class="app-btn app-btn-primary px-4 py-2.5 rounded-xl font-bold text-xs">บันทึกโหมด IP</button>
+              <div>
+                <label for="sftp-max-attempts" class="block text-xs font-medium text-slate-300 mb-1.5 whitespace-nowrap">จำนวนครั้งที่ผิด</label>
+                <input id="sftp-max-attempts" type="number" min="0" step="1" value="5" class="w-full glass-input rounded-xl p-2.5 text-xs text-white" placeholder="5" title="จำนวนครั้งที่ล็อกอินผิดก่อนบล็อก (0 = ปิดการบล็อก)">
+              </div>
+              <div>
+                <label for="sftp-lockout-duration" class="block text-xs font-medium text-slate-300 mb-1.5">ระยะเวลาบล็อก IP</label>
+                <select id="sftp-lockout-duration" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+                  <option value="15">15 นาที</option>
+                  <option value="30">30 นาที</option>
+                  <option value="60" selected>60 นาที (1 ชั่วโมง)</option>
+                  <option value="120">2 ชั่วโมง</option>
+                  <option value="360">6 ชั่วโมง</option>
+                  <option value="720">12 ชั่วโมง</option>
+                  <option value="1440">24 ชั่วโมง (1 วัน)</option>
+                  <option value="4320">3 วัน</option>
+                  <option value="10080">7 วัน (1 สัปดาห์)</option>
+                  <option value="21600">15 วัน</option>
+                  <option value="43200">30 วัน (1 เดือน)</option>
+                </select>
+              </div>
+              <button onclick="saveSFTPSecuritySettings()" class="app-btn app-btn-primary px-4 py-2.5 rounded-xl font-bold text-xs">บันทึกการตั้งค่า</button>
             </div>
             <p class="text-[11px] text-amber-400">โหมด Allow list จะปฏิเสธทุก IP ที่ไม่ได้เพิ่มเป็น Allow รวมถึง IP ที่ใช้งานอยู่ในขณะนี้</p>
 
@@ -2180,11 +2200,20 @@
     }
 
     function formatBlockDuration(seconds) {
-      const minutes = Math.floor(seconds / 60);
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
       const rest = seconds % 60;
-      return currentLanguage === 'en'
-        ? (minutes ? `${minutes}m ${rest}s` : `${rest}s`)
-        : (minutes ? `${minutes} นาที ${rest} วินาที` : `${rest} วินาที`);
+      if (currentLanguage === 'en') {
+        if (days) return `${days}d ${hours}h ${minutes}m`;
+        if (hours) return `${hours}h ${minutes}m ${rest}s`;
+        if (minutes) return `${minutes}m ${rest}s`;
+        return `${rest}s`;
+      }
+      if (days) return `${days} วัน ${hours} ชม. ${minutes} นาที`;
+      if (hours) return `${hours} ชม. ${minutes} นาที ${rest} วินาที`;
+      if (minutes) return `${minutes} นาที ${rest} วินาที`;
+      return `${rest} วินาที`;
     }
 
     function updateSFTPBlockedCountdowns() {
@@ -2208,6 +2237,10 @@
           const result = await response.json();
           if (!appUnlocked) return;
           document.getElementById('sftp-ip-mode').value = result.settings?.ip_mode || 'allow_all';
+          const maxAttemptsInput = document.getElementById('sftp-max-attempts');
+          if (maxAttemptsInput) maxAttemptsInput.value = result.settings?.max_failed_attempts !== undefined ? result.settings.max_failed_attempts : 5;
+          const lockoutSelect = document.getElementById('sftp-lockout-duration');
+          if (lockoutSelect) lockoutSelect.value = String(result.settings?.lockout_minutes || 60);
           const ruleTable = document.getElementById('sftp-ip-rules-table');
           const blockedTable = document.getElementById('sftp-blocked-ip-table');
           ruleTable.innerHTML = result.rules?.length ? result.rules.map(rule => `
@@ -2238,6 +2271,13 @@
 
     async function saveSFTPSecuritySettings() {
       const ipMode = document.getElementById('sftp-ip-mode').value;
+      const lockoutMinutes = parseInt(document.getElementById('sftp-lockout-duration')?.value, 10) || 60;
+      const rawMaxAttempts = document.getElementById('sftp-max-attempts')?.value;
+      const maxFailedAttempts = parseInt(rawMaxAttempts, 10);
+      if (isNaN(maxFailedAttempts) || maxFailedAttempts < 0) {
+        showToast(currentLanguage === 'en' ? 'Failed login attempts must be 0 or greater' : 'จำนวนครั้งที่ผิดต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป', 'error');
+        return;
+      }
       if (ipMode === 'allow_list' && !window.confirm(currentLanguage === 'en'
         ? 'Only IP addresses in the Allow list will be able to connect. Continue?'
         : 'หลังเปิด Allow list จะมีเฉพาะ IP ที่เพิ่มเป็นอนุญาตเท่านั้นที่เชื่อมต่อได้ ต้องการดำเนินการต่อหรือไม่?')) {
@@ -2246,10 +2286,11 @@
       }
       try {
         const response = await fetch(`${API_BASE}/security/sftp`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ip_mode: ipMode })
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ip_mode: ipMode, lockout_minutes: lockoutMinutes, max_failed_attempts: maxFailedAttempts })
         });
-        if (!response.ok) throw new Error((await response.json()).error || 'Could not save IP mode');
-        showToast(currentLanguage === 'en' ? 'SFTP IP access mode saved' : 'บันทึกโหมด IP SFTP แล้ว', 'success');
+        if (!response.ok) throw new Error((await response.json()).error || 'Could not save security settings');
+        showToast(currentLanguage === 'en' ? 'SFTP security settings saved' : 'บันทึกการตั้งค่าความปลอดภัย SFTP แล้ว', 'success');
         await loadSFTPSecurity();
       } catch (error) { showToast(error.message, 'error'); }
     }

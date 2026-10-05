@@ -393,7 +393,9 @@ func (s *Server) handleSFTPSecurity(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusOK, map[string]interface{}{"settings": settings, "rules": rules, "blocked_ips": blocked})
 	case http.MethodPut, http.MethodPost:
 		var request struct {
-			IPMode string `json:"ip_mode"`
+			IPMode            string `json:"ip_mode"`
+			LockoutMinutes    *int   `json:"lockout_minutes"`
+			MaxFailedAttempts *int   `json:"max_failed_attempts"`
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&request); err != nil {
 			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid settings"})
@@ -403,11 +405,30 @@ func (s *Server) handleSFTPSecurity(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "ip_mode must be allow_all or allow_list"})
 			return
 		}
-		if err := s.db.SetSFTPIPMode(request.IPMode); err != nil {
+		lockoutMinutes := 60
+		if request.LockoutMinutes != nil {
+			if *request.LockoutMinutes <= 0 {
+				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "lockout_minutes must be positive"})
+				return
+			}
+			lockoutMinutes = *request.LockoutMinutes
+		}
+		maxFailedAttempts := 5
+		if request.MaxFailedAttempts != nil {
+			if *request.MaxFailedAttempts < 0 {
+				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "max_failed_attempts cannot be negative"})
+				return
+			}
+			maxFailedAttempts = *request.MaxFailedAttempts
+		}
+		if err := s.db.SetSFTPSecuritySettings(request.IPMode, lockoutMinutes, maxFailedAttempts); err != nil {
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		_ = s.db.LogAudit(models.AuditLog{EventType: "SFTP_SECURITY", Protocol: "SFTP", Username: "admin", Status: "SUCCESS", Details: "SFTP IP access mode changed to " + request.IPMode})
+		_ = s.db.LogAudit(models.AuditLog{
+			EventType: "SFTP_SECURITY", Protocol: "SFTP", Username: "admin", Status: "SUCCESS",
+			Details: fmt.Sprintf("SFTP security settings updated: mode=%s, lockout=%d min, max_attempts=%d", request.IPMode, lockoutMinutes, maxFailedAttempts),
+		})
 		jsonResponse(w, http.StatusOK, map[string]string{"status": "updated"})
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
