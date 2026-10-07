@@ -289,7 +289,7 @@
         <i class="fa-solid fa-bolt text-dark-950 text-[10px] font-black"></i>
       </div>
       <span class="font-semibold tracking-wide text-slate-200 text-[12px]">Odoo SCB Bridge</span>
-      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.77</span>
+      <span class="text-[9px] font-mono font-medium text-slate-400 bg-dark-800/80 px-1.5 py-0.5 rounded border border-white/5">Studio v0.1.83</span>
     </div>
     <div class="titlebar-nodrag flex items-center space-x-1">
       <button onclick="window.electronAPI ? window.electronAPI.minimize() : null" title="ย่อหน้าต่าง" class="app-btn app-btn-quiet w-8 h-7 rounded flex items-center justify-center">
@@ -314,7 +314,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-sm tracking-tight text-white">Odoo SCB Bridge</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.77</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-brand-400 border border-emerald-500/20 font-mono">CORE v0.1.83</span>
         </div>
         <p class="text-[11px] text-slate-400 font-normal">Automated Financial SFTP/FTPS Gateway & Microservice</p>
       </div>
@@ -515,7 +515,7 @@
           <i class="fa-brands fa-golang text-accent-cyan text-sm"></i>
           <span>Go Microservice</span>
         </div>
-        <span class="font-mono text-[10px] text-slate-400">v0.1.77</span>
+        <span class="font-mono text-[10px] text-slate-400">v0.1.83</span>
       </div>
     </aside>
 
@@ -850,8 +850,111 @@
             <span>Active — <span class="text-slate-400">เปิดใช้งานรอบงานตาม Cron</span></span>
           </label>
 
+          <!-- PGP Encryption Settings -->
+          <div class="rounded-xl border border-white/10 bg-dark-950/40 p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <label for="job-pgp-enabled" class="inline-flex items-center gap-2.5 cursor-pointer">
+                <input id="job-pgp-enabled" type="checkbox" onchange="toggleJobPGPPanel()" class="h-4 w-4 accent-brand-500">
+                <span class="text-xs font-semibold text-slate-200">เปิดใช้งานการเข้ารหัส PGP (PGP Encryption)</span>
+              </label>
+              <span class="text-[11px] text-slate-400">สร้างหรือใส่ Key เพื่อเข้ารหัสไฟล์ก่อนส่งออก</span>
+            </div>
+
+            <div id="job-pgp-panel" class="hidden space-y-4 pt-3 border-t border-dark-800">
+              <!-- Public Key (Used to encrypt outbound files) -->
+              <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                  <label class="block text-xs font-medium text-slate-300">
+                    กุญแจสาธารณะ (Public Key - ใช้เข้ารหัสไฟล์) <span class="text-rose-400">*</span>
+                  </label>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="openGeneratePGPModal()" class="text-[11px] text-purple-400 hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i>
+                      <span>สร้างคู่กุญแจใหม่</span>
+                    </button>
+                    <button type="button" onclick="document.getElementById('job-pgp-public-file').click()" class="text-[11px] text-accent-cyan hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-file-import"></i>
+                      <span>นำเข้าจากไฟล์ .asc/.key</span>
+                    </button>
+                    <input type="file" id="job-pgp-public-file" accept=".asc,.key,.pub,.pgp,.txt" onchange="importPublicPGPKeyFile(event)" class="hidden">
+                    <button type="button" onclick="copyPGPPublicKey()" class="text-[11px] text-brand-400 hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-copy"></i>
+                      <span>คัดลอก Public Key</span>
+                    </button>
+                    <button type="button" onclick="downloadPGPPublicKey()" class="text-[11px] text-accent-cyan hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-file-export"></i>
+                      <span>ส่งออกไฟล์ Public Key</span>
+                    </button>
+                    <button type="button" onclick="validatePublicPGPKey()" class="text-[11px] text-brand-400 hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-circle-check"></i>
+                      <span>ตรวจสอบ Key</span>
+                    </button>
+                  </div>
+                </div>
+                <textarea id="job-pgp-public-key" onblur="this.value = normalizePGPArmor(this.value)" rows="4" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;&#10;...&#10;-----END PGP PUBLIC KEY BLOCK-----" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white resize-y"></textarea>
+                <p class="text-[11px] text-slate-400 mt-1">ใช้สำหรับเข้ารหัสไฟล์ก่อนส่งออก (กดสร้างกุญแจใหม่ หรือนำเข้าไฟล์ที่มีอยู่ได้)</p>
+                <p id="job-pgp-public-status" class="text-xs min-h-3 mt-1"></p>
+              </div>
+
+              <!-- Private Key (Given to recipient/partner to decrypt) -->
+              <div class="pt-2 border-t border-dark-800/60">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                  <label class="block text-xs font-medium text-slate-300">
+                    กุญแจส่วนตัว (Private Key - มอบให้ปลายทางใช้ถอดรหัส)
+                  </label>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" id="btn-reveal-pgp-privkey" onclick="requestRevealPGPPrivateKey()" class="hidden text-[11px] text-amber-400 hover:underline items-center gap-1">
+                      <i class="fa-solid fa-eye"></i>
+                      <span id="label-reveal-pgp-privkey">ดู / แก้ไข Private Key</span>
+                    </button>
+                    <button type="button" onclick="copyPGPPrivateKey()" class="text-[11px] text-brand-400 hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-copy"></i>
+                      <span>คัดลอก Private Key</span>
+                    </button>
+                    <button type="button" onclick="downloadPGPPrivateKey()" class="text-[11px] text-accent-cyan hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-file-export"></i>
+                      <span>ส่งออกไฟล์ Private Key</span>
+                    </button>
+                    <button type="button" onclick="document.getElementById('job-pgp-signer-file').click()" class="text-[11px] text-accent-cyan hover:underline flex items-center gap-1">
+                      <i class="fa-solid fa-file-import"></i>
+                      <span>นำเข้าจากไฟล์</span>
+                    </button>
+                    <input type="file" id="job-pgp-signer-file" accept=".asc,.key,.priv,.pgp,.txt" onchange="importSignerPGPKeyFile(event)" class="hidden">
+                  </div>
+                </div>
+                <div class="relative">
+                  <textarea id="job-pgp-private-key" oninput="onSignerPrivateKeyInput(event)" onblur="onSignerPrivateKeyBlur()" rows="4" placeholder="-----BEGIN PGP PRIVATE KEY BLOCK-----&#10;...&#10;-----END PGP PRIVATE KEY BLOCK-----" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white resize-y"></textarea>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">นำ Private Key นี้ไปมอบให้ธนาคาร/ปลายทางเพื่อใช้ถอดรหัส (หากมี PIN ต้องยืนยัน PIN ก่อนดูหรือคัดลอก)</p>
+              </div>
+
+              <!-- Passphrase & File Extension -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-dark-800/60">
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1.5">รหัสผ่าน Private Key (Passphrase ถ้ามี)</label>
+                  <div class="relative">
+                    <input type="password" id="job-pgp-passphrase" placeholder="Passphrase" class="w-full glass-input rounded-xl p-2.5 pr-10 text-xs font-mono text-white">
+                    <button type="button" id="toggle-pgp-passphrase" onclick="togglePGPPassphraseVisibility()" aria-label="แสดงรหัสผ่าน" aria-pressed="false" title="แสดงรหัสผ่าน" class="absolute inset-y-0 right-0 px-3 text-slate-400 hover:text-white transition">
+                      <i class="fa-regular fa-eye" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1.5">นามสกุลไฟล์หลังเข้ารหัส (File Extension)</label>
+                  <input type="text" id="job-pgp-extension" value=".pgp" placeholder=".pgp" class="w-full glass-input rounded-xl p-2.5 text-xs font-mono text-white">
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p id="job-test-result" class="text-xs text-slate-400 min-h-4" role="status" aria-live="polite"></p>
+            <div class="flex flex-wrap items-center gap-3">
+              <button type="button" id="job-cancel-edit" onclick="onResetOrCancelJob()" class="app-btn app-btn-secondary px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center space-x-1.5 active:scale-95">
+                <i id="job-cancel-icon" class="fa-solid fa-rotate-left"></i>
+                <span id="job-cancel-label">ล้างฟอร์ม</span>
+              </button>
+              <p id="job-test-result" class="text-xs text-slate-400 min-h-4" role="status" aria-live="polite"></p>
+            </div>
             <div class="flex flex-wrap gap-2">
               <button id="job-test-button" onclick="testOutboundConnection()" class="app-btn app-btn-info px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center space-x-2 active:scale-95">
                 <i class="fa-solid fa-plug-circle-check"></i>
@@ -860,9 +963,6 @@
               <button onclick="saveOutboundJob()" class="app-btn app-btn-primary px-5 py-2.5 rounded-xl font-bold text-xs flex items-center space-x-2 shadow-lg shadow-brand-500/20 active:scale-95">
                 <i id="job-save-icon" class="fa-solid fa-plus"></i>
                 <span id="job-save-label">บันทึกงานส่งออก (Save Job)</span>
-              </button>
-              <button id="job-cancel-edit" onclick="cancelEditJob()" class="app-btn app-btn-secondary hidden px-4 py-2.5 rounded-xl font-semibold text-xs">
-                <span>Cancel</span>
               </button>
             </div>
           </div>
@@ -1204,6 +1304,101 @@
     <div id="toast-box" class="px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs font-medium border bg-dark-900 border-white/10 text-white">
       <i id="toast-icon" class="fa-solid fa-circle-check text-brand-400 text-sm"></i>
       <span id="toast-msg">ข้อความแจ้งเตือน</span>
+    </div>
+  </div>
+
+  <!-- Modal: Generate PGP Key Pair -->
+  <div id="pgp-gen-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md glass-card rounded-2xl p-6 shadow-2xl border border-white/10 space-y-4">
+      <div class="flex items-center justify-between border-b border-dark-800 pb-3">
+        <div class="flex items-center gap-2.5 text-brand-400">
+          <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+          <h3 class="font-bold text-white text-base">สร้างคู่กุญแจ PGP ใหม่ (Generate Key Pair)</h3>
+        </div>
+        <button type="button" onclick="closeGeneratePGPModal()" class="text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">ชื่อผู้ใช้งานหรือระบบ (Name / Identity) <span class="text-rose-400">*</span></label>
+          <input type="text" id="pgp-gen-name" placeholder="Odoo SCB Bridge" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">อีเมล (Email) <span class="text-rose-400">*</span></label>
+          <input type="email" id="pgp-gen-email" placeholder="bridge@example.com" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">หมายเหตุ (Comment - ทางเลือก)</label>
+          <input type="text" id="pgp-gen-comment" placeholder="SCB Outbound Transfer Key" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">ขนาดกุญแจ RSA (Key Size)</label>
+          <select id="pgp-gen-bits" class="w-full glass-input rounded-xl p-2.5 text-xs text-white">
+            <option value="2048">RSA 2048-bit (แนะนำ - ประมวลผลรวดเร็ว)</option>
+            <option value="4096">RSA 4096-bit (ความปลอดภัยสูงสุด)</option>
+          </select>
+        </div>
+        <p id="pgp-gen-error" class="text-xs text-rose-400 min-h-4"></p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-dark-800">
+        <button type="button" onclick="closeGeneratePGPModal()" class="app-btn app-btn-secondary px-4 py-2 rounded-xl text-xs font-semibold">
+          <span>ยกเลิก</span>
+        </button>
+        <button type="button" id="btn-submit-pgp-gen" onclick="submitGeneratePGPKey()" class="app-btn app-btn-primary px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-key"></i>
+          <span>สร้างกุญแจ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: PGP PIN Verification -->
+  <div id="pgp-pin-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-sm glass-card rounded-2xl p-5 md:p-6 shadow-2xl border border-white/10">
+      <div class="flex items-center gap-3 border-b border-dark-800 pb-4 mb-4">
+        <div class="w-11 h-11 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white">แอปถูกล็อก</h2>
+          <p class="text-sm text-slate-400 mt-1">กรอก PIN 6 หลักเพื่อเข้าใช้งาน</p>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-slate-300 mb-2">PIN</label>
+        <div class="pin-input-shell">
+          <input id="pgp-pin-input" type="password" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" readonly class="pin-value-input glass-input w-full rounded-xl p-3 text-lg tracking-[0.5em] text-center" aria-label="PIN">
+          <div class="pin-dot-row" data-pin-dots-for="pgp-pin-input" aria-hidden="true">
+            <i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i>
+          </div>
+        </div>
+      </div>
+
+      <p id="pgp-pin-error" class="pin-message text-xs text-rose-400" role="status" aria-live="polite"></p>
+
+      <div class="mx-auto grid w-full max-w-[360px] grid-cols-3 justify-items-center gap-x-4 gap-y-3 mb-4" aria-label="PIN keypad">
+        <button type="button" onclick="appendPgpPinDigit('1')" aria-label="1" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">1</button>
+        <button type="button" onclick="appendPgpPinDigit('2')" aria-label="2" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">2</button>
+        <button type="button" onclick="appendPgpPinDigit('3')" aria-label="3" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">3</button>
+        <button type="button" onclick="appendPgpPinDigit('4')" aria-label="4" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">4</button>
+        <button type="button" onclick="appendPgpPinDigit('5')" aria-label="5" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">5</button>
+        <button type="button" onclick="appendPgpPinDigit('6')" aria-label="6" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">6</button>
+        <button type="button" onclick="appendPgpPinDigit('7')" aria-label="7" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">7</button>
+        <button type="button" onclick="appendPgpPinDigit('8')" aria-label="8" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">8</button>
+        <button type="button" onclick="appendPgpPinDigit('9')" aria-label="9" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">9</button>
+        <span class="block w-16 h-16" aria-hidden="true"></span>
+        <button type="button" onclick="appendPgpPinDigit('0')" aria-label="0" class="pin-keypad-button w-16 h-16 rounded-full text-xl font-semibold">0</button>
+        <button type="button" onclick="deletePgpPinDigit()" aria-label="ลบตัวเลขล่าสุด" title="ลบตัวเลขล่าสุด" class="pin-keypad-button w-16 h-16 rounded-full text-base"><i class="fa-solid fa-delete-left"></i></button>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="btn-submit-pgp-pin" onclick="submitPGPPinVerification()" class="app-btn app-btn-primary flex-1 px-4 py-3 rounded-xl font-bold text-sm">ปลดล็อก</button>
+        <button type="button" onclick="closePGPPinModal()" class="app-btn app-btn-secondary px-4 py-3 rounded-xl font-semibold text-sm">ยกเลิก</button>
+      </div>
     </div>
   </div>
 
@@ -1634,6 +1829,26 @@
     }
 
     document.addEventListener('keydown', event => {
+      const pgpModal = document.getElementById('pgp-pin-modal');
+      if (pgpModal && !pgpModal.classList.contains('hidden')) {
+        const digit = /^\d$/.test(event.key) ? event.key
+          : /^(?:Numpad|Digit)\d$/.test(event.code) ? event.code.slice(-1) : null;
+        if (digit !== null) {
+          event.preventDefault();
+          appendPgpPinDigit(digit);
+        } else if (event.key === 'Backspace') {
+          event.preventDefault();
+          deletePgpPinDigit();
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          submitPGPPinVerification();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          closePGPPinModal();
+        }
+        return;
+      }
+
       if (document.getElementById('pin-screen').classList.contains('hidden')) return;
       const digit = /^\d$/.test(event.key) ? event.key
         : /^(?:Numpad|Digit)\d$/.test(event.code) ? event.code.slice(-1) : null;
@@ -2560,6 +2775,502 @@
 
     let outboundJobsById = new Map();
     let editingOutboundJobId = null;
+    let currentSignerPrivateKey = "";
+    let isSignerPrivateKeyRevealed = false;
+    let pinSuccessCallback = null;
+
+    function toggleJobPGPPanel() {
+      const enabled = document.getElementById('job-pgp-enabled').checked;
+      const panel = document.getElementById('job-pgp-panel');
+      if (enabled) {
+        panel.classList.remove('hidden');
+      } else {
+        panel.classList.add('hidden');
+      }
+    }
+
+    function normalizePGPArmor(key) {
+      if (!key) return '';
+      const text = key.replace(/\r\n/g, '\n').trim();
+      const headers = [
+        '-----BEGIN PGP PUBLIC KEY BLOCK-----',
+        '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+        '-----BEGIN PGP MESSAGE-----',
+        '-----BEGIN PGP SIGNATURE-----'
+      ];
+      let res = text;
+      for (const h of headers) {
+        const idx = res.indexOf(h);
+        if (idx === -1) continue;
+        const endMarker = h.replace('BEGIN', 'END');
+        const endIdx = res.indexOf(endMarker, idx);
+        const body = endIdx !== -1 ? res.slice(idx + h.length, endIdx) : res.slice(idx + h.length);
+        const suffix = endIdx !== -1 ? res.slice(endIdx) : '';
+
+        const lines = body.split('\n');
+        const headerLines = [];
+        const dataLines = [];
+        let foundBlank = false;
+
+        for (let i = 0; i < lines.length; i++) {
+          const trimmed = lines[i].trim();
+          if (trimmed === '' && i > 0 && !foundBlank) {
+            foundBlank = true;
+            continue;
+          }
+          if (!foundBlank) {
+            if (trimmed === '') continue;
+            if (trimmed.includes(':')) {
+              headerLines.push(trimmed);
+            } else {
+              foundBlank = true;
+              dataLines.push(trimmed);
+            }
+          } else {
+            if (trimmed !== '') dataLines.push(trimmed);
+          }
+        }
+
+        let block = res.slice(0, idx + h.length) + '\n';
+        for (const hl of headerLines) {
+          block += hl + '\n';
+        }
+        // Mandatory RFC 4880 blank line before base64 payload
+        block += '\n';
+        for (const dl of dataLines) {
+          block += dl + '\n';
+        }
+        if (suffix) {
+          block += suffix.trim() + '\n';
+        }
+        res = block;
+      }
+      return res.trim() + '\n';
+    }
+
+    function updatePGPPrivateKeyDisplay() {
+      const privKeyInput = document.getElementById('job-pgp-private-key');
+      const revealBtn = document.getElementById('btn-reveal-pgp-privkey');
+      const revealLabel = document.getElementById('label-reveal-pgp-privkey');
+      if (!currentSignerPrivateKey) {
+        if (privKeyInput) {
+          privKeyInput.value = '';
+          privKeyInput.placeholder = '-----BEGIN PGP PRIVATE KEY BLOCK-----\n\n...\n-----END PGP PRIVATE KEY BLOCK-----';
+          privKeyInput.readOnly = false;
+        }
+        if (revealBtn) {
+          revealBtn.classList.add('hidden');
+          revealBtn.classList.remove('inline-flex', 'flex');
+        }
+        return;
+      }
+      if (revealBtn) {
+        revealBtn.classList.remove('hidden');
+        revealBtn.classList.add('inline-flex');
+        revealBtn.classList.remove('flex');
+      }
+      if (isSignerPrivateKeyRevealed) {
+        if (privKeyInput) {
+          privKeyInput.value = normalizePGPArmor(currentSignerPrivateKey);
+          privKeyInput.readOnly = false;
+        }
+        if (revealLabel) revealLabel.innerText = currentLanguage === 'en' ? 'Hide Private Key' : 'ซ่อน Private Key';
+        if (revealBtn) {
+          const icon = revealBtn.querySelector('i');
+          if (icon) icon.className = 'fa-solid fa-eye-slash';
+        }
+      } else {
+        if (privKeyInput) {
+          privKeyInput.value = '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
+          privKeyInput.readOnly = true;
+        }
+        if (revealLabel) revealLabel.innerText = currentLanguage === 'en' ? 'View / Edit Private Key' : 'ดู / แก้ไข Private Key';
+        if (revealBtn) {
+          const icon = revealBtn.querySelector('i');
+          if (icon) icon.className = 'fa-solid fa-eye';
+        }
+      }
+    }
+
+    function onSignerPrivateKeyInput(event) {
+      if (isSignerPrivateKeyRevealed || !currentSignerPrivateKey) {
+        currentSignerPrivateKey = event.target.value.trim();
+        const revealBtn = document.getElementById('btn-reveal-pgp-privkey');
+        if (revealBtn) {
+          revealBtn.classList.toggle('hidden', !currentSignerPrivateKey);
+          revealBtn.classList.toggle('inline-flex', Boolean(currentSignerPrivateKey));
+          revealBtn.classList.remove('flex');
+        }
+      }
+    }
+
+    function onSignerPrivateKeyBlur() {
+      if (currentSignerPrivateKey) {
+        currentSignerPrivateKey = normalizePGPArmor(currentSignerPrivateKey);
+        if (isSignerPrivateKeyRevealed) {
+          isSignerPrivateKeyRevealed = false;
+        }
+        updatePGPPrivateKeyDisplay();
+      }
+    }
+
+    async function requestRevealPGPPrivateKey() {
+      if (isSignerPrivateKeyRevealed) {
+        isSignerPrivateKeyRevealed = false;
+        updatePGPPrivateKeyDisplay();
+        return;
+      }
+
+      let hasPin = pinConfigured;
+      if (window.electronAPI?.getPinStatus) {
+        try {
+          const status = await window.electronAPI.getPinStatus();
+          hasPin = status.configured === true;
+        } catch (e) {}
+      }
+
+      if (hasPin) {
+        pinSuccessCallback = null;
+        openPGPPinModal();
+      } else {
+        isSignerPrivateKeyRevealed = true;
+        updatePGPPrivateKeyDisplay();
+      }
+    }
+
+    function openPGPPinModal() {
+      const modal = document.getElementById('pgp-pin-modal');
+      const input = document.getElementById('pgp-pin-input');
+      const err = document.getElementById('pgp-pin-error');
+      if (input) input.value = '';
+      if (err) err.innerText = '';
+      renderPinDots();
+      updatePgpPinSubmitState();
+      modal.classList.remove('hidden');
+    }
+
+    function closePGPPinModal() {
+      const modal = document.getElementById('pgp-pin-modal');
+      modal.classList.add('hidden');
+      const input = document.getElementById('pgp-pin-input');
+      if (input) input.value = '';
+      pinSuccessCallback = null;
+      renderPinDots();
+    }
+
+    function appendPgpPinDigit(digit) {
+      if (!/^\d$/.test(digit)) return;
+      const field = document.getElementById('pgp-pin-input');
+      if (!field || field.value.length >= 6) return;
+      field.value += digit;
+      const err = document.getElementById('pgp-pin-error');
+      if (err) err.innerText = '';
+      renderPinDots();
+      updatePgpPinSubmitState();
+    }
+
+    function deletePgpPinDigit() {
+      const field = document.getElementById('pgp-pin-input');
+      if (!field || field.value.length === 0) return;
+      field.value = field.value.slice(0, -1);
+      const err = document.getElementById('pgp-pin-error');
+      if (err) err.innerText = '';
+      renderPinDots();
+      updatePgpPinSubmitState();
+    }
+
+    function updatePgpPinSubmitState() {
+      const field = document.getElementById('pgp-pin-input');
+      const btn = document.getElementById('btn-submit-pgp-pin');
+      if (btn && field) {
+        btn.disabled = field.value.length !== 6;
+      }
+    }
+
+    async function submitPGPPinVerification() {
+      const input = document.getElementById('pgp-pin-input');
+      const err = document.getElementById('pgp-pin-error');
+      const pin = input?.value.trim() || '';
+      if (!/^\d{6}$/.test(pin)) {
+        err.innerText = pinText('PIN ต้องเป็นตัวเลข 6 หลัก', 'PIN must contain exactly 6 digits.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-pgp-pin');
+      btn.disabled = true;
+      try {
+        if (!window.electronAPI?.verifyPin) {
+          const cb = pinSuccessCallback;
+          pinSuccessCallback = null;
+          closePGPPinModal();
+          if (typeof cb === 'function') {
+            cb();
+          } else {
+            isSignerPrivateKeyRevealed = true;
+            updatePGPPrivateKeyDisplay();
+          }
+          return;
+        }
+        const result = await window.electronAPI.verifyPin(pin);
+        if (result && result.ok) {
+          const cb = pinSuccessCallback;
+          pinSuccessCallback = null;
+          closePGPPinModal();
+          if (typeof cb === 'function') {
+            cb();
+          } else {
+            isSignerPrivateKeyRevealed = true;
+            updatePGPPrivateKeyDisplay();
+          }
+          showToast(pinText('ยืนยัน PIN สำเร็จ', 'PIN verified successfully'), 'success');
+        } else if (result && result.locked) {
+          err.innerText = pinText(`ลองอีกครั้งใน ${result.seconds} วินาที`, `Try again in ${result.seconds} seconds.`);
+          input.value = '';
+          renderPinDots();
+          updatePgpPinSubmitState();
+        } else {
+          err.innerText = (result && typeof result.remaining === 'number')
+            ? translateValue('PIN ไม่ถูกต้อง เหลืออีก ' + result.remaining + ' ครั้ง')
+            : pinText('PIN ไม่ถูกต้อง กรุณาลองใหม่', 'Incorrect PIN. Please try again.');
+          input.value = '';
+          renderPinDots();
+          updatePgpPinSubmitState();
+        }
+      } catch (e) {
+        err.innerText = e.message || pinText('การยืนยันล้มเหลว', 'Verification failed');
+      } finally {
+        updatePgpPinSubmitState();
+      }
+    }
+
+    function openGeneratePGPModal() {
+      document.getElementById('pgp-gen-name').value = document.getElementById('job-name').value.trim() || 'Odoo SCB Bridge';
+      document.getElementById('pgp-gen-email').value = 'scb-bridge@example.com';
+      document.getElementById('pgp-gen-comment').value = 'SCB Outbound Transfer Key';
+      document.getElementById('pgp-gen-bits').value = '2048';
+      document.getElementById('pgp-gen-error').innerText = '';
+      document.getElementById('pgp-gen-modal').classList.remove('hidden');
+    }
+
+    function closeGeneratePGPModal() {
+      document.getElementById('pgp-gen-modal').classList.add('hidden');
+    }
+
+    async function submitGeneratePGPKey() {
+      const name = document.getElementById('pgp-gen-name').value.trim();
+      const email = document.getElementById('pgp-gen-email').value.trim();
+      const comment = document.getElementById('pgp-gen-comment').value.trim();
+      const bits = parseInt(document.getElementById('pgp-gen-bits').value, 10) || 2048;
+      const err = document.getElementById('pgp-gen-error');
+      const btn = document.getElementById('btn-submit-pgp-gen');
+
+      if (!name) {
+        err.innerText = currentLanguage === 'en' ? 'Please enter a name/identity.' : 'กรุณากรอกชื่อผู้ใช้งานหรือระบบ';
+        return;
+      }
+      if (!email) {
+        err.innerText = currentLanguage === 'en' ? 'Please enter an email.' : 'กรุณากรอกอีเมล';
+        return;
+      }
+
+      err.innerText = '';
+      btn.disabled = true;
+      const origBtnHTML = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>${currentLanguage === 'en' ? 'Generating...' : 'กำลังสร้าง...'}</span>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/pgp/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, comment, bits })
+        });
+        const data = await res.json();
+        if (res.ok && data.public_key && data.private_key) {
+          document.getElementById('job-pgp-public-key').value = normalizePGPArmor(data.public_key);
+          currentSignerPrivateKey = normalizePGPArmor(data.private_key);
+          isSignerPrivateKeyRevealed = false;
+          updatePGPPrivateKeyDisplay();
+          document.getElementById('job-pgp-public-status').innerText = '';
+          validatePublicPGPKey();
+          closeGeneratePGPModal();
+          showToast(currentLanguage === 'en' ? 'PGP Key Pair generated successfully' : 'สร้างคู่กุญแจ PGP เรียบร้อยแล้ว', 'success');
+        } else {
+          err.innerText = `${currentLanguage === 'en' ? 'Failed to generate key: ' : 'สร้างกุญแจไม่สำเร็จ: '}${data.error || ''}`;
+        }
+      } catch (e) {
+        err.innerText = `${currentLanguage === 'en' ? 'Connection error: ' : 'ข้อผิดพลาดการเชื่อมต่อ: '}${e.message || ''}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origBtnHTML;
+      }
+    }
+
+    function importPublicPGPKeyFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('job-pgp-public-key').value = normalizePGPArmor(e.target.result);
+        validatePublicPGPKey();
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function importSignerPGPKeyFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentSignerPrivateKey = normalizePGPArmor(e.target.result);
+        isSignerPrivateKeyRevealed = false;
+        updatePGPPrivateKeyDisplay();
+        showToast(currentLanguage === 'en' ? 'Private Key imported' : 'นำเข้า Private Key เรียบร้อยแล้ว', 'success');
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    async function validatePublicPGPKey() {
+      const key = normalizePGPArmor(document.getElementById('job-pgp-public-key').value.trim());
+      document.getElementById('job-pgp-public-key').value = key;
+      const status = document.getElementById('job-pgp-public-status');
+      if (!key) {
+        status.innerText = currentLanguage === 'en' ? 'Please enter or import a public key first.' : 'กรุณาระบุหรือนำเข้า Public Key ก่อน';
+        status.className = 'text-xs text-rose-400 min-h-3 mt-1';
+        return;
+      }
+      status.innerText = currentLanguage === 'en' ? 'Validating...' : 'กำลังตรวจสอบ...';
+      status.className = 'text-xs text-slate-400 min-h-3 mt-1';
+      try {
+        const res = await fetch(`${API_BASE}/pgp/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key_data: key, key, key_type: 'public' })
+        });
+        const data = await res.json();
+        if (res.ok && data.valid) {
+          status.innerText = (currentLanguage === 'en' ? 'Valid PGP Public Key' : 'Public Key ถูกต้อง') + (data.identities?.length ? ` (${data.identities.join(', ')})` : '');
+          status.className = 'text-xs text-emerald-400 min-h-3 mt-1';
+        } else {
+          status.innerText = `${currentLanguage === 'en' ? 'Invalid Key: ' : 'Key ไม่ถูกต้อง: '}${data.error || ''}`;
+          status.className = 'text-xs text-rose-400 min-h-3 mt-1';
+        }
+      } catch (e) {
+        status.innerText = `${currentLanguage === 'en' ? 'Validation failed: ' : 'การตรวจสอบล้มเหลว: '}${e.message || ''}`;
+        status.className = 'text-xs text-rose-400 min-h-3 mt-1';
+      }
+    }
+
+    function copyPGPPublicKey() {
+      const key = document.getElementById('job-pgp-public-key').value.trim();
+      if (!key) {
+        showToast(currentLanguage === 'en' ? 'No Public Key to copy' : 'ไม่มี Public Key ให้คัดลอก', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(key).then(() => {
+        showToast(currentLanguage === 'en' ? 'Public Key copied to clipboard' : 'คัดลอก Public Key เรียบร้อยแล้ว', 'success');
+      }).catch(() => {
+        showToast(currentLanguage === 'en' ? 'Failed to copy to clipboard' : 'คัดลอกไม่สำเร็จ', 'error');
+      });
+    }
+
+    function getPGPKeyDownloadFilename(keyType) {
+      const rawName = document.getElementById('job-name')?.value.trim() || '';
+      const sanitized = rawName.replace(/[/\\?%*:|"<>]/g, '_').trim();
+      const base = sanitized || 'scb_bridge';
+      return `${base}_${keyType}.asc`;
+    }
+
+    function downloadPGPPublicKey() {
+      const key = document.getElementById('job-pgp-public-key').value.trim();
+      if (!key) {
+        showToast(currentLanguage === 'en' ? 'No Public Key to export' : 'ไม่มี Public Key ให้ส่งออก', 'error');
+        return;
+      }
+      const blob = new Blob([normalizePGPArmor(key)], { type: 'application/pgp-keys' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = getPGPKeyDownloadFilename('public_key');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(currentLanguage === 'en' ? 'Public Key exported successfully' : 'ส่งออกไฟล์ Public Key เรียบร้อยแล้ว', 'success');
+    }
+
+    async function copyPGPPrivateKey() {
+      if (!currentSignerPrivateKey) {
+        showToast(currentLanguage === 'en' ? 'No Private Key to copy' : 'ไม่มี Private Key ให้คัดลอก', 'error');
+        return;
+      }
+      let hasPin = pinConfigured;
+      if (window.electronAPI?.getPinStatus) {
+        try {
+          const status = await window.electronAPI.getPinStatus();
+          hasPin = status.configured === true;
+        } catch (e) {}
+      }
+      if (!isSignerPrivateKeyRevealed && hasPin) {
+        pinSuccessCallback = () => doCopyPGPPrivateKey();
+        openPGPPinModal();
+        return;
+      }
+      doCopyPGPPrivateKey();
+    }
+
+    function doCopyPGPPrivateKey() {
+      navigator.clipboard.writeText(currentSignerPrivateKey).then(() => {
+        showToast(currentLanguage === 'en' ? 'Private Key copied to clipboard' : 'คัดลอก Private Key เรียบร้อยแล้ว', 'success');
+      }).catch(() => {
+        showToast(currentLanguage === 'en' ? 'Failed to copy to clipboard' : 'คัดลอกไม่สำเร็จ', 'error');
+      });
+    }
+
+    async function downloadPGPPrivateKey() {
+      if (!currentSignerPrivateKey) {
+        showToast(currentLanguage === 'en' ? 'No Private Key to export' : 'ไม่มี Private Key ให้ส่งออก', 'error');
+        return;
+      }
+      let hasPin = pinConfigured;
+      if (window.electronAPI?.getPinStatus) {
+        try {
+          const status = await window.electronAPI.getPinStatus();
+          hasPin = status.configured === true;
+        } catch (e) {}
+      }
+      if (!isSignerPrivateKeyRevealed && hasPin) {
+        pinSuccessCallback = () => doDownloadPGPPrivateKey();
+        openPGPPinModal();
+        return;
+      }
+      doDownloadPGPPrivateKey();
+    }
+
+    function doDownloadPGPPrivateKey() {
+      const blob = new Blob([normalizePGPArmor(currentSignerPrivateKey)], { type: 'application/pgp-keys' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = getPGPKeyDownloadFilename('private_key');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(currentLanguage === 'en' ? 'Private Key exported successfully' : 'ส่งออกไฟล์ Private Key เรียบร้อยแล้ว', 'success');
+    }
+
+    function togglePGPPassphraseVisibility() {
+      const input = document.getElementById('job-pgp-passphrase');
+      const toggle = document.getElementById('toggle-pgp-passphrase');
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      toggle.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+      toggle.setAttribute('aria-label', isPassword ? (currentLanguage === 'en' ? 'Hide password' : 'ซ่อนรหัสผ่าน') : (currentLanguage === 'en' ? 'Show password' : 'แสดงรหัสผ่าน'));
+      toggle.title = toggle.getAttribute('aria-label');
+      toggle.innerHTML = `<i class="fa-regular ${isPassword ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>`;
+    }
 
     // Load Outbound Jobs
     async function loadJobs() {
@@ -2582,6 +3293,7 @@
                     <i class="fa-solid fa-paper-plane"></i>
                   </div>
                   <button type="button" onclick="showOutboundJobLogs(${Number(j.id)})" aria-label="${currentLanguage === 'en' ? 'View transfer logs for ' : 'ดู Log การส่งไฟล์ของ '}${escapeHTML(j.name)}" title="${currentLanguage === 'en' ? 'View this job’s transfer logs' : 'คลิกเพื่อดู Log การส่งไฟล์ของงานนี้'}" class="truncate text-left hover:text-accent-cyan hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-cyan-400">${escapeHTML(j.name)}</button>
+                  ${j.pgp_enabled ? '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 font-sans" title="PGP Encrypted"><i class="fa-solid fa-key text-[9px]"></i>PGP</span>' : ''}
                 </div>
               </td>
               <td class="py-1.5 px-3 text-xs min-w-0">
@@ -2634,7 +3346,13 @@
         remote_dir: document.getElementById('job-remote-dir').value.trim(),
         post_action: existingJob?.post_action || "archive",
         archive_dir: sourceUserID > 0 ? joinLocalPath(sourceDir, 'archive') : existingJob?.archive_dir || joinLocalPath(sourceDir, 'archive'),
-        enabled: document.getElementById('job-enabled').checked
+        enabled: document.getElementById('job-enabled').checked,
+        pgp_enabled: document.getElementById('job-pgp-enabled').checked,
+        pgp_recipient_public_key: document.getElementById('job-pgp-public-key').value.trim(),
+        pgp_signer_private_key: currentSignerPrivateKey.trim(),
+        pgp_signer_passphrase: document.getElementById('job-pgp-passphrase').value,
+        pgp_our_public_key: document.getElementById('job-pgp-public-key').value.trim(),
+        pgp_file_extension: document.getElementById('job-pgp-extension').value.trim() || '.pgp'
       };
     }
 
@@ -2656,10 +3374,23 @@
       }
       onOutboundSourceUserChange();
       document.getElementById('job-enabled').checked = Boolean(job.enabled);
+      document.getElementById('job-pgp-enabled').checked = Boolean(job.pgp_enabled);
+      document.getElementById('job-pgp-public-key').value = normalizePGPArmor(job.pgp_recipient_public_key || job.pgp_our_public_key || '');
+      currentSignerPrivateKey = normalizePGPArmor(job.pgp_signer_private_key || '');
+      isSignerPrivateKeyRevealed = false;
+      updatePGPPrivateKeyDisplay();
+      document.getElementById('job-pgp-passphrase').value = job.pgp_signer_passphrase || '';
+      document.getElementById('job-pgp-extension').value = job.pgp_file_extension || '.pgp';
+      document.getElementById('job-pgp-public-status').innerText = '';
+      toggleJobPGPPanel();
+
       document.getElementById('job-form-title').innerText = currentLanguage === 'en' ? 'Edit Scheduled Transfer' : 'แก้ไขรอบงานส่งไฟล์';
       document.getElementById('job-save-icon').className = 'fa-solid fa-floppy-disk';
       document.getElementById('job-save-label').innerText = currentLanguage === 'en' ? 'Update Job' : 'บันทึกการแก้ไข';
-      document.getElementById('job-cancel-edit').classList.remove('hidden');
+      const cancelLabel = document.getElementById('job-cancel-label');
+      if (cancelLabel) cancelLabel.innerText = currentLanguage === 'en' ? 'Cancel' : 'ยกเลิก';
+      const cancelIcon = document.getElementById('job-cancel-icon');
+      if (cancelIcon) cancelIcon.className = 'fa-solid fa-xmark';
       document.getElementById('job-test-result').innerText = '';
       document.getElementById('job-pass').type = 'password';
       const toggle = document.getElementById('toggle-job-password');
@@ -2668,6 +3399,14 @@
       toggle.title = toggle.getAttribute('aria-label');
       toggle.innerHTML = '<i class="fa-regular fa-eye" aria-hidden="true"></i>';
       document.getElementById('tab-outbound').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function onResetOrCancelJob() {
+      const isEditing = Boolean(editingOutboundJobId);
+      cancelEditJob();
+      if (!isEditing) {
+        showToast(currentLanguage === 'en' ? 'Form reset to defaults' : 'คืนค่าเริ่มต้นฟอร์มเรียบร้อยแล้ว', 'info');
+      }
     }
 
     function cancelEditJob() {
@@ -2681,6 +3420,16 @@
       document.getElementById('job-port').value = '22';
       document.getElementById('job-remote-dir').value = '/upload';
       document.getElementById('job-enabled').checked = true;
+      document.getElementById('job-pgp-enabled').checked = false;
+      document.getElementById('job-pgp-public-key').value = '';
+      currentSignerPrivateKey = '';
+      isSignerPrivateKeyRevealed = false;
+      updatePGPPrivateKeyDisplay();
+      document.getElementById('job-pgp-passphrase').value = '';
+      document.getElementById('job-pgp-extension').value = '.pgp';
+      document.getElementById('job-pgp-public-status').innerText = '';
+      toggleJobPGPPanel();
+
       document.getElementById('job-pass').type = 'password';
       const toggle = document.getElementById('toggle-job-password');
       toggle.setAttribute('aria-pressed', 'false');
@@ -2688,7 +3437,10 @@
       document.getElementById('job-form-title').innerText = currentLanguage === 'en' ? 'Create / Edit Scheduled Transfers' : 'สร้าง / ปรับแต่งรอบงานส่งไฟล์ (Cron Scheduler)';
       document.getElementById('job-save-icon').className = 'fa-solid fa-plus';
       document.getElementById('job-save-label').innerText = currentLanguage === 'en' ? 'Save Outbound Job' : 'บันทึกงานส่งออก (Save Job)';
-      document.getElementById('job-cancel-edit').classList.add('hidden');
+      const cancelLabel = document.getElementById('job-cancel-label');
+      if (cancelLabel) cancelLabel.innerText = currentLanguage === 'en' ? 'Clear Form' : 'ล้างฟอร์ม';
+      const cancelIcon = document.getElementById('job-cancel-icon');
+      if (cancelIcon) cancelIcon.className = 'fa-solid fa-rotate-left';
       document.getElementById('job-test-result').innerText = '';
     }
 
@@ -2791,6 +3543,10 @@
         return;
       }
       const payload = getOutboundJobPayload();
+      if (payload.pgp_enabled && !payload.pgp_recipient_public_key) {
+        showToast(currentLanguage === 'en' ? 'Please enter the PGP public key' : 'กรุณาระบุ Public Key สำหรับการเข้ารหัส PGP', 'error');
+        return;
+      }
       try {
         const res = await fetch(`${API_BASE}/outbound/jobs`, {
           method: 'POST',
@@ -3092,6 +3848,7 @@
     initializeLanguage();
     initializeTheme();
     initializePinLock();
+    updatePGPPrivateKeyDisplay();
     switchTab('dashboard');
     setInterval(() => { if (appUnlocked) loadStatus(); }, 5000);
   </script>

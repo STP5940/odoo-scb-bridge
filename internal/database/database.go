@@ -122,6 +122,12 @@ func (d *DB) migrate() error {
 		post_action TEXT DEFAULT 'archive',
 		archive_dir TEXT DEFAULT '',
 		enabled INTEGER DEFAULT 1,
+		pgp_enabled INTEGER NOT NULL DEFAULT 0,
+		pgp_recipient_public_key TEXT DEFAULT '',
+		pgp_signer_private_key TEXT DEFAULT '',
+		pgp_signer_passphrase TEXT DEFAULT '',
+		pgp_our_public_key TEXT DEFAULT '',
+		pgp_file_extension TEXT DEFAULT '.pgp',
 		last_run_at DATETIME,
 		last_status TEXT DEFAULT 'IDLE',
 		last_error TEXT DEFAULT '',
@@ -193,6 +199,9 @@ func (d *DB) migrate() error {
 	}
 	if err := ensureOutboundSourceUserColumn(d.conn); err != nil {
 		return fmt.Errorf("migrate outbound source user: %w", err)
+	}
+	if err := ensureOutboundPGPColumns(d.conn); err != nil {
+		return fmt.Errorf("migrate outbound pgp columns: %w", err)
 	}
 	if err := ensureAuditLogJobIDColumn(d.conn); err != nil {
 		return fmt.Errorf("migrate audit log job id: %w", err)
@@ -428,6 +437,43 @@ func ensureOutboundSourceUserColumn(conn *sql.DB) error {
 	}
 	_, err = conn.Exec("ALTER TABLE outbound_jobs ADD COLUMN source_user_id INTEGER NOT NULL DEFAULT 0")
 	return err
+}
+
+func ensureOutboundPGPColumns(conn *sql.DB) error {
+	cols := map[string]string{
+		"pgp_enabled":              "INTEGER NOT NULL DEFAULT 0",
+		"pgp_recipient_public_key": "TEXT DEFAULT ''",
+		"pgp_signer_private_key":   "TEXT DEFAULT ''",
+		"pgp_signer_passphrase":   "TEXT DEFAULT ''",
+		"pgp_our_public_key":       "TEXT DEFAULT ''",
+		"pgp_file_extension":      "TEXT DEFAULT '.pgp'",
+	}
+	existing := make(map[string]bool)
+	rows, err := conn.Query("PRAGMA table_info(outbound_jobs)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid, notnull, pk int
+		var name, columnType string
+		var defaultValue interface{}
+		if err := rows.Scan(&cid, &name, &columnType, &notnull, &defaultValue, &pk); err != nil {
+			return err
+		}
+		existing[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for col, colDef := range cols {
+		if !existing[col] {
+			if _, err := conn.Exec(fmt.Sprintf("ALTER TABLE outbound_jobs ADD COLUMN %s %s", col, colDef)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func ensureAuditLogJobIDColumn(conn *sql.DB) error {
@@ -1110,7 +1156,7 @@ func (d *DB) ListOutboundJobs() ([]models.OutboundJob, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
-	rows, err := d.conn.Query("SELECT id, name, cron_expr, source_user_id, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled, last_run_at, last_status, last_error, created_at, updated_at FROM outbound_jobs")
+	rows, err := d.conn.Query("SELECT id, name, cron_expr, source_user_id, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled, pgp_enabled, pgp_recipient_public_key, pgp_signer_private_key, pgp_signer_passphrase, pgp_our_public_key, pgp_file_extension, last_run_at, last_status, last_error, created_at, updated_at FROM outbound_jobs")
 	if err != nil {
 		return nil, err
 	}
@@ -1119,11 +1165,12 @@ func (d *DB) ListOutboundJobs() ([]models.OutboundJob, error) {
 	var jobs []models.OutboundJob
 	for rows.Next() {
 		var j models.OutboundJob
-		var enabled int
-		if err := rows.Scan(&j.ID, &j.Name, &j.CronExpr, &j.SourceUserID, &j.SourceDir, &j.FilePattern, &j.Protocol, &j.RemoteHost, &j.RemotePort, &j.RemoteUser, &j.RemotePassword, &j.RemoteDir, &j.PostAction, &j.ArchiveDir, &enabled, &j.LastRunAt, &j.LastStatus, &j.LastError, &j.CreatedAt, &j.UpdatedAt); err != nil {
+		var enabled, pgpEnabled int
+		if err := rows.Scan(&j.ID, &j.Name, &j.CronExpr, &j.SourceUserID, &j.SourceDir, &j.FilePattern, &j.Protocol, &j.RemoteHost, &j.RemotePort, &j.RemoteUser, &j.RemotePassword, &j.RemoteDir, &j.PostAction, &j.ArchiveDir, &enabled, &pgpEnabled, &j.PGPRecipientPublicKey, &j.PGPSignerPrivateKey, &j.PGPSignerPassphrase, &j.PGPOurPublicKey, &j.PGPFileExtension, &j.LastRunAt, &j.LastStatus, &j.LastError, &j.CreatedAt, &j.UpdatedAt); err != nil {
 			return nil, err
 		}
 		j.Enabled = enabled == 1
+		j.PGPEnabled = pgpEnabled == 1
 		jobs = append(jobs, j)
 	}
 	return jobs, nil
@@ -1138,12 +1185,19 @@ func (d *DB) SaveOutboundJob(j *models.OutboundJob) error {
 	if j.Enabled {
 		enabled = 1
 	}
+	pgpEnabled := 0
+	if j.PGPEnabled {
+		pgpEnabled = 1
+	}
+	if j.PGPFileExtension == "" {
+		j.PGPFileExtension = ".pgp"
+	}
 
 	if j.ID == 0 {
 		res, err := d.conn.Exec(`
-			INSERT INTO outbound_jobs (name, cron_expr, source_user_id, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`, j.Name, j.CronExpr, j.SourceUserID, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled)
+			INSERT INTO outbound_jobs (name, cron_expr, source_user_id, source_dir, file_pattern, protocol, remote_host, remote_port, remote_user, remote_password, remote_dir, post_action, archive_dir, enabled, pgp_enabled, pgp_recipient_public_key, pgp_signer_private_key, pgp_signer_passphrase, pgp_our_public_key, pgp_file_extension)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`, j.Name, j.CronExpr, j.SourceUserID, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled, pgpEnabled, j.PGPRecipientPublicKey, j.PGPSignerPrivateKey, j.PGPSignerPassphrase, j.PGPOurPublicKey, j.PGPFileExtension)
 		if err != nil {
 			return err
 		}
@@ -1154,9 +1208,9 @@ func (d *DB) SaveOutboundJob(j *models.OutboundJob) error {
 
 	_, err := d.conn.Exec(`
 		UPDATE outbound_jobs
-		SET name=?, cron_expr=?, source_user_id=?, source_dir=?, file_pattern=?, protocol=?, remote_host=?, remote_port=?, remote_user=?, remote_password=?, remote_dir=?, post_action=?, archive_dir=?, enabled=?, updated_at=CURRENT_TIMESTAMP
+		SET name=?, cron_expr=?, source_user_id=?, source_dir=?, file_pattern=?, protocol=?, remote_host=?, remote_port=?, remote_user=?, remote_password=?, remote_dir=?, post_action=?, archive_dir=?, enabled=?, pgp_enabled=?, pgp_recipient_public_key=?, pgp_signer_private_key=?, pgp_signer_passphrase=?, pgp_our_public_key=?, pgp_file_extension=?, updated_at=CURRENT_TIMESTAMP
 		WHERE id=?
-	`, j.Name, j.CronExpr, j.SourceUserID, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled, j.ID)
+	`, j.Name, j.CronExpr, j.SourceUserID, j.SourceDir, j.FilePattern, j.Protocol, j.RemoteHost, j.RemotePort, j.RemoteUser, j.RemotePassword, j.RemoteDir, j.PostAction, j.ArchiveDir, enabled, pgpEnabled, j.PGPRecipientPublicKey, j.PGPSignerPrivateKey, j.PGPSignerPassphrase, j.PGPOurPublicKey, j.PGPFileExtension, j.ID)
 	return err
 }
 

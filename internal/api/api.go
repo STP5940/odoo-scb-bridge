@@ -18,6 +18,7 @@ import (
 	"odoo-scb-bridge/internal/scheduler"
 	"odoo-scb-bridge/internal/server/sftp"
 	"odoo-scb-bridge/internal/ui"
+	"odoo-scb-bridge/internal/utils"
 )
 
 type Server struct {
@@ -80,6 +81,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/outbound/jobs", cors(s.requireLicense(s.handleOutboundJobs)))
 	mux.HandleFunc("/api/outbound/jobs/", cors(s.requireLicense(s.handleOutboundJobLogs)))
 	mux.HandleFunc("/api/outbound/test-connection", cors(s.requireLicense(s.handleOutboundTestConnection)))
+	mux.HandleFunc("/api/pgp/generate", cors(s.requireLicense(s.handlePGPGenerate)))
+	mux.HandleFunc("/api/pgp/validate", cors(s.requireLicense(s.handlePGPValidate)))
 	mux.HandleFunc("/locales.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		_, _ = w.Write([]byte(ui.LocalesContent))
@@ -689,6 +692,68 @@ func (s *Server) handleOutboundTestConnection(w http.ResponseWriter, r *http.Req
 		return
 	}
 	jsonResponse(w, http.StatusOK, map[string]interface{}{"ok": true})
+}
+
+func (s *Server) handlePGPGenerate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Name    string `json:"name"`
+		Email   string `json:"email"`
+		Comment string `json:"comment"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16*1024)).Decode(&req); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid payload"})
+		return
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = "Odoo SCB Bridge"
+	}
+	pubKey, privKey, err := utils.GeneratePGPKeyPair(name, strings.TrimSpace(req.Email), strings.TrimSpace(req.Comment))
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]string{
+		"public_key":  pubKey,
+		"private_key": privKey,
+	})
+}
+
+func (s *Server) handlePGPValidate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		KeyType    string `json:"key_type"` // "public" or "private"
+		KeyData    string `json:"key_data"`
+		Key        string `json:"key"`
+		Passphrase string `json:"passphrase"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64*1024)).Decode(&req); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid payload"})
+		return
+	}
+	keyData := strings.TrimSpace(req.KeyData)
+	if keyData == "" {
+		keyData = strings.TrimSpace(req.Key)
+	}
+	if req.KeyType == "private" {
+		if err := utils.ValidatePGPPrivateKey(keyData, req.Passphrase); err != nil {
+			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+	} else {
+		if err := utils.ValidatePGPPublicKey(keyData); err != nil {
+			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{"valid": true})
 }
 
 func jsonResponse(w http.ResponseWriter, code int, data interface{}) {

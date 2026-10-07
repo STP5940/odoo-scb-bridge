@@ -31,16 +31,33 @@ function pinSecurityStatePath() {
 function loadPinSecurityState() {
   if (pinSecurityStateLoaded) return;
   const file = pinSecurityStatePath();
+  pinFailures = 0;
+  pinLockedUntil = 0;
+  pinAuditEvents = [];
   if (fs.existsSync(file)) {
-    if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure PIN storage is unavailable');
-    const encrypted = fs.readFileSync(file, 'utf8');
-    const state = JSON.parse(safeStorage.decryptString(Buffer.from(encrypted, 'base64')));
-    if (!Number.isInteger(state.failures) || state.failures < 0 || state.failures > 4 || !Number.isFinite(state.lockedUntil) || !Array.isArray(state.pendingLockoutAudits)) {
-      throw new Error('Stored PIN security state is invalid');
+    try {
+      if (safeStorage.isEncryptionAvailable()) {
+        const encrypted = fs.readFileSync(file, 'utf8').trim();
+        if (encrypted) {
+          const decrypted = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+          if (decrypted) {
+            const state = JSON.parse(decrypted);
+            if (Number.isInteger(state.failures) && state.failures >= 0 && state.failures <= 4) {
+              pinFailures = state.failures;
+            }
+            if (Number.isFinite(state.lockedUntil)) {
+              pinLockedUntil = state.lockedUntil;
+            }
+            if (Array.isArray(state.pendingLockoutAudits)) {
+              pinAuditEvents = state.pendingLockoutAudits.filter(event => event && typeof event.timestamp === 'string');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error loading PIN security state, resetting:', e);
+      try { fs.rmSync(file, { force: true }); } catch (_) {}
     }
-    pinFailures = state.failures;
-    pinLockedUntil = state.lockedUntil;
-    pinAuditEvents = state.pendingLockoutAudits.filter(event => event && typeof event.timestamp === 'string');
   }
   pinSecurityStateLoaded = true;
 }
@@ -90,8 +107,18 @@ function readPinRecord() {
   const file = pinRecordPath();
   if (!fs.existsSync(file)) return null;
   if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure PIN storage is unavailable');
-  const encrypted = fs.readFileSync(file, 'utf8');
-  return JSON.parse(safeStorage.decryptString(Buffer.from(encrypted, 'base64')));
+  try {
+    const encrypted = fs.readFileSync(file, 'utf8').trim();
+    if (!encrypted) return null;
+    const decrypted = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+    if (!decrypted) return null;
+    const record = JSON.parse(decrypted);
+    if (!record || !record.salt || !record.verifier) return null;
+    return record;
+  } catch (e) {
+    console.error('Error reading PIN record:', e);
+    return null;
+  }
 }
 
 function validatePin(pin) {
@@ -143,13 +170,22 @@ function verifyPin(pin) {
 }
 
 ipcMain.handle('pin-status', () => {
-  loadPinSecurityState();
-  const configured = Boolean(readPinRecord());
-  return {
-    configured,
-    skipped: !configured && fs.existsSync(pinSetupSkippedPath()),
-    lockoutSeconds: Math.max(0, Math.ceil((pinLockedUntil - Date.now()) / 1000))
-  };
+  try {
+    loadPinSecurityState();
+    const configured = Boolean(readPinRecord());
+    return {
+      configured,
+      skipped: !configured && fs.existsSync(pinSetupSkippedPath()),
+      lockoutSeconds: Math.max(0, Math.ceil((pinLockedUntil - Date.now()) / 1000))
+    };
+  } catch (e) {
+    console.error('Error in pin-status handler:', e);
+    return {
+      configured: false,
+      skipped: false,
+      lockoutSeconds: 0
+    };
+  }
 });
 ipcMain.handle('open-folder', async (_event, folderPath) => {
   if (typeof folderPath !== 'string' || !folderPath.trim()) throw new Error('Folder path is required');

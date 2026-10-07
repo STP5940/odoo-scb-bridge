@@ -31,3 +31,4 @@ Desktop.ini
 
 tools/
 .cache/
+*.asc

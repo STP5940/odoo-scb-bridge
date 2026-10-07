@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"odoo-scb-bridge/internal/database"
@@ -54,25 +55,71 @@ func (w *Worker) ExecuteJob(job *models.OutboundJob) error {
 			continue
 		}
 
+		dispatchPath := filePath
+		dispatchName := fileName
+		var tempEncryptedFile string
+
+		if job.PGPEnabled {
+			ext := strings.TrimSpace(job.PGPFileExtension)
+			if ext == "" {
+				ext = ".pgp"
+			}
+			if !strings.HasPrefix(ext, ".") {
+				ext = "." + ext
+			}
+			dispatchName = fileName + ext
+			tempEncryptedFile = filepath.Join(os.TempDir(), fmt.Sprintf("odoo_pgp_%d_%s", time.Now().UnixNano(), dispatchName))
+
+			if err := utils.EncryptFilePGP(filePath, tempEncryptedFile, job.PGPRecipientPublicKey, job.PGPSignerPrivateKey, job.PGPSignerPassphrase); err != nil {
+				_ = w.db.LogAudit(models.AuditLog{
+					EventType: "OUTBOUND_FILE",
+					JobID:     job.ID,
+					Protocol:  job.Protocol,
+					Username:  job.RemoteUser,
+					FileName:  dispatchName,
+					FileSize:  size,
+					FileHash:  hash,
+					Status:    "FAILED",
+					Details:   fmt.Sprintf("PGP encryption error: %v", err),
+					Timestamp: time.Now(),
+				})
+				lastErr = err
+				continue
+			}
+
+			dispatchPath = tempEncryptedFile
+			if encHash, encSize, err := utils.CalculateFileSHA256(dispatchPath); err == nil {
+				hash = encHash
+				size = encSize
+			}
+		}
+
 		// Dispatch via configured protocol
 		destinationIP := ""
 		switch job.Protocol {
 		case "sftp":
-			destinationIP, err = w.sendViaSFTP(job, filePath, fileName)
+			destinationIP, err = w.sendViaSFTP(job, dispatchPath, dispatchName)
 		case "ftp", "ftps":
-			destinationIP, err = w.sendViaFTP(job, filePath, fileName)
+			destinationIP, err = w.sendViaFTP(job, dispatchPath, dispatchName)
 		default:
 			err = fmt.Errorf("unsupported protocol: %s", job.Protocol)
 		}
 
+		if tempEncryptedFile != "" {
+			_ = os.Remove(tempEncryptedFile)
+		}
+
 		status := "SUCCESS"
 		details := fmt.Sprintf("Pushed to %s:%d/%s", job.RemoteHost, job.RemotePort, job.RemoteDir)
+		if job.PGPEnabled {
+			details = fmt.Sprintf("Pushed (PGP Encrypted) to %s:%d/%s", job.RemoteHost, job.RemotePort, job.RemoteDir)
+		}
 		if err != nil {
 			status = "FAILED"
 			details = fmt.Sprintf("Push error: %v", err)
 			lastErr = err
 		} else {
-			// Perform Post-Action
+			// Perform Post-Action on the original source file
 			w.handlePostAction(job, filePath, fileName)
 		}
 
@@ -82,7 +129,7 @@ func (w *Worker) ExecuteJob(job *models.OutboundJob) error {
 			Protocol:  job.Protocol,
 			Username:  job.RemoteUser,
 			ClientIP:  destinationIP,
-			FileName:  fileName,
+			FileName:  dispatchName,
 			FileSize:  size,
 			FileHash:  hash,
 			Status:    status,

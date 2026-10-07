@@ -258,3 +258,55 @@ func TestHandleSFTPBlockedIPsUnblockAuditStatus(t *testing.T) {
 		t.Errorf("expected client_ip = 171.5.229.191, got %s", latest.ClientIP)
 	}
 }
+
+func TestHandlePGPGenerateAndValidate(t *testing.T) {
+	t.Chdir(t.TempDir())
+	db, err := database.Init(":memory:")
+	if err != nil {
+		t.Fatalf("initialize test database: %v", err)
+	}
+	server := &Server{db: db}
+
+	// 1. Generate PGP Key
+	body := strings.NewReader(`{"name":"Test Issuer","email":"issuer@example.com"}`)
+	req := httptest.NewRequest("POST", "/api/pgp/generate", body)
+	rec := httptest.NewRecorder()
+	server.handlePGPGenerate(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var res struct {
+		PublicKey  string `json:"public_key"`
+		PrivateKey string `json:"private_key"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if !strings.Contains(res.PublicKey, "BEGIN PGP PUBLIC KEY BLOCK") {
+		t.Fatalf("missing public key block in response")
+	}
+
+	// 2. Validate Public Key
+	validPayload, _ := json.Marshal(map[string]string{
+		"key_type": "public",
+		"key_data": res.PublicKey,
+	})
+	req = httptest.NewRequest("POST", "/api/pgp/validate", strings.NewReader(string(validPayload)))
+	rec = httptest.NewRecorder()
+	server.handlePGPValidate(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("expected 200 for valid pub key, got %d", rec.Code)
+	}
+
+	// 3. Validate Invalid Key
+	invalidPayload, _ := json.Marshal(map[string]string{
+		"key_type": "public",
+		"key_data": "not-a-pgp-key",
+	})
+	req = httptest.NewRequest("POST", "/api/pgp/validate", strings.NewReader(string(invalidPayload)))
+	rec = httptest.NewRecorder()
+	server.handlePGPValidate(rec, req)
+	if rec.Code == 200 {
+		t.Fatal("expected error for invalid key, got 200")
+	}
+}

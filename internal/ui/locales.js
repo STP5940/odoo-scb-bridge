@@ -938,6 +938,262 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "เลือกหน้าบันทึก",
     "Select log page"
+  ],
+  [
+    "เปิดใช้งานการเข้ารหัส PGP (PGP Encryption)",
+    "Enable PGP Encryption"
+  ],
+  [
+    "เพิ่มความปลอดภัยเข้ารหัสไฟล์และลงลายมือชื่อก่อนส่ง",
+    "Encrypt files and digitally sign before transfer"
+  ],
+  [
+    "กุญแจสาธารณะของผู้รับ (Recipient Public Key)",
+    "Recipient Public Key"
+  ],
+  [
+    "นำเข้าจากไฟล์ .asc/.key",
+    "Import from .asc/.key"
+  ],
+  [
+    "ตรวจสอบ Key",
+    "Validate Key"
+  ],
+  [
+    "ใช้สำหรับเข้ารหัสไฟล์ (เฉพาะผู้รับที่มี Private Key คู่กันเท่านั้นจึงจะถอดรหัสได้)",
+    "Used to encrypt files (only the recipient with the corresponding private key can decrypt)"
+  ],
+  [
+    "กุญแจส่วนตัวสำหรับลงลายมือชื่อ (Signer Private Key - ทางเลือก)",
+    "Signer Private Key (Optional)"
+  ],
+  [
+    "ดู / แก้ไข Private Key",
+    "View / Edit Private Key"
+  ],
+  [
+    "ซ่อน Private Key",
+    "Hide Private Key"
+  ],
+  [
+    "สร้างคู่กุญแจใหม่",
+    "Generate Key Pair"
+  ],
+  [
+    "นำเข้าจากไฟล์",
+    "Import from file"
+  ],
+  [
+    "ใช้สำหรับเซ็นกำกับ (Sign) เพื่อให้ปลายทางตรวจสอบได้ว่าส่งมาจากเราจริง (หากมี PIN ต้องยืนยัน PIN ก่อนดู Key)",
+    "Used to sign files to verify origin (requires PIN to view if configured)"
+  ],
+  [
+    "รหัสผ่าน Private Key (Passphrase ถ้ามี)",
+    "Private Key Passphrase (if any)"
+  ],
+  [
+    "นามสกุลไฟล์หลังเข้ารหัส (File Extension)",
+    "Encrypted File Extension"
+  ],
+  [
+    "กุญแจสาธารณะของเรา (Our Public Key - มอบให้ปลายทาง)",
+    "Our Public Key (share with recipient)"
+  ],
+  [
+    "คัดลอก Public Key",
+    "Copy Public Key"
+  ],
+  [
+    "ดาวน์โหลด .asc",
+    "Download .asc"
+  ],
+  [
+    "นำ Public Key นี้ส่งให้ฝั่งธนาคาร/ปลายทาง เพื่อใช้ตรวจสอบลายมือชื่อ (Signature Verification)",
+    "Send this public key to your bank/partner for signature verification"
+  ],
+  [
+    "สร้างคู่กุญแจ PGP ใหม่ (Generate Key Pair)",
+    "Generate PGP Key Pair"
+  ],
+  [
+    "ชื่อผู้ใช้งานหรือระบบ (Name / Identity)",
+    "User or System Name (Identity)"
+  ],
+  [
+    "อีเมล (Email)",
+    "Email"
+  ],
+  [
+    "หมายเหตุ (Comment - ทางเลือก)",
+    "Comment (Optional)"
+  ],
+  [
+    "ขนาดกุญแจ RSA (Key Size)",
+    "RSA Key Size"
+  ],
+  [
+    "RSA 2048-bit (แนะนำ - ประมวลผลรวดเร็ว)",
+    "RSA 2048-bit (Recommended - Fast)"
+  ],
+  [
+    "RSA 4096-bit (ความปลอดภัยสูงสุด)",
+    "RSA 4096-bit (High Security)"
+  ],
+  [
+    "สร้างกุญแจ",
+    "Generate Key"
+  ],
+  [
+    "ยืนยัน PIN เพื่อดู Private Key",
+    "Verify PIN to view Private Key"
+  ],
+  [
+    "กรุณากรอกรหัส PIN 6 หลักของแอปพลิเคชัน",
+    "Enter your 6-digit application PIN"
+  ],
+  [
+    "กุญแจสาธารณะของเราจะแสดงที่นี่เมื่อสร้าง Key หรือนำเข้าคู่ Key",
+    "Our public key will appear here after key generation or import"
+  ],
+  [
+    "กรุณาระบุ Public Key ของผู้รับสำหรับการเข้ารหัส PGP",
+    "Please enter recipient's PGP public key"
+  ],
+  [
+    "สร้างคู่กุญแจ PGP เรียบร้อยแล้ว",
+    "PGP key pair generated successfully"
+  ],
+  [
+    "นำเข้า Private Key เรียบร้อยแล้ว",
+    "Private key imported successfully"
+  ],
+  [
+    "คัดลอก Public Key เรียบร้อยแล้ว",
+    "Public key copied to clipboard"
+  ],
+  [
+    "ไม่มี Public Key ให้คัดลอก",
+    "No public key to copy"
+  ],
+  [
+    "ไม่มี Public Key ให้ดาวน์โหลด",
+    "No public key to download"
+  ],
+  [
+    "กรุณาระบุหรือนำเข้า Public Key ก่อน",
+    "Please enter or import a public key first"
+  ],
+  [
+    "Public Key ถูกต้อง",
+    "Valid PGP public key"
+  ],
+  [
+    "Key ไม่ถูกต้อง: ",
+    "Invalid key: "
+  ],
+  [
+    "การตรวจสอบล้มเหลว: ",
+    "Validation failed: "
+  ],
+  [
+    "กรุณากรอกชื่อผู้ใช้งานหรือระบบ",
+    "Please enter user or system name"
+  ],
+  [
+    "กรุณากรอกอีเมล",
+    "Please enter email"
+  ],
+  [
+    "สร้างกุญแจไม่สำเร็จ: ",
+    "Failed to generate key: "
+  ],
+  [
+    "ข้อผิดพลาดการเชื่อมต่อ: ",
+    "Connection error: "
+  ],
+  [
+    "PIN ไม่ถูกต้อง กรุณาลองใหม่",
+    "Incorrect PIN. Please try again."
+  ],
+  [
+    "การยืนยันล้มเหลว",
+    "Verification failed"
+  ],
+  [
+    "ยืนยัน PIN สำเร็จ",
+    "PIN verified successfully"
+  ],
+  [
+    "ล้างฟอร์ม",
+    "Clear Form"
+  ],
+  [
+    "คืนค่าเริ่มต้นฟอร์มเรียบร้อยแล้ว",
+    "Form reset to defaults"
+  ],
+  [
+    "สร้างหรือใส่ Key เพื่อเข้ารหัสไฟล์ก่อนส่งออก",
+    "Generate or provide keys to encrypt outbound files"
+  ],
+  [
+    "กุญแจสาธารณะ (Public Key - ใช้เข้ารหัสไฟล์)",
+    "Public Key (Used for Encryption)"
+  ],
+  [
+    "ใช้สำหรับเข้ารหัสไฟล์ก่อนส่งออก (กดสร้างกุญแจใหม่ หรือนำเข้าไฟล์ที่มีอยู่ได้)",
+    "Used to encrypt files before transfer (generate new or import existing key)"
+  ],
+  [
+    "กุญแจส่วนตัว (Private Key - มอบให้ปลายทางใช้ถอดรหัส)",
+    "Private Key (Provide to Recipient to Decrypt)"
+  ],
+  [
+    "คัดลอก Private Key",
+    "Copy Private Key"
+  ],
+  [
+    "นำ Private Key นี้ไปมอบให้ธนาคาร/ปลายทางเพื่อใช้ถอดรหัส (หากมี PIN ต้องยืนยัน PIN ก่อนดูหรือคัดลอก)",
+    "Provide this private key to the bank/recipient to decrypt (requires PIN to view or copy if configured)"
+  ],
+  [
+    "กรุณาระบุ Public Key สำหรับการเข้ารหัส PGP",
+    "Please enter the PGP public key"
+  ],
+  [
+    "ไม่มี Private Key ให้คัดลอก",
+    "No private key to copy"
+  ],
+  [
+    "ไม่มี Private Key ให้ดาวน์โหลด",
+    "No private key to download"
+  ],
+  [
+    "คัดลอก Private Key เรียบร้อยแล้ว",
+    "Private key copied to clipboard"
+  ],
+  [
+    "ส่งออกไฟล์ Public Key",
+    "Export Public Key"
+  ],
+  [
+    "ส่งออกไฟล์ Private Key",
+    "Export Private Key"
+  ],
+  [
+    "ไม่มี Public Key ให้ส่งออก",
+    "No public key to export"
+  ],
+  [
+    "ส่งออกไฟล์ Public Key เรียบร้อยแล้ว",
+    "Public key exported successfully"
+  ],
+  [
+    "ไม่มี Private Key ให้ส่งออก",
+    "No private key to export"
+  ],
+  [
+    "ส่งออกไฟล์ Private Key เรียบร้อยแล้ว",
+    "Private key exported successfully"
   ]
 ];
 // Parameterized UI messages live here with the static translations for easier maintenance.

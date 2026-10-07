@@ -51,6 +51,12 @@ type OutboundJob struct {
 	PostAction     string     `json:"post_action"` // "delete", "archive", "none"
 	ArchiveDir     string     `json:"archive_dir"` // If post_action is "archive"
 	Enabled        bool       `json:"enabled"`
+	PGPEnabled             bool       `json:"pgp_enabled"`
+	PGPRecipientPublicKey  string     `json:"pgp_recipient_public_key"`
+	PGPSignerPrivateKey    string     `json:"pgp_signer_private_key"`
+	PGPSignerPassphrase    string     `json:"pgp_signer_passphrase"`
+	PGPOurPublicKey        string     `json:"pgp_our_public_key"`
+	PGPFileExtension       string     `json:"pgp_file_extension"`
 	LastRunAt      *time.Time `json:"last_run_at"`
 	LastStatus     string     `json:"last_status"`
 	LastError      string     `json:"last_error"`
