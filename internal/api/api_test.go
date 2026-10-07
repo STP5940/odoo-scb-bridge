@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"odoo-scb-bridge/internal/database"
 	"odoo-scb-bridge/internal/models"
@@ -56,6 +57,99 @@ func TestHandleLogsReturnsRequestedPage(t *testing.T) {
 	}
 	if logs[0].Details != "2" || logs[1].Details != "1" {
 		t.Errorf("page details = [%q, %q], want [2, 1]", logs[0].Details, logs[1].Details)
+	}
+}
+
+func TestHandleLogsSearch(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	db, err := database.Init(":memory:")
+	if err != nil {
+		t.Fatalf("initialize test database: %v", err)
+	}
+	_ = db.LogAudit(models.AuditLog{
+		EventType: "LOGIN", Protocol: "SFTP", Username: "user1", ClientIP: "192.168.1.100",
+		Status: "SUCCESS", Details: "Login accepted",
+	})
+	_ = db.LogAudit(models.AuditLog{
+		EventType: "INBOUND_FILE", Protocol: "SFTP", Username: "user2", ClientIP: "10.0.0.5",
+		FileName: "invoice_12345.pdf", Status: "SUCCESS", Details: "Uploaded file",
+	})
+	_ = db.LogAudit(models.AuditLog{
+		EventType: "LOGIN", Protocol: "SFTP", Username: "user1", ClientIP: "192.168.1.100",
+		Status: "FAILED", Details: "Invalid password",
+	})
+
+	server := &Server{db: db}
+
+	// 1. Search for "12345" -> matches invoice_12345.pdf
+	req := httptest.NewRequest("GET", "/api/logs?search=12345", nil)
+	rec := httptest.NewRecorder()
+	server.handleLogs(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("search status = %d: %s", rec.Code, rec.Body.String())
+	}
+	var logs []models.AuditLog
+	if err := json.Unmarshal(rec.Body.Bytes(), &logs); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(logs) != 1 || logs[0].FileName != "invoice_12345.pdf" {
+		t.Fatalf("expected 1 log with invoice_12345.pdf, got %d", len(logs))
+	}
+
+	// 2. Search for "192.168" -> matches 2 logs
+	req = httptest.NewRequest("GET", "/api/logs?search=192.168", nil)
+	rec = httptest.NewRecorder()
+	server.handleLogs(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("search status = %d", rec.Code)
+	}
+	logs = nil
+	if err := json.Unmarshal(rec.Body.Bytes(), &logs); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(logs) != 2 {
+		t.Fatalf("expected 2 logs for 192.168, got %d", len(logs))
+	}
+
+	// 3. Search for "Invalid" -> matches 1 log
+	req = httptest.NewRequest("GET", "/api/logs?search=Invalid", nil)
+	rec = httptest.NewRecorder()
+	server.handleLogs(rec, req)
+	logs = nil
+	_ = json.Unmarshal(rec.Body.Bytes(), &logs)
+	if len(logs) != 1 || logs[0].Status != "FAILED" {
+		t.Fatalf("expected 1 failed log, got %d", len(logs))
+	}
+
+	// 4. Search specific column "file_details" with "invoice"
+	req = httptest.NewRequest("GET", "/api/logs?search=invoice&search_column=file_details", nil)
+	rec = httptest.NewRecorder()
+	server.handleLogs(rec, req)
+	logs = nil
+	_ = json.Unmarshal(rec.Body.Bytes(), &logs)
+	if len(logs) != 1 || logs[0].FileName != "invoice_12345.pdf" {
+		t.Fatalf("expected 1 log for file_details column search, got %d", len(logs))
+	}
+
+	// 5. Search specific column "event_type" with "invoice" -> should return 0
+	req = httptest.NewRequest("GET", "/api/logs?search=invoice&search_column=event_type", nil)
+	rec = httptest.NewRecorder()
+	server.handleLogs(rec, req)
+	logs = nil
+	_ = json.Unmarshal(rec.Body.Bytes(), &logs)
+	if len(logs) != 0 {
+		t.Fatalf("expected 0 logs when searching event_type for invoice, got %d", len(logs))
+	}
+
+	// 6. Search Thai status "ล้มเหลว" -> should match FAILED
+	req = httptest.NewRequest("GET", "/api/logs?search=ล้มเหลว&search_column=status", nil)
+	rec = httptest.NewRecorder()
+	server.handleLogs(rec, req)
+	logs = nil
+	_ = json.Unmarshal(rec.Body.Bytes(), &logs)
+	if len(logs) != 1 || logs[0].Status != "FAILED" {
+		t.Fatalf("expected 1 log matching Thai status ล้มเหลว, got %d", len(logs))
 	}
 }
 
@@ -122,5 +216,45 @@ func TestHandleSFTPSecuritySettings(t *testing.T) {
 	}
 	if settings.MaxFailedAttempts != 0 || settings.LockoutMinutes != 30 {
 		t.Errorf("expected max_failed_attempts=0 lockout=30, got max=%d lockout=%d", settings.MaxFailedAttempts, settings.LockoutMinutes)
+	}
+}
+
+func TestHandleSFTPBlockedIPsUnblockAuditStatus(t *testing.T) {
+	t.Chdir(t.TempDir())
+
+	db, err := database.Init(":memory:")
+	if err != nil {
+		t.Fatalf("initialize test database: %v", err)
+	}
+	server := &Server{db: db}
+
+	// Trigger failure to block IP
+	now := time.Now()
+	for i := 0; i < 5; i++ {
+		_, _, _, _ = db.RecordSFTPAuthFailure("171.5.229.191", "testuser", now)
+	}
+
+	// Unblock IP via DELETE /api/security/sftp/blocked?ip=171.5.229.191
+	req := httptest.NewRequest("DELETE", "/api/security/sftp/blocked?ip=171.5.229.191", nil)
+	rec := httptest.NewRecorder()
+	server.handleSFTPBlockedIPs(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Check audit log for UNBLOCKED status
+	logs, err := db.GetRecentLogs(5, "SFTP_SECURITY")
+	if err != nil {
+		t.Fatalf("GetRecentLogs: %v", err)
+	}
+	if len(logs) == 0 {
+		t.Fatalf("expected at least 1 SFTP_SECURITY log")
+	}
+	latest := logs[0]
+	if latest.Status != "UNBLOCKED" {
+		t.Errorf("expected unblock log status = UNBLOCKED, got %s", latest.Status)
+	}
+	if latest.ClientIP != "171.5.229.191" {
+		t.Errorf("expected client_ip = 171.5.229.191, got %s", latest.ClientIP)
 	}
 }

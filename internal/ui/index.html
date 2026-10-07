@@ -614,17 +614,17 @@
             </button>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[1000px] table-fixed text-left text-xs">
-              <colgroup><col style="width:14%"><col style="width:12%"><col style="width:8%"><col style="width:14%"><col style="width:34%"><col style="width:10%"><col style="width:8%"></colgroup>
+            <table class="w-full min-w-[1050px] table-fixed text-left text-xs">
+              <colgroup><col style="width:14%"><col style="width:12%"><col style="width:8%"><col style="width:14%"><col style="width:30%"><col style="width:10%"><col style="width:12%"></colgroup>
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
-                  <th class="py-2.5 px-3">วัน/เวลา</th>
-                  <th class="py-2.5 px-3">ประเภทเหตุการณ์</th>
-                  <th class="py-2.5 px-3">โปรโตคอล</th>
-                  <th class="py-2.5 px-3">ผู้ใช้ / IP</th>
-                  <th class="py-2.5 px-3">ไฟล์ / รายละเอียด</th>
-                  <th class="py-2.5 px-3">SHA-256 Hash</th>
-                  <th class="py-2.5 px-3">สถานะ</th>
+                  <th class="py-2 px-3">วัน/เวลา</th>
+                  <th class="py-2 px-3">ประเภทเหตุการณ์</th>
+                  <th class="py-2 px-3">โปรโตคอล</th>
+                  <th class="py-2 px-3">ผู้ใช้ / IP</th>
+                  <th class="py-2 px-3">ไฟล์ / รายละเอียด</th>
+                  <th class="py-2 px-3">SHA-256 Hash</th>
+                  <th class="py-2 px-3">สถานะ</th>
                 </tr>
               </thead>
               <tbody id="dash-recent-logs" class="divide-y divide-dark-800/60 font-mono text-[11px]">
@@ -744,12 +744,12 @@
             <table class="w-full text-left text-xs">
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
-                  <th class="py-2.5 px-3">ID</th>
-                  <th class="py-2.5 px-3">Username</th>
-                  <th class="py-2.5 px-3">Home / Permissions</th>
-                  <th class="py-2.5 px-3">สถานะบัญชี</th>
-                  <th class="py-2.5 px-3">วันที่สร้าง</th>
-                  <th class="py-2.5 px-3 text-right">การจัดการ</th>
+                  <th class="py-2 px-3">ID</th>
+                  <th class="py-2 px-3">Username</th>
+                  <th class="py-2 px-3">Home / Permissions</th>
+                  <th class="py-2 px-3">สถานะบัญชี</th>
+                  <th class="py-2 px-3">วันที่สร้าง</th>
+                  <th class="py-2 px-3 text-right">การจัดการ</th>
                 </tr>
               </thead>
               <tbody id="user-list-table" class="divide-y divide-dark-800/60 font-mono">
@@ -878,11 +878,11 @@
             <table class="w-full table-fixed text-left text-xs">
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
-                  <th class="py-2.5 px-3 w-[27%] whitespace-nowrap">ชื่องาน</th>
-                  <th class="py-2.5 px-3 w-[14%] whitespace-nowrap">รอบเวลา Cron</th>
-                  <th class="py-2.5 px-3 w-[17%] whitespace-nowrap">ปลายทาง Host</th>
-                  <th class="py-2.5 px-3 w-[12%] whitespace-nowrap">สถานะล่าสุด</th>
-                  <th class="py-2.5 px-3 w-[30%] text-right whitespace-nowrap">การจัดการ</th>
+                  <th class="py-2 px-3 w-[27%] whitespace-nowrap">ชื่องาน</th>
+                  <th class="py-2 px-3 w-[14%] whitespace-nowrap">รอบเวลา Cron</th>
+                  <th class="py-2 px-3 w-[17%] whitespace-nowrap">ปลายทาง Host</th>
+                  <th class="py-2 px-3 w-[12%] whitespace-nowrap">สถานะล่าสุด</th>
+                  <th class="py-2 px-3 w-[30%] text-right whitespace-nowrap">การจัดการ</th>
                 </tr>
               </thead>
               <tbody id="job-list-table" class="divide-y divide-dark-800/60 font-mono">
@@ -915,7 +915,7 @@
                 <option value="PIN_LOCKOUT">ล็อกแอป (PIN_LOCKOUT)</option>
               </select>
             </div>
-            <input id="log-user-filter" list="sftp-log-users" type="text" onkeydown="if(event.key==='Enter') changeLogFilter()" placeholder="กรองตาม Username" aria-label="Filter logs by exact username" class="glass-input rounded-xl px-3 py-2 text-xs text-white w-40">
+            <input id="log-user-filter" list="sftp-log-users" type="text" onkeydown="if(event.key==='Enter') changeLogFilter()" placeholder="กรองตาม Username" aria-label="Filter logs by exact username" class="glass-input rounded-xl px-3 py-2 text-xs text-white w-36">
             <datalist id="sftp-log-users"></datalist>
             <button onclick="loadLogs()" class="app-btn app-btn-secondary px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5">
               <i class="fa-solid fa-rotate-right"></i>
@@ -926,27 +926,45 @@
 
         <!-- Audit Logs Table -->
         <div class="glass-card rounded-2xl p-6 overflow-hidden">
-          <div class="flex items-center gap-2 mb-3">
-            <label for="logs-page-size" class="text-xs text-slate-400">แสดง</label>
-            <select id="logs-page-size" onchange="changeLogsPageSize()" class="glass-input rounded-lg px-2.5 py-2 text-xs text-white" aria-label="จำนวนรายการต่อหน้า">
-              <option value="10" selected>10 รายการ</option>
-              <option value="25">25 รายการ</option>
-              <option value="50">50 รายการ</option>
-              <option value="100">100 รายการ</option>
-            </select>
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2">
+              <label for="logs-page-size" class="text-xs text-slate-400">แสดง</label>
+              <select id="logs-page-size" onchange="changeLogsPageSize()" class="glass-input rounded-lg px-2.5 py-2 text-xs text-white" aria-label="จำนวนรายการต่อหน้า">
+                <option value="10" selected>10 รายการ</option>
+                <option value="25">25 รายการ</option>
+                <option value="50">50 รายการ</option>
+                <option value="100">100 รายการ</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="log-search-column" onchange="changeLogFilter()" class="glass-input rounded-xl px-3 py-2 text-xs text-white" aria-label="เลือกคอลัมน์ค้นหา">
+                <option value="all">ทุกคอลัมน์</option>
+                <option value="timestamp">วัน/เวลา</option>
+                <option value="event_type">ประเภทเหตุการณ์</option>
+                <option value="protocol">โปรโตคอล</option>
+                <option value="user_ip">ผู้ใช้ / IP</option>
+                <option value="file_details">ไฟล์ / รายละเอียด</option>
+                <option value="file_hash">SHA-256 Hash</option>
+                <option value="status">สถานะ</option>
+              </select>
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
+                <input id="log-search" type="text" oninput="onLogSearchInput()" onkeydown="if(event.key==='Enter') changeLogFilter()" placeholder="ค้นหาข้อมูลในตาราง..." aria-label="ค้นหาข้อมูลในตาราง" class="glass-input rounded-xl pl-8 pr-3 py-2 text-xs text-white w-48 sm:w-56">
+              </div>
+            </div>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[1050px] table-fixed text-left text-xs">
-              <colgroup><col style="width:14%"><col style="width:12%"><col style="width:8%"><col style="width:14%"><col style="width:34%"><col style="width:10%"><col style="width:8%"></colgroup>
+              <colgroup><col style="width:14%"><col style="width:12%"><col style="width:8%"><col style="width:14%"><col style="width:30%"><col style="width:10%"><col style="width:12%"></colgroup>
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800">
                 <tr>
-                  <th class="py-2.5 px-3">วัน/เวลา</th>
-                  <th class="py-2.5 px-3">ประเภทเหตุการณ์</th>
-                  <th class="py-2.5 px-3">โปรโตคอล</th>
-                  <th class="py-2.5 px-3">ผู้ใช้ / IP</th>
-                  <th class="py-2.5 px-3">ไฟล์ / รายละเอียด</th>
-                  <th class="py-2.5 px-3">SHA-256 Hash</th>
-                  <th class="py-2.5 px-3">สถานะ</th>
+                  <th class="py-2 px-3">วัน/เวลา</th>
+                  <th class="py-2 px-3">ประเภทเหตุการณ์</th>
+                  <th class="py-2 px-3">โปรโตคอล</th>
+                  <th class="py-2 px-3">ผู้ใช้ / IP</th>
+                  <th class="py-2 px-3">ไฟล์ / รายละเอียด</th>
+                  <th class="py-2 px-3">SHA-256 Hash</th>
+                  <th class="py-2 px-3">สถานะ</th>
                 </tr>
               </thead>
               <tbody id="logs-table" class="divide-y divide-dark-800/60 font-mono text-[11px]">
@@ -985,10 +1003,10 @@
             </select>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[980px] table-fixed text-left text-xs">
-              <colgroup><col style="width:18%"><col style="width:9%"><col style="width:20%"><col style="width:34%"><col style="width:11%"><col style="width:8%"></colgroup>
+            <table class="w-full min-w-[1000px] table-fixed text-left text-xs">
+              <colgroup><col style="width:18%"><col style="width:9%"><col style="width:19%"><col style="width:31%"><col style="width:11%"><col style="width:12%"></colgroup>
               <thead class="bg-dark-950/70 text-slate-400 font-semibold border-b border-dark-800"><tr>
-                <th class="py-2.5 px-3">วัน/เวลา</th><th class="py-2.5 px-3">โปรโตคอล</th><th class="py-2.5 px-3">ผู้ใช้ / IP</th><th class="py-2.5 px-3">ไฟล์ / รายละเอียด</th><th class="py-2.5 px-3">SHA-256 Hash</th><th class="py-2.5 px-3">สถานะ</th>
+                <th class="py-2 px-3">วัน/เวลา</th><th class="py-2 px-3">โปรโตคอล</th><th class="py-2 px-3">ผู้ใช้ / IP</th><th class="py-2 px-3">ไฟล์ / รายละเอียด</th><th class="py-2 px-3">SHA-256 Hash</th><th class="py-2 px-3">สถานะ</th>
               </tr></thead>
               <tbody id="job-logs-table" class="divide-y divide-dark-800/60 font-mono text-[11px]"><tr><td colspan="6" class="p-6 text-center text-slate-500">เลือกงานเพื่อดูประวัติ</td></tr></tbody>
             </table>
@@ -1158,7 +1176,7 @@
               <h4 class="text-xs font-semibold text-slate-200">IP ที่กำลังถูกบล็อกชั่วคราว</h4>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
-                  <thead class="bg-dark-950/70 text-slate-400"><tr><th class="p-2.5">IP</th><th class="p-2.5">Username ล่าสุด</th><th class="p-2.5">ผิดสะสม</th><th class="p-2.5">เหลือเวลา</th><th class="p-2.5 text-right">การจัดการ</th></tr></thead>
+                  <thead class="bg-dark-950/70 text-slate-400"><tr><th class="py-1.5 px-2.5">IP</th><th class="py-1.5 px-2.5">Username ล่าสุด</th><th class="py-1.5 px-2.5">ผิดสะสม</th><th class="py-1.5 px-2.5">เหลือเวลา</th><th class="py-1.5 px-2.5 text-right">การจัดการ</th></tr></thead>
                   <tbody id="sftp-blocked-ip-table" class="divide-y divide-dark-800/60"><tr><td colspan="5" class="p-4 text-center text-slate-500">กำลังโหลด...</td></tr></tbody>
                 </table>
               </div>
@@ -1168,7 +1186,7 @@
               <h4 class="text-xs font-semibold text-slate-200">รายการ Allow / Block ถาวร</h4>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
-                  <thead class="bg-dark-950/70 text-slate-400"><tr><th class="p-2.5">IP / CIDR</th><th class="p-2.5">กฎ</th><th class="p-2.5">ชนิด</th><th class="p-2.5 text-right">การจัดการ</th></tr></thead>
+                  <thead class="bg-dark-950/70 text-slate-400"><tr><th class="py-1.5 px-2.5">IP / CIDR</th><th class="py-1.5 px-2.5">กฎ</th><th class="py-1.5 px-2.5">ชนิด</th><th class="py-1.5 px-2.5 text-right">การจัดการ</th></tr></thead>
                   <tbody id="sftp-ip-rules-table" class="divide-y divide-dark-800/60"><tr><td colspan="4" class="p-4 text-center text-slate-500">กำลังโหลด...</td></tr></tbody>
                 </table>
               </div>
@@ -2245,18 +2263,18 @@
           const blockedTable = document.getElementById('sftp-blocked-ip-table');
           ruleTable.innerHTML = result.rules?.length ? result.rules.map(rule => `
             <tr>
-              <td class="p-2.5 font-mono">${escapeHTML(rule.cidr)}</td>
-              <td class="p-2.5"><span class="px-2 py-0.5 rounded-full ${rule.action === 'block' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-brand-400'}">${rule.action === 'block' ? (currentLanguage === 'en' ? 'BLOCK' : 'บล็อก') : (currentLanguage === 'en' ? 'ALLOW' : 'อนุญาต')}</span></td>
-              <td class="p-2.5 text-slate-400">${rule.permanent ? (currentLanguage === 'en' ? 'Permanent' : 'ถาวร') : escapeHTML(rule.expires_at || '')}</td>
-              <td class="p-2.5 text-right"><button onclick="deleteSFTPIPRule(${Number(rule.id)})" class="app-btn app-btn-danger px-2.5 py-1 rounded-lg text-xs">${currentLanguage === 'en' ? 'Remove' : 'ลบ'}</button></td>
+              <td class="py-1.5 px-2.5 font-mono">${escapeHTML(rule.cidr)}</td>
+              <td class="py-1.5 px-2.5"><span class="px-2 py-0.5 rounded-full ${rule.action === 'block' ? 'bg-rose-500/10 text-rose-400' : 'bg-emerald-500/10 text-brand-400'}">${rule.action === 'block' ? (currentLanguage === 'en' ? 'BLOCK' : 'บล็อก') : (currentLanguage === 'en' ? 'ALLOW' : 'อนุญาต')}</span></td>
+              <td class="py-1.5 px-2.5 text-slate-400">${rule.permanent ? (currentLanguage === 'en' ? 'Permanent' : 'ถาวร') : escapeHTML(rule.expires_at || '')}</td>
+              <td class="py-1.5 px-2.5 text-right"><button onclick="deleteSFTPIPRule(${Number(rule.id)})" class="app-btn app-btn-danger px-2.5 py-1 rounded-lg text-xs">${currentLanguage === 'en' ? 'Remove' : 'ลบ'}</button></td>
             </tr>`).join('') : `<tr><td colspan="4" class="p-4 text-center text-slate-500">${currentLanguage === 'en' ? 'No permanent IP rules' : 'ยังไม่มีกฎ IP ถาวร'}</td></tr>`;
           blockedTable.innerHTML = result.blocked_ips?.length ? result.blocked_ips.map(item => `
             <tr>
-              <td class="p-2.5 font-mono">${escapeHTML(item.ip)}</td>
-              <td class="p-2.5">${escapeHTML(item.username || '-')}</td>
-              <td class="p-2.5">${Number(item.failed_attempts) || 0}</td>
-              <td class="p-2.5 font-mono text-amber-400"><span data-sftp-blocked-until="${new Date(item.blocked_until).getTime()}"></span></td>
-              <td class="p-2.5 text-right"><button onclick="unblockSFTPIP('${escapeHTML(item.ip)}')" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs">${currentLanguage === 'en' ? 'Unblock' : 'ปลดบล็อก'}</button></td>
+              <td class="py-1.5 px-2.5 font-mono">${escapeHTML(item.ip)}</td>
+              <td class="py-1.5 px-2.5">${escapeHTML(item.username || '-')}</td>
+              <td class="py-1.5 px-2.5">${Number(item.failed_attempts) || 0}</td>
+              <td class="py-1.5 px-2.5 font-mono text-amber-400"><span data-sftp-blocked-until="${new Date(item.blocked_until).getTime()}"></span></td>
+              <td class="py-1.5 px-2.5 text-right"><button onclick="unblockSFTPIP('${escapeHTML(item.ip)}')" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs">${currentLanguage === 'en' ? 'Unblock' : 'ปลดบล็อก'}</button></td>
             </tr>`).join('') : `<tr><td colspan="5" class="p-4 text-center text-slate-500">${currentLanguage === 'en' ? 'No IPs are temporarily blocked' : 'ไม่มี IP ที่ถูกบล็อกชั่วคราว'}</td></tr>`;
           updateSFTPBlockedCountdowns();
         } catch (error) {
@@ -2377,8 +2395,8 @@
           }
           table.innerHTML = users.map(u => `
             <tr class="hover:bg-dark-850/50 transition">
-              <td class="p-3 text-slate-500 text-[11px] font-mono">#${u.id}</td>
-              <td class="p-3 font-semibold text-white">
+              <td class="py-1.5 px-3 text-slate-500 text-[11px] font-mono">#${u.id}</td>
+              <td class="py-1.5 px-3 font-semibold text-white">
                 <div class="flex items-center space-x-2">
                   <div class="w-6 h-6 rounded-md bg-blue-500/10 text-accent-blue flex items-center justify-center text-[10px]">
                     <i class="fa-solid fa-user"></i>
@@ -2386,7 +2404,7 @@
                   <span>${u.username}</span>
                 </div>
               </td>
-              <td class="p-3 text-slate-400 text-xs">
+              <td class="py-1.5 px-3 text-slate-400 text-xs">
                 <div class="font-mono text-slate-300">/${u.root_dir || ''}</div>
                 <div class="mt-1 flex flex-wrap gap-1 text-[9px]">
                   ${u.can_list ? '<span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300">LIST</span>' : ''}
@@ -2397,13 +2415,13 @@
                   ${u.can_delete ? '<span class="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300">DELETE</span>' : ''}
                 </div>
               </td>
-              <td class="p-3">
+              <td class="py-1.5 px-3">
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${u.enabled ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
                   ${u.enabled ? '● ACTIVE' : '○ DISABLED'}
                 </span>
               </td>
-              <td class="p-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString(getLocale())}</td>
-              <td class="p-3 text-right space-x-2">
+              <td class="py-1.5 px-3 text-[11px] text-slate-400 font-mono">${new Date(u.created_at).toLocaleString(getLocale())}</td>
+              <td class="py-1.5 px-3 text-right space-x-2">
                 <button onclick="openUserFolder(${Number(u.id)})" title="${currentLanguage === 'en' ? 'Open user folder' : 'เปิดโฟลเดอร์ของผู้ใช้'}" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                   <i class="fa-solid fa-folder-open text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Folder' : 'โฟลเดอร์'}
                 </button>
@@ -2558,7 +2576,7 @@
           }
           table.innerHTML = jobs.map(j => `
             <tr class="hover:bg-dark-850/50 transition">
-              <td class="p-3 font-semibold text-white whitespace-nowrap">
+              <td class="py-1.5 px-3 font-semibold text-white whitespace-nowrap">
                 <div class="flex items-center space-x-2 min-w-0">
                   <div class="w-6 h-6 rounded-md bg-purple-500/10 text-accent-purple flex items-center justify-center text-[10px]">
                     <i class="fa-solid fa-paper-plane"></i>
@@ -2566,16 +2584,16 @@
                   <button type="button" onclick="showOutboundJobLogs(${Number(j.id)})" aria-label="${currentLanguage === 'en' ? 'View transfer logs for ' : 'ดู Log การส่งไฟล์ของ '}${escapeHTML(j.name)}" title="${currentLanguage === 'en' ? 'View this job’s transfer logs' : 'คลิกเพื่อดู Log การส่งไฟล์ของงานนี้'}" class="truncate text-left hover:text-accent-cyan hover:underline focus-visible:outline focus-visible:outline-1 focus-visible:outline-cyan-400">${escapeHTML(j.name)}</button>
                 </div>
               </td>
-              <td class="p-3 text-xs min-w-0">
+              <td class="py-1.5 px-3 text-xs min-w-0">
                 <div class="text-accent-cyan font-mono whitespace-nowrap">${escapeHTML(j.cron_expr)}</div>
               </td>
-              <td class="p-3 text-xs text-slate-300 whitespace-nowrap">${escapeHTML(j.protocol.toUpperCase())}://${escapeHTML(j.remote_host)}:${Number(j.remote_port)}</td>
-              <td class="p-3 whitespace-nowrap">
+              <td class="py-1.5 px-3 text-xs text-slate-300 whitespace-nowrap">${escapeHTML(j.protocol.toUpperCase())}://${escapeHTML(j.remote_host)}:${Number(j.remote_port)}</td>
+              <td class="py-1.5 px-3 whitespace-nowrap">
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${!j.enabled ? 'bg-slate-800 text-slate-400' : j.last_status === 'SUCCESS' ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}">
                   ${j.enabled ? (j.last_status || 'IDLE') : (currentLanguage === 'en' ? 'DISABLED' : 'ปิดใช้งาน')}
                 </span>
               </td>
-              <td class="p-3 text-right whitespace-nowrap">
+              <td class="py-1.5 px-3 text-right whitespace-nowrap">
                 <div class="flex justify-end gap-1.5 whitespace-nowrap">
                   <button onclick="openOutboundFolder(${Number(j.id)})" title="${currentLanguage === 'en' ? 'Open source folder' : 'เปิดโฟลเดอร์ต้นทาง'}" class="app-btn app-btn-secondary px-2.5 py-1 rounded-lg text-xs whitespace-nowrap">
                     <i class="fa-solid fa-folder-open text-[10px] mr-1"></i>${currentLanguage === 'en' ? 'Folder' : 'โฟลเดอร์'}
@@ -2814,6 +2832,14 @@
         if (filter) params.set('event_type', filter);
         const username = document.getElementById('log-user-filter').value.trim();
         if (username) params.set('username', username);
+        const search = document.getElementById('log-search')?.value.trim();
+        if (search) {
+          params.set('search', search);
+          const searchCol = document.getElementById('log-search-column')?.value;
+          if (searchCol && searchCol !== 'all') {
+            params.set('search_column', searchCol);
+          }
+        }
         const res = await fetch(`${API_BASE}/logs?${params.toString()}`);
         if (requestId !== logsRequestId) return;
         if (res.ok) {
@@ -2839,7 +2865,7 @@
             const statusLabel = formatLogStatus(l.status);
             const statusClass = l.status === 'SUCCESS'
               ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20'
-              : l.status === 'WARNING'
+              : (l.status === 'WARNING' || l.status === 'UNBLOCKED')
                 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
                 : 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
             let badgeClass = 'text-brand-400 bg-emerald-500/10 border-emerald-500/20';
@@ -2858,18 +2884,18 @@
 
             return `
               <tr class="hover:bg-dark-850/50 transition">
-                <td class="p-3 text-slate-400 font-mono"><span class="block truncate whitespace-nowrap" title="${escapeHTML(new Date(l.timestamp).toLocaleString(getLocale()))}">${escapeHTML(new Date(l.timestamp).toLocaleString(getLocale()))}</span></td>
-                <td class="p-3 overflow-hidden">
+                <td class="py-1.5 px-3 text-slate-400 font-mono"><span class="block truncate whitespace-nowrap" title="${escapeHTML(new Date(l.timestamp).toLocaleString(getLocale()))}">${escapeHTML(new Date(l.timestamp).toLocaleString(getLocale()))}</span></td>
+                <td class="py-1.5 px-3 overflow-hidden">
                   <span class="inline-block max-w-full truncate whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono border ${badgeClass}" title="${escapeHTML(l.event_type)}">
                     ${escapeHTML(l.event_type)}
                   </span>
                 </td>
-                <td class="p-3 font-semibold text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(String(l.protocol || '').toUpperCase())}">${escapeHTML(String(l.protocol || '').toUpperCase())}</span></td>
-                <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(`${l.username || '-'}${l.client_ip ? ` (${l.client_ip})` : ''}`)}">${escapeHTML(l.username || '-')}${l.client_ip ? ` <span class="text-slate-500">(${escapeHTML(l.client_ip)})</span>` : ''}</span></td>
-                <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(details || '-')}">${escapeHTML(details || '-')}</span></td>
-                <td class="p-3 font-mono text-[10px] text-slate-500"><span class="block truncate whitespace-nowrap" title="${escapeHTML(l.file_hash || '-')}">${l.file_hash ? escapeHTML(l.file_hash) : '-'}</span></td>
-                <td class="p-3">
-                  <span class="inline-block max-w-full truncate whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}" title="${escapeHTML(statusLabel)}">
+                <td class="py-1.5 px-3 font-semibold text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(String(l.protocol || '').toUpperCase())}">${escapeHTML(String(l.protocol || '').toUpperCase())}</span></td>
+                <td class="py-1.5 px-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(`${l.username || '-'}${l.client_ip ? ` (${l.client_ip})` : ''}`)}">${escapeHTML(l.username || '-')}${l.client_ip ? ` <span class="text-slate-500">(${escapeHTML(l.client_ip)})</span>` : ''}</span></td>
+                <td class="py-1.5 px-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(details || '-')}">${escapeHTML(details || '-')}</span></td>
+                <td class="py-1.5 px-3 font-mono text-[10px] text-slate-500"><span class="block truncate whitespace-nowrap" title="${escapeHTML(l.file_hash || '-')}">${l.file_hash ? escapeHTML(l.file_hash) : '-'}</span></td>
+                <td class="py-1.5 px-3 whitespace-nowrap">
+                  <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono whitespace-nowrap ${statusClass}" title="${escapeHTML(statusLabel)}">
                     ${statusLabel}
                   </span>
                 </td>
@@ -2896,10 +2922,20 @@
         SUCCESS: 'สำเร็จ',
         WARNING: 'คำเตือน',
         LOCKED: 'ถูกล็อก',
+        BLOCKED: 'ถูกบล็อก',
+        UNBLOCKED: 'ปลดบล็อก',
         FAILED: 'ล้มเหลว',
         ERROR: 'ผิดพลาด'
       };
       return thaiLabels[value.toUpperCase()] || value;
+    }
+
+    let logSearchTimeout = null;
+    function onLogSearchInput() {
+      clearTimeout(logSearchTimeout);
+      logSearchTimeout = setTimeout(() => {
+        changeLogFilter();
+      }, 350);
     }
 
     function changeLogFilter() {
@@ -2950,7 +2986,7 @@
         table.innerHTML = logs.map(log => {
           const statusClass = log.status === 'SUCCESS'
             ? 'bg-emerald-500/10 text-brand-400 border border-emerald-500/20'
-            : log.status === 'WARNING'
+            : (log.status === 'WARNING' || log.status === 'UNBLOCKED')
               ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
           const details = escapeHTML(log.file_name || log.details || '');
@@ -2960,12 +2996,12 @@
           const hash = log.file_hash || '-';
           const statusLabel = formatLogStatus(log.status);
           return `<tr class="hover:bg-dark-850/50 transition">
-            <td class="p-3 text-slate-400"><span class="block truncate whitespace-nowrap" title="${escapeHTML(timestamp)}">${escapeHTML(timestamp)}</span></td>
-            <td class="p-3 font-semibold text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(protocol)}">${escapeHTML(protocol)}</span></td>
-            <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(userAndIP)}">${escapeHTML(log.username || '')}${log.client_ip ? ` <span class="text-slate-500">(${escapeHTML(log.client_ip)})</span>` : ''}</span></td>
-            <td class="p-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(log.file_name || log.details || '')}">${details}</span></td>
-            <td class="p-3 font-mono text-[10px] text-slate-500"><span class="block truncate whitespace-nowrap" title="${escapeHTML(hash)}">${escapeHTML(hash)}</span></td>
-            <td class="p-3"><span class="inline-block max-w-full truncate whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-mono ${statusClass}" title="${escapeHTML(statusLabel)}">${statusLabel}</span></td>
+            <td class="py-1.5 px-3 text-slate-400"><span class="block truncate whitespace-nowrap" title="${escapeHTML(timestamp)}">${escapeHTML(timestamp)}</span></td>
+            <td class="py-1.5 px-3 font-semibold text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(protocol)}">${escapeHTML(protocol)}</span></td>
+            <td class="py-1.5 px-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(userAndIP)}">${escapeHTML(log.username || '')}${log.client_ip ? ` <span class="text-slate-500">(${escapeHTML(log.client_ip)})</span>` : ''}</span></td>
+            <td class="py-1.5 px-3 text-slate-300"><span class="block truncate whitespace-nowrap" title="${escapeHTML(log.file_name || log.details || '')}">${details}</span></td>
+            <td class="py-1.5 px-3 font-mono text-[10px] text-slate-500"><span class="block truncate whitespace-nowrap" title="${escapeHTML(hash)}">${escapeHTML(hash)}</span></td>
+            <td class="py-1.5 px-3 whitespace-nowrap"><span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono whitespace-nowrap ${statusClass}" title="${escapeHTML(statusLabel)}">${statusLabel}</span></td>
           </tr>`;
         }).join('');
       } catch (error) {

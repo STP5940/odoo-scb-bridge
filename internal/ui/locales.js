@@ -868,6 +868,10 @@ window.APP_LANGUAGE_PAIRS = [
     "IP lockout duration"
   ],
   [
+    "ค้นหาข้อมูลในตาราง...",
+    "Search table data..."
+  ],
+  [
     "จำนวนครั้งที่ผิดต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป",
     "Failed login attempts must be 0 or greater"
   ],
@@ -922,6 +926,18 @@ window.APP_LANGUAGE_PAIRS = [
   [
     "30 วัน (1 เดือน)",
     "30 days (1 month)"
+  ],
+  [
+    "ทุกคอลัมน์",
+    "All columns"
+  ],
+  [
+    "เลือกคอลัมน์ค้นหา",
+    "Select search column"
+  ],
+  [
+    "เลือกหน้าบันทึก",
+    "Select log page"
   ]
 ];
 // Parameterized UI messages live here with the static translations for easier maintenance.

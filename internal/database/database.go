@@ -617,12 +617,12 @@ func (d *DB) CountLogs(eventType string) (int, error) {
 	return count, err
 }
 
-// GetRecentLogsFiltered retrieves audit logs filtered by event type and exact username.
-func (d *DB) GetRecentLogsFiltered(limit int, eventType, username string, offset int) ([]models.AuditLog, error) {
+// GetRecentLogsFiltered retrieves audit logs filtered by event type, username, search keyword, and optional search column.
+func (d *DB) GetRecentLogsFiltered(limit int, eventType, username, search, searchColumn string, offset int) ([]models.AuditLog, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	query := `SELECT id, event_type, protocol, username, client_ip, file_name, file_size, file_hash, status, details, timestamp, job_id FROM audit_logs WHERE 1=1`
-	args := make([]interface{}, 0, 4)
+	args := make([]interface{}, 0, 14)
 	if eventType != "" {
 		query += ` AND event_type = ?`
 		args = append(args, eventType)
@@ -630,6 +630,11 @@ func (d *DB) GetRecentLogsFiltered(limit int, eventType, username string, offset
 	if username != "" {
 		query += ` AND username = ?`
 		args = append(args, username)
+	}
+	if search != "" {
+		clause, searchArgs := buildSearchFilter(search, searchColumn)
+		query += clause
+		args = append(args, searchArgs...)
 	}
 	query += ` ORDER BY id DESC LIMIT ? OFFSET ?`
 	args = append(args, limit, offset)
@@ -649,11 +654,11 @@ func (d *DB) GetRecentLogsFiltered(limit int, eventType, username string, offset
 	return logs, rows.Err()
 }
 
-func (d *DB) CountLogsFiltered(eventType, username string) (int, error) {
+func (d *DB) CountLogsFiltered(eventType, username, search, searchColumn string) (int, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	query := `SELECT COUNT(*) FROM audit_logs WHERE 1=1`
-	args := make([]interface{}, 0, 3)
+	args := make([]interface{}, 0, 12)
 	if eventType != "" {
 		query += ` AND event_type = ?`
 		args = append(args, eventType)
@@ -662,9 +667,69 @@ func (d *DB) CountLogsFiltered(eventType, username string) (int, error) {
 		query += ` AND username = ?`
 		args = append(args, username)
 	}
+	if search != "" {
+		clause, searchArgs := buildSearchFilter(search, searchColumn)
+		query += clause
+		args = append(args, searchArgs...)
+	}
 	var count int
 	err := d.conn.QueryRow(query, args...).Scan(&count)
 	return count, err
+}
+
+func buildSearchFilter(search, searchColumn string) (string, []interface{}) {
+	term := "%" + search + "%"
+	mappedStatus := mapThaiStatus(search)
+
+	switch searchColumn {
+	case "timestamp":
+		return ` AND timestamp LIKE ?`, []interface{}{term}
+	case "event_type":
+		return ` AND event_type LIKE ?`, []interface{}{term}
+	case "protocol":
+		return ` AND protocol LIKE ?`, []interface{}{term}
+	case "user_ip":
+		return ` AND (username LIKE ? OR client_ip LIKE ?)`, []interface{}{term, term}
+	case "file_details":
+		return ` AND (file_name LIKE ? OR details LIKE ?)`, []interface{}{term, term}
+	case "file_hash":
+		return ` AND file_hash LIKE ?`, []interface{}{term}
+	case "status":
+		if mappedStatus != "" {
+			return ` AND (status LIKE ? OR status LIKE ?)`, []interface{}{term, "%" + mappedStatus + "%"}
+		}
+		return ` AND status LIKE ?`, []interface{}{term}
+	default:
+		// Search across all columns (including timestamp, event_type, protocol, user, ip, file, details, hash, status)
+		if mappedStatus != "" {
+			return ` AND (timestamp LIKE ? OR event_type LIKE ? OR protocol LIKE ? OR username LIKE ? OR client_ip LIKE ? OR file_name LIKE ? OR details LIKE ? OR file_hash LIKE ? OR status LIKE ? OR status LIKE ?)`,
+				[]interface{}{term, term, term, term, term, term, term, term, term, "%" + mappedStatus + "%"}
+		}
+		return ` AND (timestamp LIKE ? OR event_type LIKE ? OR protocol LIKE ? OR username LIKE ? OR client_ip LIKE ? OR file_name LIKE ? OR details LIKE ? OR file_hash LIKE ? OR status LIKE ?)`,
+			[]interface{}{term, term, term, term, term, term, term, term, term}
+	}
+}
+
+func mapThaiStatus(search string) string {
+	s := strings.TrimSpace(strings.ToLower(search))
+	switch s {
+	case "สำเร็จ", "success":
+		return "SUCCESS"
+	case "คำเตือน", "เตือน", "warning":
+		return "WARNING"
+	case "ถูกล็อก", "ล็อก", "locked", "lock":
+		return "LOCKED"
+	case "ถูกบล็อก", "บล็อก", "blocked", "block":
+		return "BLOCKED"
+	case "ปลดบล็อก", "ปลดล็อค", "unblocked", "unblock":
+		return "UNBLOCKED"
+	case "ล้มเหลว", "failed", "fail":
+		return "FAILED"
+	case "ผิดพลาด", "error":
+		return "ERROR"
+	default:
+		return ""
+	}
 }
 
 // GetOutboundJobLogs returns transfer logs linked to one outbound job only.

@@ -300,7 +300,12 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	eventType := query.Get("event_type")
 	username := strings.TrimSpace(query.Get("username"))
-	total, err := s.db.CountLogsFiltered(eventType, username)
+	search := strings.TrimSpace(query.Get("search"))
+	if search == "" {
+		search = strings.TrimSpace(query.Get("q"))
+	}
+	searchColumn := strings.TrimSpace(query.Get("search_column"))
+	total, err := s.db.CountLogsFiltered(eventType, username, search, searchColumn)
 	if err != nil {
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -313,7 +318,7 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 		page = totalPages
 	}
 	offset := (page - 1) * pageSize
-	logs, err := s.db.GetRecentLogsFiltered(pageSize, eventType, username, offset)
+	logs, err := s.db.GetRecentLogsFiltered(pageSize, eventType, username, search, searchColumn, offset)
 	if err != nil {
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -508,7 +513,7 @@ func (s *Server) handleSFTPBlockedIPs(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		_ = s.db.LogAudit(models.AuditLog{EventType: "SFTP_SECURITY", Protocol: "SFTP", Username: "admin", ClientIP: canonicalIP, Status: "SUCCESS", Details: "Temporary SFTP IP block cleared"})
+		_ = s.db.LogAudit(models.AuditLog{EventType: "SFTP_SECURITY", Protocol: "SFTP", Username: "admin", ClientIP: canonicalIP, Status: "UNBLOCKED", Details: "Temporary SFTP IP block cleared"})
 		jsonResponse(w, http.StatusOK, map[string]string{"status": "unblocked"})
 	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
